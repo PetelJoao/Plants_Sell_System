@@ -1,5 +1,4 @@
 "use client"
-
 import { useState } from "react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -7,78 +6,83 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Badge } from "@/components/ui/badge"
 import { ChevronDown, Download, Heart, MoreHorizontal, Share2 } from "lucide-react"
 import Image from "next/image"
-
-// Sample data for architectural plans
+import HousePic from "@/assets/images/Casa.jpeg"
+import Porshe from "@/assets/images/Porsche.jpeg"
+// Dados simples das plantas que tem que ser tirados de uma API ou de um banco de dados
+// Para o momento, os dados estão hardcoded para facilitar o desenvolvimento inicial
+/* Tendo em conta que o arquiteto vai subir varias img referentes a planta então a propriendade image tem que ser um array de images */
 const plans = [
   {
     id: 1,
-    title: "Modern Minimalist Home",
-    description: "A sleek, minimalist design with open floor plan and large windows.",
+    title: "Casa Moderna Minimalista",
+    description: "Design elegante e minimalista com planta aberta e janelas amplas.",
     price: 499,
-    category: "Residential",
-    squareFeet: 2400,
+    category: "Residencial",
+    squareFeet: 240,
     bedrooms: 3,
     bathrooms: 2,
     featured: true,
-  },
-  {
+},
+{
     id: 2,
-    title: "Urban Apartment Complex",
-    description: "Multi-unit apartment building designed for urban environments.",
+    title: "Complexo de Apartamentos",
+    description: "Edifício de múltiplas unidades projetado para ambientes urbanos.",
     price: 1299,
-    category: "Multi-family",
+    category: "Multifamiliar",
     squareFeet: 12000,
     bedrooms: 12,
     bathrooms: 14,
     featured: false,
-  },
-  {
+},
+{
     id: 3,
-    title: "Suburban Family House",
-    description: "Traditional family home with spacious backyard and garage.",
+    title: "Casa Familiar Suburbana",
+    description: "Residência tradicional com quintal espaçoso e garagem.",
     price: 599,
-    category: "Residential",
+    category: "Residencial",
     squareFeet: 3200,
     bedrooms: 4,
     bathrooms: 3,
     featured: true,
-  },
-  {
+    image: HousePic,
+},
+{
     id: 4,
-    title: "Tiny House Design",
-    description: "Compact and efficient tiny house with smart space utilization.",
+    title: "Casa Pequena",
+    description: "Casa compacta e eficiente com aproveitamento inteligente do espaço.",
     price: 299,
-    category: "Tiny Home",
+    category: "Casa Pequena",
     squareFeet: 400,
     bedrooms: 1,
     bathrooms: 1,
     featured: false,
-  },
-  {
+},
+{
     id: 5,
-    title: "Commercial Office Building",
-    description: "Modern office building with flexible workspace layouts.",
+    title: "Edifício Comercial para Escritórios",
+    description: "Prédio de escritórios moderno com layouts de trabalho flexíveis.",
     price: 1999,
-    category: "Commercial",
+    category: "Comercial",
     squareFeet: 25000,
     bedrooms: 0,
     bathrooms: 8,
     featured: true,
-  },
-  {
+},
+{
     id: 6,
-    title: "Beachfront Villa",
-    description: "Luxury beachfront property with panoramic ocean views.",
+    title: "Villa à Beira-Mar",
+    description: "Propriedade luxuosa à beira-mar com vista panorâmica para o oceano.",
     price: 899,
-    category: "Luxury",
+    category: "Luxo",
     squareFeet: 4500,
     bedrooms: 5,
     bathrooms: 5,
     featured: false,
-  },
+}
 ]
 
 export function ArchitecturalPlans() {
+
   const [filter, setFilter] = useState("All")
 
   const filteredPlans = filter === "All" ? plans : plans.filter((plan) => plan.category === filter)
@@ -95,28 +99,28 @@ export function ArchitecturalPlans() {
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               <DropdownMenuItem onClick={() => setFilter("All")}>All</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setFilter("Residential")}>Residential</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setFilter("Commercial")}>Commercial</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setFilter("Multi-family")}>Multi-family</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setFilter("Tiny Home")}>Tiny Home</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setFilter("Luxury")}>Luxury</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setFilter("Residencial")}>Residencial</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setFilter("Comercial")}>Comercial</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setFilter("Multifamiliar")}>Multifamiliar</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setFilter("Casa Pequena")}>Casa Pequena</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setFilter("Luxo")}>Luxo</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <span className="text-sm text-muted-foreground">{filteredPlans.length} plans available</span>
+          <span className="text-sm text-muted-foreground">{filteredPlans.length} Plantas Disponíveis</span>
         </div>
-        <Button>Upload Your Plan</Button>
+        <Button>Carregue a sua Planta</Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredPlans.map((plan) => (
           <Card key={plan.id} className="overflow-hidden">
             <div className="relative aspect-video">
-              <Image
-                src={`/placeholder.svg?height=300&width=500&text=${encodeURIComponent(plan.title)}`}
-                alt={plan.title}
-                fill
-                className="object-cover"
+
+            <Image
+                src={(plan.image) || Porshe}
+                alt={plan.description}
               />
+
               <Button
                 variant="ghost"
                 size="icon"
@@ -137,10 +141,10 @@ export function ArchitecturalPlans() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem>
-                      <Share2 className="mr-2 h-4 w-4" /> Share
+                      <Share2 className="mr-2 h-4 w-4" /> Compartilhar
                     </DropdownMenuItem>
                     <DropdownMenuItem>
-                      <Download className="mr-2 h-4 w-4" /> Download Preview
+                      <Download className="mr-2 h-4 w-4" /> Denunciar
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -150,22 +154,22 @@ export function ArchitecturalPlans() {
             <CardContent>
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <div>
-                  <span className="text-muted-foreground">Category:</span> {plan.category}
+                  <span className="text-muted-foreground">Categoria:</span> {plan.category}
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Size:</span> {plan.squareFeet} sq ft
+                  <span className="text-muted-foreground">Tamanho:</span> {plan.squareFeet} m²
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Bedrooms:</span> {plan.bedrooms}
+                  <span className="text-muted-foreground">Quartos:</span> {plan.bedrooms}
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Bathrooms:</span> {plan.bathrooms}
+                  <span className="text-muted-foreground">Casas de banho:</span> {plan.bathrooms}
                 </div>
               </div>
             </CardContent>
             <CardFooter className="flex justify-between">
-              <div className="font-bold text-lg">${plan.price}</div>
-              <Button>Purchase Plan</Button>
+              <div className="font-bold text-lg">KZ {plan.price} AOA</div>
+              <Button>Comprar planta</Button>
             </CardFooter>
           </Card>
         ))}

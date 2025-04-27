@@ -48,10 +48,10 @@ export default function SignupForm() {
             Duria
           </Link>
           <nav className="flex items-center space-x-6">
-            <Link href="/about" className="text-sm text-muted-foreground hover:text-foreground">
+            <Link href="#" className="text-sm text-muted-foreground hover:text-foreground">
               About
             </Link>
-            <Link href="/projects" className="text-sm text-muted-foreground hover:text-foreground">
+            <Link href="#" className="text-sm text-muted-foreground hover:text-foreground">
               Projects
             </Link>
             <Link href="/login">
