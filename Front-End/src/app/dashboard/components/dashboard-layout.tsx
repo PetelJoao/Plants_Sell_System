@@ -1,6 +1,6 @@
 "use client"
+
 import type React from "react"
-import { useState } from "react"
 import {
   Sidebar,
   SidebarContent,
@@ -10,17 +10,15 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
-  SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Building2, Home, LayoutDashboard, LogOut, Search, ShoppingCart, User } from "lucide-react"
+import { Clock,Building2, ChevronLeft, ChevronRight, Home, LayoutDashboard, LogOut, ShoppingCart, User } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const [searchQuery, setSearchQuery] = useState("")
 
   const navigationItems = [
     {
@@ -29,18 +27,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       icon: LayoutDashboard,
     },
     {
-      name: "Plans",
-      href: "/dashboard/plans",
+      name: "Eventos",
+      href: "/dashboard/eventos",
       icon: Building2,
     },
     {
-      name: "Orders",
-      href: "/dashboard/orders",
+      name: "Carrinho de Compras",
+      href: "/dashboard/Compras",
       icon: ShoppingCart,
     },
     {
-      name: "Profile",
-      href: "/dashboard/profile",
+      name: "Histórico de Compras",
+      href: "/dashboard/history",
+      icon: Clock,
+    },
+    {
+      name: "Perfil",
+      href: "/dashboard/perfil",
       icon: User,
     },
   ]
@@ -48,24 +51,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
-        <Sidebar>
-          <SidebarHeader>
-            <div className="flex items-center gap-2 px-4 py-2">
-              <Home className="h-6 w-6" />
-              <span className="font-semibold">ArchPlans</span>
-            </div>
-            <div className="px-2 pb-2">
-              <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="search"
-                  placeholder="Search plans..."
-                  className="w-full pl-8"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-            </div>
+        <Sidebar collapsible="icon">
+          <SidebarHeader className="group-data-[collapsible=icon]:!block">
+            <SidebarToggleButton />
           </SidebarHeader>
           <SidebarContent>
             <SidebarMenu>
@@ -96,12 +84,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </Sidebar>
         <main className="flex-1 overflow-auto">
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px]">
-            <SidebarTrigger />
             <div className="ml-auto flex items-center gap-2">
               <Button variant="outline" size="sm">
-                Help
+                Ajuda
               </Button>
-              <Button size="sm">New Plan</Button>
+              <Button size="sm">Novo Evento</Button>
             </div>
           </div>
           {children}
@@ -111,3 +98,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   )
 }
 
+function SidebarToggleButton() {
+  const { toggleSidebar, state } = useSidebar()
+
+  return (
+    <button
+      onClick={toggleSidebar}
+      className="flex w-full items-center justify-center gap-2 p-4 hover:bg-sidebar-accent transition-colors group-data-[collapsible=icon]:px-2"
+      title={state === "expanded" ? "Collapse Sidebar" : "Expand Sidebar"}
+    >
+      <Home className="h-6 w-6 flex-shrink-0" />
+      <span className="font-semibold group-data-[collapsible=icon]:hidden">Duria</span>
+      {state === "expanded" ? (
+        <ChevronLeft className="ml-auto h-4 w-4 group-data-[collapsible=icon]:hidden" />
+      ) : (
+        <ChevronRight className="ml-auto h-4 w-4 hidden group-data-[state=collapsed]:group-data-[collapsible=icon]:block" />
+      )}
+    </button>
+  )
+}

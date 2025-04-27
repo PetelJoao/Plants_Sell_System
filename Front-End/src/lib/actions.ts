@@ -8,7 +8,7 @@ export async function login(email: string, password: string) {
   }
   if (email==="Admin@gmail.com" && password==="1234") {
         const token=generateToken(email)
-        localStorage.setItem('jwt',token)
+       localStorage.setItem('jwt',token)
    return {
     success: true,
    }
@@ -22,4 +22,16 @@ function generateToken(email:string){
   const signature='jobera_nas_tecnicas';
 
   return btoa(header)+'.'+ btoa(payload)+'.'+ btoa(signature);
+}
+export function islogged(){
+  const token=localStorage.getItem('jwt')
+  if(!token) return false;
+  const parts = token.split('.');
+  const payload = JSON.parse(atob(parts[1]));
+
+  if (payload.exp < Date.now()) {
+      localStorage.removeItem('jwt');
+      return false;
+  }
+  return true;
 }
