@@ -12,7 +12,6 @@ export default function Compras() {
        </div>
       
        <div className="flex flex-col gap-4">
-        {/* O resto */}
       </div>
       </div>
         </DashboardLayout>

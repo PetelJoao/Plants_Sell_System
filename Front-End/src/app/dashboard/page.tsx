@@ -6,9 +6,9 @@ export default function DashboardPage() {
     <DashboardLayout>
       <div className="flex flex-col gap-6 p-6 md:p-8">
         <div className="flex flex-col gap-2">
-          <h1 className="text-3xl font-bold tracking-tight">Architectural Plans</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Plantas Arquiteturas</h1>
           <p className="text-muted-foreground">
-            Browse and purchase high-quality architectural plans for your next project.
+            Navegue e compre planos arquitetônicos de alta qualidade para seu próximo projecto.
           </p>
         </div>
         <ArchitecturalPlans />
