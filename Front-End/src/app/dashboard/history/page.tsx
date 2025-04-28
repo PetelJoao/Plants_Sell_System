@@ -6,57 +6,55 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator"
 import DashboardLayout from "@/app/dashboard/components/dashboard-layout"
 import Image from "next/image"
+import HousePic from "@/assets/images/Casa.jpeg"
+import Porshe from "@/assets/images/Porsche.jpeg"
 import { Calendar, Download, FileText, Search } from "lucide-react"
 
-// Sample data for purchase history
 const purchases = [
   {
     id: "ORD-2023-1001",
-    date: "March 15, 2023",
+    date: "Março 15, 2023",
     plan: {
-      title: "Suburban Family House",
-      image: "/placeholder.svg?height=300&width=500&text=Suburban%20Family%20House",
+      title: "Casa Familiar Suburbana",
+      image: HousePic,
       category: "Residential",
     },
     total: 599,
     downloadCount: 3,
-    lastDownloaded: "April 2, 2023",
+    lastDownloaded: "Abril 2, 2023",
   },
   {
     id: "ORD-2023-0875",
-    date: "February 28, 2023",
+    date: "Fevereiro 28, 2023",
     plan: {
-      title: "Commercial Office Building",
-      image: "/placeholder.svg?height=300&width=500&text=Commercial%20Office%20Building",
-      category: "Commercial",
+      title: "Escritório Comercial Moderno",
+      category: "Comercial",
     },
     total: 1999,
     downloadCount: 5,
-    lastDownloaded: "March 20, 2023",
+    lastDownloaded: "Março 20, 2023",
   },
   {
     id: "ORD-2022-2345",
-    date: "December 10, 2022",
+    date: "Dezembro 10, 2022",
     plan: {
-      title: "Urban Apartment Complex",
-      image: "/placeholder.svg?height=300&width=500&text=Urban%20Apartment%20Complex",
+      title: "Apartamento Urbano",
       category: "Multi-family",
     },
     total: 1299,
     downloadCount: 8,
-    lastDownloaded: "March 5, 2023",
+    lastDownloaded: "Março 5, 2023",
   },
   {
     id: "ORD-2022-1987",
-    date: "November 5, 2022",
+    date: "Novembro 5, 2022",
     plan: {
-      title: "Modern Minimalist Home",
-      image: "/placeholder.svg?height=300&width=500&text=Modern%20Minimalist%20Home",
+      title: "Casa de Praia Moderna",
       category: "Residential",
     },
     total: 499,
     downloadCount: 2,
-    lastDownloaded: "January 15, 2023",
+    lastDownloaded: "Janeiro 15, 2023",
   },
 ]
 
@@ -65,8 +63,8 @@ export default function PurchaseHistoryPage() {
     <DashboardLayout>
       <div className="flex flex-col gap-6 p-6 md:p-8">
         <div className="flex flex-col gap-2">
-          <h1 className="text-3xl font-bold tracking-tight">Purchase History</h1>
-          <p className="text-muted-foreground">View and download your previously purchased architectural plans.</p>
+          <h1 className="text-3xl font-bold tracking-tight">Histórico De Compras</h1>
+          <p className="text-muted-foreground">Vizualize e transfira as plantas arquitetonicas compradas.</p>
         </div>
 
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -76,14 +74,14 @@ export default function PurchaseHistoryPage() {
                 <SelectValue placeholder="Time period" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all-time">All Time</SelectItem>
-                <SelectItem value="this-year">This Year</SelectItem>
-                <SelectItem value="last-year">Last Year</SelectItem>
-                <SelectItem value="last-6-months">Last 6 Months</SelectItem>
-                <SelectItem value="last-30-days">Last 30 Days</SelectItem>
+                <SelectItem value="all-time">Todas</SelectItem>
+                <SelectItem value="this-year">Esse Ano</SelectItem>
+                <SelectItem value="last-year">último Ano</SelectItem>
+                <SelectItem value="last-6-months">Últimos 6 meses</SelectItem>
+                <SelectItem value="last-30-days">Últimos 30 Dias</SelectItem>
               </SelectContent>
             </Select>
-            <span className="text-sm text-muted-foreground hidden sm:inline">{purchases.length} purchases</span>
+            <span className="text-sm text-muted-foreground hidden sm:inline">{purchases.length} compras</span>
           </div>
           <div className="w-full sm:w-auto relative">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -98,10 +96,10 @@ export default function PurchaseHistoryPage() {
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                   <div>
                     <CardTitle className="text-lg">{purchase.id}</CardTitle>
-                    <CardDescription>Purchased on {purchase.date}</CardDescription>
+                    <CardDescription>Compradas em {purchase.date}</CardDescription>
                   </div>
                   <Badge variant="outline" className="border-green-500 text-green-500">
-                    Completed
+                    Completas
                   </Badge>
                 </div>
               </CardHeader>
@@ -109,7 +107,7 @@ export default function PurchaseHistoryPage() {
                 <div className="flex flex-col sm:flex-row gap-4">
                   <div className="relative aspect-video w-full sm:w-48 rounded-md overflow-hidden">
                     <Image
-                      src={purchase.plan.image || "/placeholder.svg"}
+                      src={(purchase.plan.image) || Porshe}
                       alt={purchase.plan.title}
                       fill
                       className="object-cover"
@@ -120,14 +118,10 @@ export default function PurchaseHistoryPage() {
                     <p className="text-sm text-muted-foreground">Category: {purchase.plan.category}</p>
                     <div className="flex items-center gap-2 text-sm">
                       <FileText className="h-4 w-4 text-muted-foreground" />
-                      <span>Complete plan set with all documents</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span>Last downloaded: {purchase.lastDownloaded}</span>
+                      <span>Completa completa com todos os documentos</span>
                     </div>
                     <div className="text-sm">
-                      <span className="font-medium">Download count:</span> {purchase.downloadCount} of unlimited
+                      <span className="font-medium"> Contagem Downloads:</span> {purchase.downloadCount} de ilimitados
                     </div>
                   </div>
                   <div className="text-right">
@@ -137,11 +131,11 @@ export default function PurchaseHistoryPage() {
               </CardContent>
               <CardFooter className="flex justify-between border-t pt-4 bg-muted/50">
                 <Button variant="outline" size="sm">
-                  View Receipt
+                  Perfil do arquiteto
                 </Button>
                 <Button size="sm">
                   <Download className="mr-2 h-4 w-4" />
-                  Download Files
+                  Baixar Ficheiros
                 </Button>
               </CardFooter>
             </Card>
@@ -149,27 +143,27 @@ export default function PurchaseHistoryPage() {
         </div>
 
         <div className="mt-8">
-          <h2 className="text-xl font-semibold mb-4">Purchase Summary</h2>
+          <h2 className="text-xl font-semibold mb-4">Resumo das compras</h2>
           <Card>
             <CardContent className="p-6">
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <span className="font-medium">Total Purchases</span>
+                  <span className="font-medium">Total de plantas compradas</span>
                   <span>{purchases.length}</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between items-center">
-                  <span className="font-medium">Total Spent</span>
+                  <span className="font-medium">Total Gasto em plantas</span>
                   <span className="font-bold">${purchases.reduce((sum, purchase) => sum + purchase.total, 0)}</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between items-center">
-                  <span className="font-medium">Most Recent Purchase</span>
+                  <span className="font-medium">Compra mais recente</span>
                   <span>{purchases[0].date}</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between items-center">
-                  <span className="font-medium">Most Downloaded Plan</span>
+                  <span className="font-medium">Plantas com mais download</span>
                   <span>{purchases.sort((a, b) => b.downloadCount - a.downloadCount)[0].plan.title}</span>
                 </div>
               </div>
