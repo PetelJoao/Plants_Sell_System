@@ -121,7 +121,7 @@ export default function PurchaseHistoryPage() {
                       <span>Completa completa com todos os documentos</span>
                     </div>
                     <div className="text-sm">
-                      <span className="font-medium"> Contagem Downloads:</span> {purchase.downloadCount} de ilimitados
+                      <span className="font-medium"> Contagem Downloads:</span> {purchase.downloadCount} 
                     </div>
                   </div>
                   <div className="text-right">
