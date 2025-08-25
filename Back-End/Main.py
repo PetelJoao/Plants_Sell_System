@@ -1,79 +1,105 @@
-from flask import Flask, jsonify
-from flask_sqlalchemy import SQLAlchemy
+from fastapi import FastAPI, Depends, Form, status
+from fastapi.responses import RedirectResponse
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, Session
+from passlib.context import CryptContext
+from sqlalchemy import Column, Integer, String
+from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.ext.declarative import declarative_base
+from models import Base, Usuario  
 import os
 
-app = Flask(__name__)
+app = FastAPI()
 
-DB_USER = 'root'
-DB_PASSWORD = '1234petel' # Mude para a sua senha do workbench antes de executar
-DB_HOST = 'localhost'
-DB_PORT = '3306'
-DB_NAME = 'duria'
+origins = [
+    "*", 
+]
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,          
+    allow_credentials=True,         
+    allow_methods=["*"],            
+    allow_headers=["*"],            
+)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = (
-        f'mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
-    )
+DB_USER = "root"    
+DB_PASS = "1234petel"   # cada dev troca pela sua senha ( att isto é so para desenvolvimento)
+DB_HOST = "localhost" 
+DB_NAME = "duria" 
 
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False # Desativa o rastreamento de modificações para economizar memória
+DATABASE_URL = f"mysql+pymysql://{DB_USER}:{DB_PASS}@{DB_HOST}/{DB_NAME}"
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-db = SQLAlchemy(app)
+class Usuario(Base):
+    __tablename__ = "usuario"
 
-class planta(db.Model):
-   
-    __tablename__ = 'planta'
-    IdPlanta = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    Nome_Planta = db.Column(db.String(45), nullable=False)
-    Topologia_Planta = db.Column(db.String(45))
-    Dimensao_Planta = db.Column(db.String(70))
-    Descricao_Planta = db.Column(db.String(255))
-    NumeroComodos_Planta = db.Column(db.Integer)
-    Preco_Planta = db.Column(db.Integer)
-    Orcamento_Planta = db.Column(db.String(64))
-    IdArquiteto = db.Column(db.Integer) 
-
-    def __repr__(self):
-        # Retorna uma representação legível do objeto planta
-        return f'<Planta {self.Nome_Planta}>'
-
-    def to_dict(self):
-        return {
-            'id': self.IdPlanta,
-            'title': self.Nome_Planta,
-            'Topologia_Planta': self.Topologia_Planta,
-            'Dimensao_Planta': self.Dimensao_Planta,
-            'description': self.Descricao_Planta,
-            'NumeroComodos_Planta': self.NumeroComodos_Planta,
-            'price': self.Preco_Planta,
-            'Orcamento_Planta': self.Orcamento_Planta,
-            'IdArquiteto': self.IdArquiteto  
-        }
+    IdUsuario = Column(Integer, primary_key=True, index=True)
+    Numero_Usuario = Column(String(50), nullable=True)
+    Tipo_Usuario = Column(String(50), nullable=True)
+    Senha_Usuario = Column(String(255), nullable=False)
+    Email_Usuario = Column(String(255), unique=True, nullable=False, index=True)
+    Nome_usuario = Column(String(255), nullable=False)
 
 
-@app.route('/dashboard')
-def dashboard():
+Base = declarative_base()
 
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
+def get_db():
+    db = SessionLocal()
     try:
-        with app.app_context():
+        yield db
+    finally:
+        db.close()
+
+
+@app.post("http://localhost:3000/Cadastro")
+def register(
+    email: str = Form(...),
+    password: str = Form(...),
+    nome: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    usuario = db.query(Usuario).filter(Usuario.Email_Usuario == email).first()
+    if usuario:
+        return {"error": "Este usuario ja existeee"}
     
-            all_plantas = planta.query.all()
+    hashed_pwd = pwd_context.hash(password)
+    novo_usuario = Usuario(
+        Email_Usuario=email,
+        Senha_Usuario=hashed_pwd,
+        Nome_usuario=nome,
+        Tipo_Usuario="....",    
+        Numero_Usuario="..."     
+    )
+    db.add(novo_usuario)
+    db.commit()
+    db.refresh(novo_usuario)
+    return {"message": "Usuário registrado com sucesso", "user_id": novo_usuario.IdUsuario}
 
-            
-            plantas_list = [p.to_dict() for p in all_plantas]
 
-            return jsonify({
-                'status': 'success',
-                'message': f'{len(plantas_list)} plantas encontradas.',
-                'plantas_data': plantas_list
-            }), 200
+@app.post("http://localhost:3000/login")
+def login(email: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
+    usuario = db.query(Usuario).filter(Usuario.Email_Usuario == email).first()
+    if not usuario:
         
-    except Exception as e:
-        
-        return jsonify({
-            'status': 'error',
-            'message': f'Falha ao buscar dados da tabela planta. Erro: {str(e)}'
-        }), 500
-    
-if __name__ == '__main__':
+        return RedirectResponse(url="http://localhost:3000/Cadastro", status_code=status.HTTP_303_SEE_OTHER)
 
-    app.run(debug=True)
+    if not pwd_context.verify(password, usuario.Senha_Usuario):
+        return {"error": "Senha incorreta"}
+
+
+    return RedirectResponse(url="http://localhost:3000/dashboard", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@app.get("http://localhost:3000/dashboard")
+def dashboard():
+    return {"message": "Bem-vindo à dashboard!"}
+
+@app.get("http://localhost:3000/Cadastro")
+def register_page():
+    return {"message": "Redirecionado para a página de registro"}
