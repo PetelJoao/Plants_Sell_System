@@ -37,8 +37,39 @@ export default function SignupForm() {
   })
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values)
-  }
+
+  const payload = {
+    Nome_usuario: values.fullName,
+    Email_Usuario: values.email,
+    Senha_Usuario: values.password,
+    Tipo_Usuario: values.accountType,
+  };
+
+  fetch("http://127.0.0.1:8000/register", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  })
+    .then(async (res) => {
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.detail || "Erro ao criar conta");
+      }
+      return res.json();
+    })
+    .then((data) => {
+      console.log("Usuário criado:", data);
+      
+      window.location.href = "/dashboard";
+    })
+    .catch((err) => {
+      console.error("Erro:", err.message);
+      alert(err.message);
+    });
+}
+
 
   return (
     <div className="min-h-screen bg-white">
@@ -65,7 +96,7 @@ export default function SignupForm() {
       <main className="w-full mx-auto max-w-md py-16">
         <h1 className="mb-8 text-center text-2xl font-semibold tracking-tight">Cria a conta</h1>
 
-        {/* Aqui começa o  formulário do bagulho */}
+        {/* Aqui começa o  formulário*/}
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
@@ -132,7 +163,7 @@ export default function SignupForm() {
             </Button>
           </form>
         </Form>
-         {/* Aqui termina o  formulário do bagulho */}
+         {/* Aqui termina o  formulário  */}
 
         <p className="mt-6 text-center text-sm text-muted-foreground">
           Já tem uma conta?{" "}

@@ -6,7 +6,6 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { login } from "@/lib/actions"
 
 export function LoginForm() {
   const router = useRouter()
@@ -23,41 +22,31 @@ export function LoginForm() {
     const password = formData.get("password") as string
 
     try {
-      await login(email, password)
-      router.push("/dashboard2") 
+      const response = await fetch("http://127.0.0.1:8000/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+          email,
+          password,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Credenciais inválidas")
+      }
+
+      
+      router.push("/dashboard1")
+
     } catch (err) {
-      setError("Email invalido ou palavra-passe")
+      setError("Email inválido ou palavra-passe incorreta")
     } finally {
       setLoading(false)
     }
-
-    /*
-    Código para uma requisição na nossa API
-    try {
-  const response = await fetch('https://sua-api.com/login', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ email, password }),
-  });
-
-  if (!response.ok) {
-    throw new Error('Credenciais inválidas');
   }
 
-  const data = await response.json();
-  console.log('Login bem-sucedido:', data);
-
-  router.push('/home');
-} catch (err) {
-  setError('Invalid email or password');
-} finally {
-  setLoading(false);
-}
- */
-  }
-    
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <div className="space-y-2">
@@ -72,12 +61,12 @@ export function LoginForm() {
       <Button type="submit" className="w-full" disabled={loading}>
         {loading ? "Logging in..." : "Log in"}
       </Button>
-      <p className="text-center text-sm text-muted-foreground"> Não tem uma conta ainda?{" "}
+      <p className="text-center text-sm text-muted-foreground">
+        Não tem uma conta ainda?{" "}
         <Link href="/Cadastro" className="text-primary hover:underline">
-         Cadastrar
+          Cadastrar
         </Link>
       </p>
     </form>
   )
 }
-
