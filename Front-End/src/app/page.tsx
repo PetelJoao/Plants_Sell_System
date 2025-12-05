@@ -58,6 +58,7 @@ export default function Home() {
                   <span className="text-lg text-gray-700">{feature}</span>
                 </div>
               ))}
+              
             </div>
           </div>
         </section>
