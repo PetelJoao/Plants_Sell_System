@@ -9,82 +9,46 @@ import { ChevronDown, Download, Heart, MoreHorizontal, Share2 } from "lucide-rea
 import Image from "next/image"
 import HousePic from "@/assets/images/Casa.jpeg"
 import Porshe from "@/assets/images/Porsche.jpeg"
+import { object } from "zod"
 
-// Dados simples das plantas que tem que ser tirados de uma API ou de um banco de dados
+type Plan = {
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  category: string;
+  squareFeet: number;
+  bedrooms: number;
+  bathrooms: number;
+  featured: boolean;
+  image?: string;
+};
 
-const plans = [
-  {
-    id: 1,
-    title: "Casa Moderna Minimalista",
-    description: "Design elegante e minimalista com planta aberta e janelas amplas.",
-    price: 499,
-    category: "Residencial",
-    squareFeet: 240,
-    bedrooms: 3,
-    bathrooms: 2,
-    featured: true,
-},
-{
-    id: 2,
-    title: "Complexo de Apartamentos",
-    description: "Edifício de múltiplas unidades projetado para ambientes urbanos.",
-    price: 1299,
-    category: "Multifamiliar",
-    squareFeet: 12000,
-    bedrooms: 12,
-    bathrooms: 14,
-    featured: false,
-},
-{
-    id: 3,
-    title: "Casa Familiar Suburbana",
-    description: "Residência tradicional com quintal espaçoso e garagem.",
-    price: 599,
-    category: "Residencial",
-    squareFeet: 3200,
-    bedrooms: 4,
-    bathrooms: 3,
-    featured: true,
-    image: HousePic,
-},
-{
-    id: 4,
-    title: "Casa Pequena",
-    description: "Casa compacta e eficiente com aproveitamento inteligente do espaço.",
-    price: 299,
-    category: "Casa Pequena",
-    squareFeet: 400,
-    bedrooms: 1,
-    bathrooms: 1,
-    featured: false,
-},
-{
-    id: 5,
-    title: "Edifício Comercial para Escritórios",
-    description: "Prédio de escritórios moderno com layouts de trabalho flexíveis.",
-    price: 1999,
-    category: "Comercial",
-    squareFeet: 25000,
-    bedrooms: 0,
-    bathrooms: 8,
-    featured: true,
-},
-{
-    id: 6,
-    title: "Villa à Beira-Mar",
-    description: "Propriedade luxuosa à beira-mar com vista panorâmica para o oceano.",
-    price: 899,
-    category: "Luxo",
-    squareFeet: 4500,
-    bedrooms: 5,
-    bathrooms: 5,
-    featured: false,
+ async function LoadBackEnd()
+ {
+const response = await fetch('http://127.0.0.1:8000/dashboard');
+const JsonResponse = await response.json();
+
+return  JsonResponse.data;
 }
-]
+
+
+
 
 export function ArchitecturalPlans() {
 
-  const [filter, setFilter] = useState("All")
+  const [plans, setPlans] = useState<Plan[]>([]);
+  const [filter, setFilter] = useState<string>("All");
+
+  
+  useEffect(() => {
+    async function fetchData() {
+      const data = await LoadBackEnd();
+      setPlans(data);
+    }
+    fetchData();
+  }, []);
+
 
   const filteredPlans = filter === "All" ? plans : plans.filter((plan) => plan.category === filter)
 
