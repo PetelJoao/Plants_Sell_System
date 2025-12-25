@@ -70,7 +70,6 @@ export default function SignupForm() {
     });
 }
 
-
   return (
     <div className="min-h-screen bg-white">
       <header className="border-b">
