@@ -10,6 +10,10 @@ import Image from "next/image"
 import HousePic from "@/assets/images/Casa.jpeg"
 import Porshe from "@/assets/images/Porsche.jpeg"
 import { object } from "zod"
+import { useToast } from "@/hooks/use-toast"
+//import { useOrder, type Plan } from "@/context/order-context" -- ver a questão do context
+import { PlanUploadDialog } from "./plan-upload-dialog"
+
 
 type Plan = {
   id: string;
@@ -23,7 +27,7 @@ type Plan = {
   featured: boolean;
   image?: string;
 };
-
+/*
  async function LoadBackEnd()
  {
 const response = await fetch('http://127.0.0.1:8000/dashboard');
@@ -32,15 +36,14 @@ const JsonResponse = await response.json();
 return  JsonResponse.data;
 }
 
-
-
-
+*/
 export function ArchitecturalPlans() {
-
   const [plans, setPlans] = useState<Plan[]>([]);
   const [filter, setFilter] = useState<string>("All");
-
-  
+    const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false)
+ // const { addToOrder } = useOrder() -- Novamente a situação do context
+  const { toast } = useToast()
+  /*
   useEffect(() => {
     async function fetchData() {
       const data = await LoadBackEnd();
@@ -48,7 +51,10 @@ export function ArchitecturalPlans() {
     }
     fetchData();
   }, []);
-
+*/
+  const handlePlanAdded = (newPlan: Plan) => {
+    setPlans((prevPlans) => [...prevPlans, newPlan])
+  }
 
   const filteredPlans = filter === "All" ? plans : plans.filter((plan) => plan.category === filter)
 
@@ -73,7 +79,7 @@ export function ArchitecturalPlans() {
           </DropdownMenu>
           <span className="text-sm text-muted-foreground">{filteredPlans.length} Plantas Disponíveis</span>
         </div>
-        <Button>Carregue a sua Planta</Button>
+            <Button onClick={() => setIsUploadDialogOpen(true)}>Adicionar Planta</Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -84,6 +90,8 @@ export function ArchitecturalPlans() {
             <Image
                 src={(plan.image) || Porshe}
                 alt={plan.description}
+                width={500} 
+                height={300}
               />
 
               <Button
@@ -139,6 +147,7 @@ export function ArchitecturalPlans() {
           </Card>
         ))}
       </div>
+            <PlanUploadDialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen} onPlanAdded={handlePlanAdded} />
     </div>
   )
 }

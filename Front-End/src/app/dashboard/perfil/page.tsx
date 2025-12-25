@@ -14,7 +14,7 @@ export default function Perfil() {
       <div className="flex flex-col gap-6 p-6 md:p-8">
         <div className="flex flex-col gap-2">
           <h1 className="text-3xl font-bold tracking-tight">Perfil</h1>
-          <p className="text-muted-foreground">Gerencia a sua Co ta e definições e Preferencias.</p>
+          <p className="text-muted-foreground">Gerencia a sua Conta definições e Preferencias.</p>
         </div>
 
         <Tabs defaultValue="general" className="w-full">
@@ -119,7 +119,7 @@ export default function Perfil() {
                 </div>
               </CardContent>
               <CardFooter>
-                <Button>UAtualizar Palavra-Passe</Button>
+                <Button>Atualizar Palavra-Passe</Button>
               </CardFooter>
             </Card>
 
