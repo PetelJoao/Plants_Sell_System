@@ -9,13 +9,13 @@ export default function Home() {
           <h1 className="text-2xl font-bold text-gray-900">Duria</h1>
 
           <nav className="flex items-center space-x-6">
-            <Link href={"/Cadastro"}>
+            <Link href={"/auth/sign-up"}>
            <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors">
             Cadastrar
           </button>
           </Link>
 
-          <Link href={"/login"} className="text-sm text-muted-foreground hover:text-foreground">
+          <Link href={"/auth/login"} className="text-sm text-muted-foreground hover:text-foreground">
             Login
           </Link>
           </nav>
