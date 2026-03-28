@@ -7,13 +7,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Badge } from "@/components/ui/badge"
 import { ChevronDown, Download, Heart, MoreHorizontal, Share2 } from "lucide-react"
 import Image from "next/image"
-/*
-import {HousePic} from "@/Assets/images/Casa.jpeg";*/
-
-
-
-import Porshe from "@/Assets/images/Porsche.jpeg";
-
+import HousePic from "@/assets/images/Casa.jpeg"
+import Porshe from "@/assets/images/Porsche.jpeg"
 import { object } from "zod"
 import { useToast } from "@/hooks/use-toast"
 //import { useOrder, type Plan } from "@/context/order-context" -- ver a questão do context
