@@ -2,50 +2,49 @@
 
 import type React from "react"
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarProvider,
-  useSidebar,
+  Sidebar, SidebarContent, SidebarFooter, SidebarHeader,
+  SidebarMenu, SidebarMenuButton, SidebarMenuItem,
+  SidebarProvider, useSidebar,
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
-import { Clock,Building2, ChevronLeft, ChevronRight, Home, LayoutDashboard, LogOut, ShoppingCart, User } from "lucide-react"
+import { Clock, Building2, ChevronLeft, ChevronRight, Home, LayoutDashboard, LogOut, ShoppingCart, User } from "lucide-react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
+import { useAuth } from '@/Context/AuthContext'
+import { useEffect } from "react"
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname()
+  const { user, loading, logout } = useAuth() as any;
+  const router = useRouter();
+  const pathname = usePathname(); 
+
+useEffect(() => {
+  if (loading) return; 
+  if (!user) router.push('/login');
+}, [user, loading, router]);
+
+  const handleLogout = async () => {
+    await logout();
+    router.push('/login');
+  };
+
+if (loading || !user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p>Carregando...</p>
+        </div>
+      </div>
+    )
+  }
 
   const navigationItems = [
-    {
-      name: "Dashboard",
-      href: "/dashboard",
-      icon: LayoutDashboard,
-    },
-    {
-      name: "Eventos",
-      href: "/dashboard/eventos",
-      icon: Building2,
-    },
-    {
-      name: "Carrinho de Compras",
-      href: "/dashboard/Compras",
-      icon: ShoppingCart,
-    },
-    {
-      name: "Histórico de Compras",
-      href: "/dashboard/history",
-      icon: Clock,
-    },
-    {
-      name: "Perfil",
-      href: "/dashboard/perfil",
-      icon: User,
-    },
+    { name: "Dashboard",            href: "/dashboard",          icon: LayoutDashboard },
+    { name: "Eventos",              href: "/dashboard/eventos",  icon: Building2 },
+    { name: "Carrinho de Compras",  href: "/dashboard/Compras",  icon: ShoppingCart },
+    { name: "Histórico de Compras", href: "/dashboard/history",  icon: Clock },
+    { name: "Perfil",               href: "/dashboard/perfil",   icon: User },
   ]
 
   return (
@@ -73,7 +72,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild tooltip="Logout">
-                  <Button variant="ghost" className="w-full justify-start">
+                  <Button onClick={handleLogout} variant="ghost" className="w-full justify-start">
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Logout</span>
                   </Button>
@@ -85,9 +84,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <main className="flex-1 overflow-auto">
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px]">
             <div className="ml-auto flex items-center gap-2">
-              <Button variant="outline" size="sm">
-                Ajuda
-              </Button>
+              <Button variant="outline" size="sm">Ajuda</Button>
               <Button size="sm">Novo Evento</Button>
             </div>
           </div>
@@ -100,7 +97,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
 function SidebarToggleButton() {
   const { toggleSidebar, state } = useSidebar()
-
   return (
     <button
       onClick={toggleSidebar}

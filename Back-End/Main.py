@@ -19,7 +19,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 load_dotenv()
-DataBaseURL =os.getenv("SUPABASE_URL")
+DataBaseURL = os.getenv("SUPABASE_URL")
 DATABASEKEY =  os.getenv("SUPABASE_KEY")
 
 

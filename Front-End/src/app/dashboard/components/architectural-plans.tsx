@@ -9,9 +9,7 @@ import { ChevronDown, Download, Heart, MoreHorizontal, Share2 } from "lucide-rea
 import Image from "next/image"
 /*
 import {HousePic} from "@/Assets/images/Casa.jpeg";*/
-
-
-
+import { useAuth } from '@/Context/AuthContext'
 import Porshe from "@/Assets/images/Porsche.jpeg";
 
 import { object } from "zod"
@@ -32,31 +30,18 @@ type Plan = {
   featured: boolean;
   image?: string;
 };
-/*
- async function LoadBackEnd()
- {
-const response = await fetch('http://127.0.0.1:8000/dashboard');
-const JsonResponse = await response.json();
 
-return  JsonResponse.data;
-}
 
-*/
 export function ArchitecturalPlans() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [filter, setFilter] = useState<string>("All");
-    const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false)
- // const { addToOrder } = useOrder() -- Novamente a situação do context
+  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false)
   const { toast } = useToast()
-  /*
-  useEffect(() => {
-    async function fetchData() {
-      const data = await LoadBackEnd();
-      setPlans(data);
-    }
-    fetchData();
-  }, []);
-*/
+
+    const { user } = useAuth() as any;
+console.log('role atual:', user?.role); 
+  
+  
   const handlePlanAdded = (newPlan: Plan) => {
     setPlans((prevPlans) => [...prevPlans, newPlan])
   }
@@ -84,7 +69,10 @@ export function ArchitecturalPlans() {
           </DropdownMenu>
           <span className="text-sm text-muted-foreground">{filteredPlans.length} Plantas Disponíveis</span>
         </div>
-            <Button onClick={() => setIsUploadDialogOpen(true)}>Adicionar Planta</Button>
+        {user?.role === 'arquiteto' && (
+          <Button onClick={() => setIsUploadDialogOpen(true)}>Adicionar Planta</Button>
+        )}
+            
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

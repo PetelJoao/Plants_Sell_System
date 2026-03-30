@@ -6,11 +6,13 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { useAuth } from "@/Context/AuthContext"
 
 export function LoginForm() {
   const router = useRouter()
   const [error, setError] = useState<string>("")
   const [loading, setLoading] = useState(false)
+  const { login } = useAuth() as any;
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -22,26 +24,10 @@ export function LoginForm() {
     const password = formData.get("password") as string
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: new URLSearchParams({
-          email,
-          password,
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error("Credenciais inválidas")
-      }
-
-      
-      router.push("/dashboard1")
-
-    } catch (err) {
-      setError("Email inválido ou palavra-passe incorreta")
+      await login(email, password); // ← atualiza o user no contexto
+      router.push("/dashboard");
+    } catch (err: any) {
+      setError(err.message || "Credenciais inválidas")
     } finally {
       setLoading(false)
     }
@@ -59,7 +45,7 @@ export function LoginForm() {
       </div>
       {error && <p className="text-sm text-red-500">{error}</p>}
       <Button type="submit" className="w-full" disabled={loading}>
-        {loading ? "Logging in..." : "Log in"}
+        {loading ? "A entrar..." : "Log in"}
       </Button>
       <p className="text-center text-sm text-muted-foreground">
         Não tem uma conta ainda?{" "}
