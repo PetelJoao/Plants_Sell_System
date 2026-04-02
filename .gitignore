@@ -25,7 +25,7 @@ sketch
 instance/*
 !instance/.gitignore
 .webassets-cache
-.env
+
 
 ### Flask.Python Stack ###
 # Byte-compiled / optimized / DLL files
@@ -148,13 +148,7 @@ celerybeat.pid
 # SageMath parsed files
 *.sage.py
 
-# Environments
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
+
 
 # Spyder project settings
 .spyderproject
@@ -213,8 +207,7 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# local env files
-.env*.local
+
 
 # vercel
 .vercel
