@@ -3,8 +3,6 @@ from dotenv import load_dotenv
 from fastapi.middleware.cors import  CORSMiddleware
 from supabase import  create_client , Client
 import os
-
-
 app = FastAPI()
 origins = [
     "http://localhost",
