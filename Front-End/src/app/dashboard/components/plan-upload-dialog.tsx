@@ -112,46 +112,77 @@ export function PlanUploadDialog({ open, onOpenChange, onPlanAdded }: PlanUpload
   }
 
   // Handle form submission
-  const onSubmit = (data: FormValues) => {
+  const onSubmit = async(data: FormValues) => {
+  
     if (!file) {
       setFileError("Por favor faça o uploud de um arquivo")
       return
+    } 
+    
+    const formData = new FormData();
+    Object.entries(data).forEach(([Key,value])=>
+    {
+      formData.append(Key,value.toString())
+    });
+    formData.append("file",file);
+
+    try{
+      const response =await fetch('http://127.0.0.1:5000/dashboard/', 
+        {
+
+          method:'POST',
+          body:formData,
+         
+        }
+      )
+      if(!response.ok) throw Error("ocorreu algum erro na requesição")
     }
+    catch(error)
+      {
+        console.log(error)
+      }
 
-    // Create a new plan object
-    const newPlan = {
-      id: Date.now(),
-      ...data,
-      featured: false,
-      image: `/placeholder.svg?height=300&width=500&text=${encodeURIComponent(data.title)}`,
-      // In a real app, you would upload the file to a server and get a URL
-      fileUrl: URL.createObjectURL(file),
-      fileName: file.name,
+        // Create a new plan object
+     const newPlan = {
+        id: Date.now(),
+        ...data,
+        featured: false,
+        image: `/placeholder.svg?height=300&width=500&text=${encodeURIComponent(data.title)}`,
+        // In a real app, you would upload the file to a server and get a URL
+        fileUrl: URL.createObjectURL(file),
+        fileName: file.name,
+        }
+
+
+
+      // Call the onPlanAdded callback if provided
+      if (onPlanAdded) {
+        onPlanAdded(newPlan)
+      }
+
+      // Show success toast
+      toast({
+        title: "Plan Uploaded",
+        description: "Your architectural plan has been uploaded successfully.",
+        duration: 3000,
+      })
+
+      
+    
+
     }
-
-    // Call the onPlanAdded callback if provided
-    if (onPlanAdded) {
-      onPlanAdded(newPlan)
-    }
-
-    // Show success toast
-    toast({
-      title: "Plan Uploaded",
-      description: "Your architectural plan has been uploaded successfully.",
-      duration: 3000,
-    })
-
+    
     // Reset form and close dialog
-    form.reset()
-    setFile(null)
-    onOpenChange(false)
-  }
+      form.reset()
+      setFile(null)
+      onOpenChange(false)
 
-  // Clear file selection
-  const clearFile = () => {
-    setFile(null)
-    setFileError(null)
-  }
+       // Clear file selection
+      const clearFile = () => {
+        setFile(null)
+        setFileError(null)
+      }  
+   
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

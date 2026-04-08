@@ -16,6 +16,8 @@ import { object } from "zod"
 import { useToast } from "@/hooks/use-toast"
 //import { useOrder, type Plan } from "@/context/order-context" -- ver a questão do context
 import { PlanUploadDialog } from "./plan-upload-dialog"
+import { set } from "date-fns"
+import { error } from "console"
 
 
 type Plan = {
@@ -40,7 +42,31 @@ export function ArchitecturalPlans() {
 
     const { user } = useAuth() as any;
 console.log('role atual:', user?.role); 
-  
+
+
+  useEffect(()=>
+  {
+    async function loadPlans() 
+    {
+      try
+      {
+        const response = await fetch('http://127.0.0.1:5000/dashboard/') 
+        
+        if(!response.ok) throw new Error("erro na requesição!");
+
+        const data:Plan[] = await response.json();
+
+        setPlans(data);
+      }
+      catch
+        {
+          toast({"Tittle":"Erro","Description":"Ouve algum erro ao tentar Comunicar com a API!"})
+        }
+    }
+    loadPlans() 
+
+
+  },[])
   
   const handlePlanAdded = (newPlan: Plan) => {
     setPlans((prevPlans) => [...prevPlans, newPlan])
