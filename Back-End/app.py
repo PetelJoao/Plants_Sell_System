@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
 from routes.auth import auth_router
-from routes.users import users_router
+from routes.users import users_router  # renomear users_bp → users_router no ficheiro users.py
 
 load_dotenv()
 
@@ -18,8 +18,8 @@ app.add_middleware(
     allow_headers=["Content-Type", "Authorization"],
 )
 
-app.include_router(auth_router, prefix="/api/auth")
-app.include_router(users_router, prefix="/api/users")
+app.include_router(auth_router,  prefix="/api/auth")
+app.include_router(users_router, prefix="/api/users")  # ajusta o prefix conforme necessário
 
 @app.get("/api/health")
 async def health():
