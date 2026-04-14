@@ -30,29 +30,7 @@ async def get_by_id(user_id: str):
     return res.data
 
 
-async def create(data: UserCreateSchema):
-    sb = get_supabase_admin()
 
-    name     = data.name.strip()
-    email    = data.email.strip()
-    password = data.password
-    role     = data.role.strip()
-
-    try:
-        auth_res = sb.auth.admin.create_user({
-            'email':         email,
-            'password':      password,
-            'email_confirm': True,
-            'user_metadata': {'nome': name, 'tipo_id': role}
-        })
-        user_id = auth_res.user.id
-        return {'id': user_id, 'name': name, 'email': email, 'role': role}
-
-    except Exception as e:
-        err = str(e)
-        if 'already registered' in err or 'duplicate' in err.lower():
-            raise HTTPException(status_code=409, detail='Este email já está registado.')
-        raise HTTPException(status_code=500, detail=err)
 
 
 async def update(user_id: str, data: UserUpdateSchema):
