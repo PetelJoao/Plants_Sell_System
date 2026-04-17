@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 from routes.auth import auth_router
 from routes.users import users_router 
-
+from routes.dashboard import dashboard_router
 load_dotenv()
 
 app = FastAPI()
@@ -20,7 +20,7 @@ app.add_middleware(
 
 app.include_router(auth_router,  prefix="/api/auth")
 app.include_router(users_router, prefix="/api/users")  
-
+app.include_router(dashboard_router, prefix="/api/dashboard")
 @app.get("/api/health")
 async def health():
     return {"status": "ok"}

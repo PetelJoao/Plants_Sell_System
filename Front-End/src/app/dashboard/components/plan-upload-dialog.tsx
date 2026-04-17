@@ -168,21 +168,18 @@ export function PlanUploadDialog({ open, onOpenChange, onPlanAdded }: PlanUpload
       })
 
       
-    
-
-    }
-    
     // Reset form and close dialog
       form.reset()
       setFile(null)
       onOpenChange(false)
-
+    }
        // Clear file selection
       const clearFile = () => {
         setFile(null)
         setFileError(null)
-      }  
-   
+      } 
+    
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
