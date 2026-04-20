@@ -18,7 +18,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { useToast } from "@/hooks/use-toast"
-import { Upload, X } from "lucide-react"
+import { Upload, X, Folder } from "lucide-react"
 
 // Define the form schema with zod
 const formSchema = z.object({
@@ -68,8 +68,13 @@ interface PlanUploadDialogProps {
 
 export function PlanUploadDialog({ open, onOpenChange, onPlanAdded }: PlanUploadDialogProps) {
   const { toast } = useToast()
-  const [file, setFile] = useState<File | null>(null)
-  const [fileError, setFileError] = useState<string | null>(null)
+  // Estado para a pasta de imagens (Galeria/Capa)
+   const [imageFiles, setImageFiles] = useState<File[]>([])
+   const [imageError, setImageError] = useState<string | null>(null)
+
+   // Estado para a pasta do projeto (Documentação técnica)
+   const [files, setFiles] = useState<File[]>([]) // Alterado para array
+   const [fileError, setFileError] = useState<string | null>(null)
 
   // Initialize the form
   const form = useForm<FormValues>({
@@ -87,72 +92,124 @@ export function PlanUploadDialog({ open, onOpenChange, onPlanAdded }: PlanUpload
   })
 
   // Handle file selection
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0]
-    setFileError(null)
+ const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const selectedFiles = e.target.files ? Array.from(e.target.files) : []
+  setFileError(null)
 
-    if (!selectedFile) {
-      return
-    }
+  if (selectedFiles.length === 0) return
 
-    // Check file type (Aqui depois eu tenho que alterar essa logica para uploud de Pasta e não arquivos)
-    const allowedTypes = ["application/pdf", "image/jpeg", "image/png", "application/zip"]
-    if (!allowedTypes.includes(selectedFile.type)) {
-      setFileError("Invalid file type. Please upload a PDF, JPEG, PNG, or ZIP file.")
-      return
-    }
+  const allowedTypes = ["application/pdf", "image/jpeg", "image/png", "application/zip"]
+  const maxSize = 10 * 1024 * 1024 // 10MB
 
-    // Logica para o limite dos arquivos a serem enviados(Meter isso no relatorio)
-    if (selectedFile.size > 10 * 1024 * 1024) {
-      setFileError("File is too large. Maximum size is 10MB.")
-      return
-    }
+  // 1. Validar tipos de arquivos dentro da pasta
+  const invalidFiles = selectedFiles.filter(file => !allowedTypes.includes(file.type))
+  
+  // Opcional: Ignorar arquivos de sistema como .DS_Store ou Thumbs.db
+  const filteredFiles = selectedFiles.filter(file => file.name !== ".DS_Store")
 
-    setFile(selectedFile)
+  if (invalidFiles.length > 0) {
+    setFileError(`A pasta contém ${invalidFiles.length} arquivo(s) com formato inválido.`)
+    return
   }
 
-  // Handle form submission
-  const onSubmit = (data: FormValues) => {
-    if (!file) {
-      setFileError("Por favor faça o uploud de um arquivo")
-      return
-    }
-
-    // Create a new plan object
-    const newPlan = {
-      id: Date.now(),
-      ...data,
-      featured: false,
-      image: `/placeholder.svg?height=300&width=500&text=${encodeURIComponent(data.title)}`,
-      // In a real app, you would upload the file to a server and get a URL
-      fileUrl: URL.createObjectURL(file),
-      fileName: file.name,
-    }
-
-    // Call the onPlanAdded callback if provided
-    if (onPlanAdded) {
-      onPlanAdded(newPlan)
-    }
-
-    // Show success toast
-    toast({
-      title: "Plan Uploaded",
-      description: "Your architectural plan has been uploaded successfully.",
-      duration: 3000,
-    })
-
-    // Reset form and close dialog
-    form.reset()
-    setFile(null)
-    onOpenChange(false)
+  // 2. Validar tamanho total ou individual (aqui validei o total de todos os arquivos)
+  const totalSize = filteredFiles.reduce((acc, file) => acc + file.size, 0)
+  if (totalSize > 50 * 1024 * 1024) { // Exemplo: 50MB para a pasta toda
+    setFileError("A pasta é muito grande. O limite total é 50MB.")
+    return
   }
 
-  // Clear file selection
-  const clearFile = () => {
-    setFile(null)
-    setFileError(null)
+  setFiles(filteredFiles)
+}
+
+// Handler para a pasta de IMAGENS
+const handleImagesFolderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const selected = e.target.files ? Array.from(e.target.files) : []
+  setImageError(null)
+  
+  if (selected.length === 0) return
+
+  const allowedImageTypes = ["image/jpeg", "image/png", "image/webp"]
+  const invalid = selected.filter(f => !allowedImageTypes.includes(f.type))
+
+  if (invalid.length > 0) {
+    setImageError(`A pasta de imagens contém ${invalid.length} arquivos com formato inválido. Use apenas JPG, PNG ou WebP.`)
+    return
+  }
+  setImageFiles(selected)
+}
+
+
+//new
+const onSubmit = (data: FormValues) => {
+  if (imageFiles.length === 0 || files.length === 0) {
+    toast({ title: "Erro", description: "Selecione as duas pastas obrigatórias.", variant: "destructive" })
+    return
+  }
+  const newPlan = {
+    id: Date.now(),
+    ...data,
+    // Definimos a primeira imagem da pasta como a capa para exibição imediata
+    image: URL.createObjectURL(imageFiles[0]), 
+    allImages: imageFiles, // Array completo para a galeria
+    allDocs: files,    // Array completo dos documentos técnicos
+    folderName: files[0].webkitRelativePath.split('/')[0]
+  }
+  onPlanAdded?.(newPlan)
+  
+  // Limpeza
+  form.reset()
+  setImageFiles([])
+  setFiles([])
+  onOpenChange(false)
+}
+const clearFile = () => {
+  setFiles([]) // Reseta o array de arquivos
+  setFileError(null) // Limpa qualquer mensagem de erro
+  }
+  const clearImageFile = () => {
+    setImageFiles([])
+    setImageError(null)
+  }
+  /* // Handle form submission
+const onSubmit = (data: FormValues) => {
+  if (files.length === 0) {
+    setFileError("Por favor, selecione uma pasta para upload")
+    return
   }
 
+  const newPlan = {
+    id: Date.now(),
+    ...data,
+    featured: false,
+    image: `/placeholder.svg?height=300&width=500&text=${encodeURIComponent(data.title)}`,
+    // Guardamos a lista de arquivos e o nome da pasta (que vem no webkitRelativePath)
+    folderName: files[0].webkitRelativePath.split('/')[0], 
+    filesCount: files.length,
+    files: files // Array com todos os objetos de arquivo
+  }
+
+  if (onPlanAdded) {
+    onPlanAdded(newPlan)
+  }
+
+  toast({
+    title: "Pasta Carregada",
+    description: `${files.length} arquivos da pasta foram preparados com sucesso.`,
+    duration: 3000,
+  })
+
+  form.reset()
+  setFiles([])
+  onOpenChange(false)
+}
+
+ // Clear file selection
+const clearFile = () => {
+  setFiles([]) // Reseta o array de arquivos
+  setFileError(null) // Limpa qualquer mensagem de erro
+  }
+*/
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
@@ -309,53 +366,125 @@ export function PlanUploadDialog({ open, onOpenChange, onPlanAdded }: PlanUpload
               />
             </div>
 
-            <div className="space-y-2">
-              <FormLabel>Arquivos da Planta</FormLabel>
-              <div className="border-2 border-dashed border-gray-300 rounded-md p-6 flex flex-col items-center justify-center">
-                {!file ? (
-                  <>
-                    <div className="flex flex-col items-center justify-center space-y-2">
-                      <Upload className="h-8 w-8 text-muted-foreground" />
-                      <div className="text-sm text-center">
-                        <label
-                          htmlFor="file-upload"
-                          className="relative cursor-pointer rounded-md font-medium text-primary hover:text-primary/80 focus-within:outline-none"
-                        >
-                          <span>Upload dos Arquivos</span>
-                          <input
-                            id="file-upload"
-                            name="file-upload"
-                            type="file"
-                            className="sr-only"
-                            onChange={handleFileChange}
-                            accept=".pdf,.jpg,.jpeg,.png,.zip"
-                          />
-                        </label>
-                        <p className="text-xs text-muted-foreground">PDF, JPEG, PNG or ZIP up to 10MB</p>
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <div className="flex items-center justify-between w-full">
-                    <div className="flex items-center space-x-2">
-                      <div className="flex-shrink-0">
-                        <Upload className="h-5 w-5 text-muted-foreground" />
-                      </div>
-                      <div className="text-sm">
-                        <p className="font-medium truncate max-w-[200px]">{file.name}</p>
-                        <p className="text-xs text-muted-foreground">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
-                      </div>
-                    </div>
-                    <Button type="button" variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={clearFile}>
-                      <X className="h-4 w-4" />
-                      <span className="sr-only">Remover arquivo</span>
-                    </Button>
-                  </div>
-                )}
-              </div>
-              {fileError && <p className="text-sm font-medium text-destructive">{fileError}</p>}
-              <FormDescription>Faça o upload da sua planta arquitetônica.</FormDescription>
-            </div>
+           <div className="space-y-2">
+  <FormLabel>Arquivos da Planta (Pasta)</FormLabel>
+  <div className="border-2 border-dashed border-gray-300 rounded-md p-6 flex flex-col items-center justify-center">
+    {/* 1. Mudamos a verificação para o tamanho do array de arquivos */}
+    {files.length === 0 ? (
+      <>
+        <div className="flex flex-col items-center justify-center space-y-2">
+          <Upload className="h-8 w-8 text-muted-foreground" />
+          <div className="text-sm text-center">
+            <label
+              htmlFor="file-upload"
+              className="relative cursor-pointer rounded-md font-medium text-primary hover:text-primary/80 focus-within:outline-none"
+            >
+              <span>Selecionar Pasta do Projeto</span>
+              <input
+                id="file-upload"
+                 name="file-upload"
+                type="file"
+                className="sr-only"
+                onChange={handleFileChange}
+                {...({
+                  webkitdirectory: "",
+                  directory: "",
+                  multiple: true
+                } as any)} 
+              />
+            </label>
+            <p className="text-xs text-muted-foreground">Selecione a pasta contendo PDF, JPEG, PNG ou ZIP</p>
+          </div>
+        </div>
+      </>
+    ) : (
+      <div className="flex items-center justify-between w-full">
+        <div className="flex items-center space-x-2">
+          <div className="flex-shrink-0">
+            {/* Ícone de pasta para dar um feedback visual melhor */}
+            <Folder className="h-5 w-5 text-primary" /> 
+          </div>
+          <div className="text-sm">
+            {/* 2. Exibimos o nome da pasta (pegando o caminho do primeiro arquivo) */}
+            <p className="font-medium truncate max-w-[200px]">
+              {files[0].webkitRelativePath.split('/')[0]}
+            </p>
+            {/* 3. Exibimos a quantidade de arquivos e o tamanho total */}
+            <p className="text-xs text-muted-foreground">
+              {files.length} arquivos ({ (files.reduce((acc, f) => acc + f.size, 0) / 1024 / 1024).toFixed(2) } MB)
+            </p>
+          </div>
+        </div>
+        <Button type="button" variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={clearFile}>
+          <X className="h-4 w-4" />
+          <span className="sr-only">Remover pasta</span>
+        </Button>
+      </div>
+    )}
+  </div>
+  {fileError && <p className="text-sm font-medium text-destructive">{fileError}</p>}
+  <FormDescription>Selecione a pasta raiz que contém todos os documentos da planta.</FormDescription>
+           </div>
+ 
+ <div className="space-y-2">
+  <FormLabel>Imagens Públicas da Planta (Pasta)</FormLabel>
+  <div className="border-2 border-dashed border-gray-300 rounded-md p-6 flex flex-col items-center justify-center">
+    {/* 1. Mudamos a verificação para o tamanho do array de arquivos */}
+    {imageFiles.length === 0 ? (
+      <>
+        <div className="flex flex-col items-center justify-center space-y-2">
+          <Upload className="h-8 w-8 text-muted-foreground" />
+          <div className="text-sm text-center">
+            <label
+              htmlFor="image-upload"
+              className="relative cursor-pointer rounded-md font-medium text-primary hover:text-primary/80 focus-within:outline-none"
+            >
+              <span>Selecionar Pasta das Imagens públicas do Projeto</span>
+              <input
+                id="image-upload"
+                 name="image-upload"
+                type="file"
+                className="sr-only"
+                onChange={handleImagesFolderChange}
+                {...({
+                  webkitdirectory: "",
+                  directory: "",
+                  multiple: true
+                } as any)} 
+              />
+            </label>
+            <p className="text-xs text-muted-foreground">Selecione a pasta contendo PDF, JPEG, PNG ou ZIP</p>
+          </div>
+        </div>
+      </>
+    ) : (
+      <div className="flex items-center justify-between w-full">
+        <div className="flex items-center space-x-2">
+          <div className="flex-shrink-0">
+            {/* Ícone de pasta para dar um feedback visual melhor */}
+            <Folder className="h-5 w-5 text-primary" /> 
+          </div>
+          <div className="text-sm">
+            {/* 2. Exibimos o nome da pasta (pegando o caminho do primeiro arquivo) */}
+            <p className="font-medium truncate max-w-[200px]">
+              {imageFiles[0].webkitRelativePath.split('/')[0]}
+            </p>
+            {/* 3. Exibimos a quantidade de arquivos e o tamanho total */}
+            <p className="text-xs text-muted-foreground">
+              {imageFiles.length} arquivos ({ (imageFiles.reduce((acc, f) => acc + f.size, 0) / 1024 / 1024).toFixed(2) } MB)
+            </p>
+          </div>
+        </div>
+        <Button type="button" variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={clearImageFile}>
+          <X className="h-4 w-4" />
+          <span className="sr-only">Remover pasta</span>
+        </Button>
+      </div>
+    )}
+  </div>
+  {imageError && <p className="text-sm font-medium text-destructive">{imageError}</p>}
+  <FormDescription>Selecione a pasta raiz que contém todas as imagens da planta.</FormDescription>
+</div>
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
