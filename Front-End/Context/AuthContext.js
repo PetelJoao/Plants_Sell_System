@@ -75,7 +75,7 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // ✅ Envia APENAS os 5 campos que o backend aceita
+
   const inserir = async ({ title, description, squareFeet, price, file }) => {
     const token = localStorage.getItem('token');
     if (!user?.id) throw new Error('Utilizador não autenticado');
@@ -86,7 +86,7 @@ export function AuthProvider({ children }) {
     formData.append('squareFeet',  squareFeet  ?? '');
     formData.append('price',       price       ?? 0);
     formData.append('file',        file);
-    // ❌ topology, bedrooms, bathrooms NÃO são enviados ao backend
+
 
     const res = await fetch(`http://localhost:5000/api/dashboard/${user.id}`, {
       method:  'POST',
