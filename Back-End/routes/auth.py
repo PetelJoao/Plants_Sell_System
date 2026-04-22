@@ -33,7 +33,6 @@ async def me(user: dict = Depends(get_current_user)):
         "nome":  user.get("nome", user["email"])
     }
 
-
 @auth_router.post("/register", status_code=201)
 async def register(data: RegisterSchema):
     sb = get_supabase_admin()

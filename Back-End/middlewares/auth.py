@@ -25,6 +25,7 @@ async def get_current_user(request: Request):
         sb = get_supabase_admin()
         sb_user = sb.auth.admin.get_user_by_id(payload['sub'])
         metadata = sb_user.user.user_metadata or {}
+    
 
         return {
             'id':    payload['sub'],
