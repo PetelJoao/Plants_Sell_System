@@ -5,28 +5,15 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
-import { ChevronDown, Download, Heart, MoreHorizontal, Share2 } from "lucide-react"
+import { ChevronDown, Download, Heart, MoreHorizontal, Share2, ShoppingCart  } from "lucide-react"
 import Image from "next/image"
 import HousePic from "@/assets/images/Casa.jpeg"
 import Porshe from "@/assets/images/Porsche.jpeg"
 import { object } from "zod"
 import { useToast } from "@/hooks/use-toast"
-//import { useOrder, type Plan } from "@/context/order-context" -- ver a questão do context
+import { useOrder, type Plan } from "@/context/order-context" 
 import { PlanUploadDialog } from "./plan-upload-dialog"
 
-
-type Plan = {
-  id: string;
-  title: string;
-  description: string;
-  price: number;
-  category: string;
-  squareFeet: number;
-  bedrooms: number;
-  bathrooms: number;
-  featured: boolean;
-  image?: string;
-};
 /*
  async function LoadBackEnd()
  {
@@ -41,7 +28,7 @@ export function ArchitecturalPlans() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [filter, setFilter] = useState<string>("All");
     const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false)
- // const { addToOrder } = useOrder() -- Novamente a situação do context
+  const { addToOrder } = useOrder() 
   const { toast } = useToast()
   /*
   useEffect(() => {
@@ -55,6 +42,15 @@ export function ArchitecturalPlans() {
   const handlePlanAdded = (newPlan: Plan) => {
     setPlans((prevPlans) => [...prevPlans, newPlan])
   }
+   const handleAddToOrder = (plan: Plan) => {
+    addToOrder(plan)
+    toast({
+      title: "Adicionado ao Carrinho",
+      description: `${plan.title}Foi adicionado com sucesso ao carrinho.`,
+      duration: 3000,
+    })
+  }
+
 
   const filteredPlans = filter === "All" ? plans : plans.filter((plan) => plan.category === filter)
 
@@ -98,8 +94,9 @@ export function ArchitecturalPlans() {
                 variant="ghost"
                 size="icon"
                 className="absolute top-2 right-2 bg-background/80 backdrop-blur-sm hover:bg-background/90"
+                onClick={()=> handleAddToOrder(plan)}
               >
-                <Heart className="h-4 w-4" />
+               <ShoppingCart className="h-4 w-4" />
               </Button>
               {plan.featured && <Badge className="absolute top-2 left-2">Featured</Badge>}
             </div>
