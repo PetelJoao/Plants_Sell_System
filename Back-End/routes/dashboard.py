@@ -28,8 +28,8 @@ async def SavePlants(
         file=file
     )
 
-@dashboard_router.post("DeletarPlanta/{Plant_id}")
+@dashboard_router.delete("/{Plant_id}")
 async def DeletarPlanta(Plant_id:str,user = Depends(get_current_user)):
 
-    return DeletePlants(Plant_id)
+    return await DeletePlants(Plant_id)
     
