@@ -14,31 +14,13 @@ import { useToast } from "@/hooks/use-toast"
 import { useOrder, type Plan } from "@/context/order-context" 
 import { PlanUploadDialog } from "./plan-upload-dialog"
 
-/*
- async function LoadBackEnd()
- {
-const response = await fetch('http://127.0.0.1:8000/dashboard');
-const JsonResponse = await response.json();
-
-return  JsonResponse.data;
-}
-
-*/
 export function ArchitecturalPlans() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [filter, setFilter] = useState<string>("All");
     const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false)
   const { addToOrder } = useOrder() 
   const { toast } = useToast()
-  /*
-  useEffect(() => {
-    async function fetchData() {
-      const data = await LoadBackEnd();
-      setPlans(data);
-    }
-    fetchData();
-  }, []);
-*/
+
   const handlePlanAdded = (newPlan: Plan) => {
     setPlans((prevPlans) => [...prevPlans, newPlan])
   }
@@ -50,7 +32,6 @@ export function ArchitecturalPlans() {
       duration: 3000,
     })
   }
-
 
   const filteredPlans = filter === "All" ? plans : plans.filter((plan) => plan.category === filter)
 

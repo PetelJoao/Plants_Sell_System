@@ -13,7 +13,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
-import { Clock,Building2, ChevronLeft, ChevronRight, Home, LayoutDashboard, LogOut, ShoppingCart, User } from "lucide-react"
+import { Clock,Building2, ChevronLeft, ChevronRight, Home, LayoutDashboard, LogOut, ShoppingCart, User,} from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 
@@ -27,8 +27,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       icon: LayoutDashboard,
     },
     {
-      name: "Eventos",
-      href: "/dashboard/eventos",
+      name: "Minhas Plantas",
+      href: "/dashboard/Plantas",
       icon: Building2,
     },
     {

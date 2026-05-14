@@ -1,16 +1,13 @@
-import { LoginForm } from "@/app/login/componentes/login-form"
+'use client'
 
-export default function Page() {
+import { DuriaBrandingPanelImage } from '@/components/ui/duria-branding-panel-image'
+import { DuriaLoginForm } from '@/components/ui/duria-login-form'
+
+export default function LoginPage() {
   return (
-    <main className="min-h-screen relative flex items-center justify-center p-4">
-      <div className="relative z-10 w-full max-w-md rounded-lg bg-white/95 backdrop-blur-sm p-6 shadow-lg space-y-6">
-        <div className="space-y-2 text-center">
-          <h1 className="text-2xl font-semibold tracking-tight">Bem-vindo de volta ao Duria</h1>
-        </div>
-        <LoginForm />
-      </div>
-    </main>
+    <div className="min-h-screen bg-background flex">
+      <DuriaBrandingPanelImage />
+      <DuriaLoginForm />
+    </div>
   )
 }
-
-
