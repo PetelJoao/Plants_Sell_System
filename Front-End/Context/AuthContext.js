@@ -66,6 +66,9 @@ export function AuthProvider({ children }) {
         bedrooms:    p.quartos      ?? 0,
         bathrooms:   p.banheiros    ?? 0,
         featured:    p.destaque     ?? false,
+        dono:        p.dono,          // ← ADICIONAR
+
+        
       }));
       setPlans(mapped);
       return mapped;

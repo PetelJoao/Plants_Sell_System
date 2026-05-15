@@ -6,6 +6,7 @@ import {
 } from "@/components/ui/card"
 import { Button }  from "@/components/ui/button"
 import { Badge }   from "@/components/ui/badge"
+import { BotaoComprar } from "@/components/BotaoComprar";
 import {
   DropdownMenu, DropdownMenuContent,
   DropdownMenuItem, DropdownMenuTrigger,
@@ -17,8 +18,10 @@ import { useToast }         from "@/hooks/use-toast"
 import { PlanUploadDialog } from "./plan-upload-dialog"
 import Porshe               from "@/Assets/images/Porsche.jpeg"
 
+
 type Plan = {
   id:          string
+  dono:        string
   title:       string
   description: string
   price:       number
@@ -27,7 +30,7 @@ type Plan = {
   bedrooms:    number
   bathrooms:   number
   featured:    boolean
-  image?:      string | null
+  image?:      string | undefined
 }
 
 export function ArchitecturalPlans() {
@@ -67,6 +70,11 @@ export function ArchitecturalPlans() {
   return (
     <div className="space-y-6">
 
+        {!loading && user?.role === "arquiteto" && (
+          <Button onClick={() => setIsUploadDialogOpen(true)}>
+            + Adicionar Planta
+          </Button>
+        )}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="flex items-center gap-2">
           <DropdownMenu>
@@ -87,17 +95,11 @@ export function ArchitecturalPlans() {
         </div>
 
 
-        {!loading && user?.role === "arquiteto" && (
-          <Button onClick={() => setIsUploadDialogOpen(true)}>
-            + Adicionar Planta
-          </Button>
-        )}
       </div>
 
 
       {!loading && filteredPlans.length === 0 && (
         <div className="text-center py-16 text-muted-foreground">
-          <p className="text-4xl mb-3">🪴</p>
           <p>Nenhuma planta encontrada.</p>
         </div>
       )}
@@ -165,7 +167,13 @@ export function ArchitecturalPlans() {
 
             <CardFooter className="flex justify-between">
               <div className="font-bold text-lg">KZ {plan.price} AOA</div>
-              <Button>Comprar planta</Button>
+              <BotaoComprar
+                plantaId={plan.id}
+                arquitetoId={plan.dono}        // campo 'dono' da tabela planta = arquiteto_id
+                nomePlanta={plan.title}
+                preco={plan.price}
+                imagemUrl={plan.image}
+              /> 
             </CardFooter>
           </Card>
         ))}
