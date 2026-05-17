@@ -6,33 +6,33 @@ import Link from "next/link"
 export default function AdminDashboard() {
   const stats = [
     {
-      title: "Total Users",
+      title: "Total de Usuarios da Plataforma",
       value: "1,234",
-      description: "Registered platform users",
+      description: "Usuarios registados na Plataforma",
       icon: Users,
       color: "text-blue-600",
       href: "/admin/users",
     },
     {
-      title: "Pending Withdrawals",
+      title: "Saques pendentes",
       value: "8",
-      description: "Awaiting payment",
+      description: "Aguardando pagamento",
       icon: CreditCard,
       color: "text-yellow-600",
       href: "/admin/withdrawals",
     },
     {
-      title: "Open Reports",
+      title: "Abrir relatórios",
       value: "12",
-      description: "Unreviewed complaints",
+      description: "Reclamações não analisadas",
       icon: AlertCircle,
       color: "text-red-600",
       href: "/admin/reports",
     },
     {
-      title: "Platform Revenue",
+      title: "Receita da plataforma",
       value: "$47.5K",
-      description: "Total withdrawals processed",
+      description: "Lucro da Platafomra",
       icon: TrendingUp,
       color: "text-green-600",
       href: "/admin/withdrawals",
@@ -42,8 +42,8 @@ export default function AdminDashboard() {
   return (
     <div className="flex-1 space-y-6 p-8">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
-        <p className="text-muted-foreground">Welcome to the Duria admin panel. Manage users, withdrawals, and reports.</p>
+        <h1 className="text-3xl font-bold tracking-tight">Painel de administração</h1>
+        <p className="text-muted-foreground">Bem-vindo ao painel de administração da Duria. Gerencie usuários, saques e relatórios.</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">
