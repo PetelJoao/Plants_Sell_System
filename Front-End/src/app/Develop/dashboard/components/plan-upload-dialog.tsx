@@ -129,7 +129,7 @@ const handleImagesFolderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
   
   if (selected.length === 0) return
 
-  const allowedImageTypes = ["image/jpeg", "image/png", "image/webp"]
+  const allowedImageTypes = ["image/jpeg", "image/png", "image/webp","image/dwg"]
   const invalid = selected.filter(f => !allowedImageTypes.includes(f.type))
 
   if (invalid.length > 0) {

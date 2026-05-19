@@ -25,7 +25,7 @@ export function LoginForm() {
 
     try {
       await login(email, password); // - atualiza o user no contexto
-      router.push("/dashboard");
+      router.push("/Develop/dashboard") // - redireciona para o dashboard;
     } catch (err: any) {
       setError(err.message || "Credenciais inválidas")
     } finally {

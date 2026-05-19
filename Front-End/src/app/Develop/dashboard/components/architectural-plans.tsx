@@ -15,7 +15,7 @@ import { useOrder, type Plan } from "@/Context/order-context"
 import { PlanUploadDialog } from "./plan-upload-dialog"
 import { usePlans } from "@/Context/plans-context"
 import { PlanDetailModal } from "./plan-detail-modal"
-
+import { useAuth }         from "@/Context/AuthContext"
 export function ArchitecturalPlans() {
  // const [plans, setPlans] = useState<Plan[]>([]);
   const [filter, setFilter] = useState<string>("All");
@@ -25,7 +25,23 @@ export function ArchitecturalPlans() {
   const { addToOrder } = useOrder() 
   const { toast } = useToast()
   const { plans, addPlan } = usePlans()
+  const { user, loading,  carregar, deletar } = useAuth() as any
 
+  useEffect(() => {
+    async function load() {
+      const data = await carregar()
+      if (!data) {
+        toast({
+          title:       "Erro",
+          description: "Não foi possível carregar as plantas.",
+          variant:     "destructive",
+        })
+      }
+    }
+    load()
+
+  }, [])
+  
   const handlePlanAdded = (newPlan: Plan) => {
     addPlan(newPlan)
   }
