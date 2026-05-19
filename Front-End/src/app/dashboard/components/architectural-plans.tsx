@@ -173,6 +173,7 @@ export function ArchitecturalPlans() {
                 nomePlanta={plan.title}
                 preco={plan.price}
                 imagemUrl={plan.image}
+
               /> 
             </CardFooter>
           </Card>

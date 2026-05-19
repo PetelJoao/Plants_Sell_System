@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Providers } from "./dashboard/components/Provisders";
+import { AuthProvider } from "@/Context/AuthContext"
 import { OrderProvider } from "@/Context/order-context";
 import { Toaster } from "@/components/ui/toaster"
 import { PlansProvider } from "@/Context/plans-context"
@@ -17,11 +18,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-<PlansProvider>
-  <OrderProvider>
-    {children}
-  </OrderProvider>
-</PlansProvider>
+        <AuthProvider>          {/* ← ENVOLVER TUDO */}
+          <PlansProvider>
+            <OrderProvider>
+              {children}
+              <Toaster />
+            </OrderProvider>
+          </PlansProvider>
+        </AuthProvider>
         </body>
     </html>
   );

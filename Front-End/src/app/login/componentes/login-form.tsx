@@ -24,7 +24,7 @@ export function LoginForm() {
     const password = formData.get("password") as string
 
     try {
-      await login(email, password); // ← atualiza o user no contexto
+      await login(email, password); // - atualiza o user no contexto
       router.push("/dashboard");
     } catch (err: any) {
       setError(err.message || "Credenciais inválidas")
