@@ -16,7 +16,7 @@ import Image from "next/image"
 import { FileText, Trash2, ShoppingCart } from "lucide-react"
 import { useOrder } from "@/Context/order-context"
 import { useState } from "react"
-import { useToast } from "@/components/ui/use-toast"
+import { useToast } from "@/hooks/use-toast"
 
 export default function OrdersPage() {
   const { orders, removeFromOrder } = useOrder()

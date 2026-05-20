@@ -21,7 +21,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet"
 import { ChevronDown, Upload, Download } from "lucide-react"
-import { useToast } from "@/components/ui/use-toast"
+import { useToast } from "@/hooks/use-toast"
 
 interface Withdrawal {
   id: number

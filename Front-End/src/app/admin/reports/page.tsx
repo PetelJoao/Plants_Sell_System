@@ -23,7 +23,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { AlertCircle } from "lucide-react"
-import { useToast } from "@/components/ui/use-toast"
+import { useToast } from "@/hooks/use-toast"
 
 interface Report {
   id: number

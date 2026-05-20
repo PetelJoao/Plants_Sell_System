@@ -91,31 +91,54 @@ export function PlanUploadDialog({ open, onOpenChange, onPlanAdded }: PlanUpload
     },
   })
 
-  // Handle file selection
- const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
   const selectedFiles = e.target.files ? Array.from(e.target.files) : []
   setFileError(null)
 
   if (selectedFiles.length === 0) return
 
-  const allowedTypes = ["application/pdf", "image/jpeg", "image/png", "application/zip"]
-  const maxSize = 10 * 1024 * 1024 // 10MB
+  // Extensões permitidas para plantas arquitetónicas
+  const allowedExtensions = [
+    // CAD / Modelação 3D
+    ".dwg", ".dxf", ".dgn", ".dwf", ".dwfx",
+    ".rvt", ".rfa", ".rte",   // Revit
+    ".skp",                    // SketchUp
+    ".3dm",                    // Rhino
+    ".ifc",                    // BIM
+    ".nwd", ".nwc",            // Navisworks
+    ".max",                    // 3ds Max
+    ".blend",                  // Blender
+    // Documentos e imagens
+    ".pdf",
+    ".jpg", ".jpeg", ".png", ".tiff", ".tif", ".bmp", ".webp",
+    // Compactados
+    ".zip", ".rar", ".7z",
+  ]
 
-  // 1. Validar tipos de arquivos dentro da pasta
-  const invalidFiles = selectedFiles.filter(file => !allowedTypes.includes(file.type))
-  
-  // Opcional: Ignorar arquivos de sistema como .DS_Store ou Thumbs.db
-  const filteredFiles = selectedFiles.filter(file => file.name !== ".DS_Store")
+  // Ficheiros de sistema a ignorar
+  const systemFiles = [".DS_Store", "Thumbs.db", "desktop.ini"]
+
+  // Filtrar ficheiros de sistema
+  const filteredFiles = selectedFiles.filter(
+    file => !systemFiles.includes(file.name)
+  )
+
+  // Validar extensões
+  const invalidFiles = filteredFiles.filter(file => {
+    const ext = "." + file.name.split(".").pop()?.toLowerCase()
+    return !allowedExtensions.includes(ext)
+  })
 
   if (invalidFiles.length > 0) {
-    setFileError(`A pasta contém ${invalidFiles.length} arquivo(s) com formato inválido.`)
+    const invalidNames = invalidFiles.map(f => f.name).join(", ")
+    setFileError(`Formato não suportado: ${invalidNames}. Formatos aceites: DWG, DXF, RVT, SKP, IFC, PDF, entre outros.`)
     return
   }
 
-  // 2. Validar tamanho total ou individual (aqui validei o total de todos os arquivos)
+  // Validar tamanho total (100MB para plantas complexas)
   const totalSize = filteredFiles.reduce((acc, file) => acc + file.size, 0)
-  if (totalSize > 50 * 1024 * 1024) { // Exemplo: 50MB para a pasta toda
-    setFileError("A pasta é muito grande. O limite total é 50MB.")
+  if (totalSize > 100 * 1024 * 1024) {
+    setFileError("Os ficheiros são muito grandes. O limite total é 100MB.")
     return
   }
 
@@ -387,9 +410,10 @@ const clearFile = () => {
               <span>Selecionar Pasta do Projeto</span>
               <input
                 id="file-upload"
-                 name="file-upload"
+                name="file-upload"
                 type="file"
                 className="sr-only"
+                accept=".dwg,.dxf,.dgn,.dwf,.dwfx,.rvt,.rfa,.rte,.skp,.3dm,.ifc,.nwd,.nwc,.max,.blend,.pdf,.jpg,.jpeg,.png,.tiff,.tif,.bmp,.webp,.zip,.rar,.7z"
                 onChange={handleFileChange}
                 {...({
                   webkitdirectory: "",
@@ -398,7 +422,7 @@ const clearFile = () => {
                 } as any)} 
               />
             </label>
-            <p className="text-xs text-muted-foreground">Selecione a pasta contendo PDF, JPEG, PNG ou ZIP</p>
+            <p className="text-xs text-muted-foreground">DWG, DXF, RVT, SKP, IFC, PDF, imagens e ZIP até 50MB</p>
           </div>
         </div>
       </>
@@ -428,7 +452,7 @@ const clearFile = () => {
     )}
   </div>
   {fileError && <p className="text-sm font-medium text-destructive">{fileError}</p>}
-  <FormDescription>Selecione a pasta raiz que contém todos os documentos da planta.</FormDescription>
+  <FormDescription>Selecione a pasta raiz com os ficheiros da planta. Formatos suportados: DWG, DXF, RVT, SKP, IFC, PDF, entre outros.</FormDescription>
            </div>
  
  <div className="space-y-2">

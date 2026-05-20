@@ -28,7 +28,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { DollarSign, FileText, Home, MoreHorizontal, Plus, Trash2, Edit, Eye, EyeOff, TrendingUp } from "lucide-react"
-import { useToast } from "@/components/ui/use-toast"
+import { useToast } from "@/hooks/use-toast"
 import {PlanUploadDialog} from "@/app/dashboard/components/plan-upload-dialog"
 import { PlanEditDialog } from "@/components/plan-edit-dialog"
 import { RevenueGoalCard } from "@/components/revenue-goal-card"
