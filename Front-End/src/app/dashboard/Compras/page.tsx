@@ -7,7 +7,7 @@ export default function Compras() {
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold tracking-tight">Carrinho de Compras</h1>
         <p className="text-muted-foreground">
-          Gerencie o seu carrinho de compras a um clique.
+          Gerencie o seu carrinho de compras a um clique rapido.
         </p>
        </div>
       
