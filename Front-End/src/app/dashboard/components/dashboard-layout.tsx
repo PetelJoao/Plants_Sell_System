@@ -40,12 +40,12 @@ if (loading || !user) {
   }
 
   const navigationItems = [
-    { name: "Dashboard",            href: "/dashboard",          icon: LayoutDashboard },
-    { name: "Minhas Plantas",       href: "/dashboard/Plantas",  icon: Building2 },
-    { name: "Carrinho de Compras",  href: "/dashboard/Compras",  icon: ShoppingCart },
-    { name: "Histórico de Compras", href: "/dashboard/history",  icon: Clock },
-    { name: "Perfil",               href: "/dashboard/perfil",   icon: User },
-  ]
+  { name: "Dashboard",            href: "/Develop/dashboard",          icon: LayoutDashboard },
+  { name: "Minhas Plantas",       href: "/Develop/dashboard/Plantas",  icon: Building2 },
+  { name: "Carrinho de Compras",  href: "/Develop/dashboard/Compras",  icon: ShoppingCart },
+  { name: "Histórico de Compras", href: "/Develop/dashboard/history",  icon: Clock },
+  { name: "Perfil",               href: "/Develop/dashboard/perfil",   icon: User },
+]
 
   return (
     <SidebarProvider>

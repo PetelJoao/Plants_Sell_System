@@ -18,20 +18,23 @@ async def DeletePlants(plant_id: str):
 
 
 async def upload_plants(
-    user_id: str,
-    title: str,
-    description:        Optional[str]         = None,
-    topology:           Optional[str]         = None,
-    category:           Optional[str]         = None,
-    squareFeet:         Optional[str]         = None,
-    bedrooms:           Optional[int]         = 0,
-    bathrooms:          Optional[int]         = 0,
-    price:              float                 = 0,
-    # Pasta de imagens públicas (galeria/capa)
-    imageFiles:         List[UploadFile]      = File(default=[]),
-    # Pasta de documentos técnicos (PDF, ZIP, etc.)
-    projectFiles:       List[UploadFile]      = File(default=[]),
+    user_id:      str,
+    title:        str,
+    description:  Optional[str]       = None,
+    topology:     Optional[str]       = None,
+    category:     Optional[str]       = None,
+    squareFeet:   Optional[str]       = None,
+    bedrooms:     Optional[int]       = 0,
+    bathrooms:    Optional[int]       = 0,
+    price:        float               = 0,
+    imageFiles:   List[UploadFile]    = File(default=[]),   # ← alinhado
+    projectFiles: List[UploadFile]    = File(default=[]),   # ← alinhado
 ):
+    if not imageFiles:
+        raise HTTPException(status_code=422, detail="Nenhuma imagem pública enviada.")
+    if not projectFiles:
+        raise HTTPException(status_code=422, detail="Nenhum arquivo de projeto enviado.")
+    
     print("=" * 60)
     print("DEBUG upload_plants chamado")
     print(f"  user_id:      {user_id}")
@@ -43,11 +46,11 @@ async def upload_plants(
     print(f"  bedrooms:     {bedrooms}")
     print(f"  bathrooms:    {bathrooms}")
     print(f"  price:        {price}")
-    print(f"  imageFiles:   {[f.filename for f in imageFiles]}")
+    print(f"  imageFile:    {[f.filename for f in imageFile]}")
     print(f"  projectFiles: {[f.filename for f in projectFiles]}")
     print("=" * 60)
 
-    if not imageFiles or len(imageFiles) == 0:
+    if not imageFile or len(imageFile) == 0:
         raise HTTPException(status_code=422, detail="Nenhuma imagem pública enviada.")
 
     if not projectFiles or len(projectFiles) == 0:
@@ -60,7 +63,7 @@ async def upload_plants(
         # ── 1. Upload das imagens públicas (galeria) ──────────────────────────
         image_urls: List[str] = []
 
-        for img in imageFiles:
+        for img in imageFile:
             contents  = await img.read()
             file_path = f"plantas/{user_id}/{timestamp}/imagens/{img.filename}"
 

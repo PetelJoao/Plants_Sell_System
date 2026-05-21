@@ -3,6 +3,7 @@ import type React from "react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { useAuth }         from "@/Context/AuthContext"
 import * as z from "zod"
 import {
   Dialog,
@@ -19,6 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { useToast } from "@/hooks/use-toast"
 import { Upload, X, Folder } from "lucide-react"
+
 
 // Define the form schema with zod
 const formSchema = z.object({
@@ -75,7 +77,7 @@ export function PlanUploadDialog({ open, onOpenChange, onPlanAdded }: PlanUpload
    // Estado para a pasta do projeto (Documentação técnica)
    const [files, setFiles] = useState<File[]>([]) // Alterado para array
    const [fileError, setFileError] = useState<string | null>(null)
-
+  const { inserir } = useAuth() as any
   // Initialize the form
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -141,32 +143,46 @@ const handleImagesFolderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 
 
 //new
-const onSubmit = (data: FormValues) => {
+const onSubmit = async (data: FormValues) => {
+  console.log("1. onSubmit chamado", data)
   if (imageFiles.length === 0 || files.length === 0) {
     toast({ title: "Erro", description: "Selecione as duas pastas obrigatórias.", variant: "destructive" })
     return
   }
-  const newPlan = {
-    id: Date.now(),
-    ...data,
-    // Definimos a primeira imagem da pasta como a capa para exibição imediata
-    image: URL.createObjectURL(imageFiles[0]), 
-    allImages: imageFiles, // Array completo para a galeria
-    allDocs: files,    // Array completo dos documentos técnicos
-    folderName: files[0].webkitRelativePath.split('/')[0]
-  }
-  onPlanAdded?.(newPlan)
+
+  try {
+    await inserir({ ...data, imageFiles, files })
+
+    
+    const newPlan = {
+      id: Date.now(),
+      ...data,
+      image:      URL.createObjectURL(imageFiles[0]),
+      allImages:  imageFiles,
+      allDocs:    files,
+      folderName: files[0].webkitRelativePath.split('/')[0],
+    }
+    onPlanAdded?.(newPlan)
 
     toast({
-      title: "Planta Adicionada",
-      description: "Your architectural plan has been uploaded successfully.",
-      duration: 3000,
+      title:       "Planta Adicionada",
+      description: "Planta carregada com sucesso.",
+      duration:    3000,
     })
-  // Limpeza
-  form.reset()
-  setImageFiles([])
-  setFiles([])
-  onOpenChange(false)
+
+    form.reset()
+    setImageFiles([])
+    setFiles([])
+    onOpenChange(false)
+
+  } catch (error: any) {
+    // Agora o erro do inserir é capturado corretamente
+    toast({
+      title:       "Erro",
+      description: error.message || "Falha ao adicionar a planta.",
+      variant:     "destructive",
+    })
+  }
 }
 const clearFile = () => {
   setFiles([]) // Reseta o array de arquivos

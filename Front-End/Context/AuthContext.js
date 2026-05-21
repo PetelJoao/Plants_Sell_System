@@ -79,47 +79,58 @@ export function AuthProvider({ children }) {
   };
 
 
-  const inserir = async ({ title, description, squareFeet, price, file }) => {
-    const token = localStorage.getItem('token');
-    if (!user?.id) throw new Error('Utilizador não autenticado');
+ const inserir = async ({
+  title, description, topology, category,
+  squareFeet, bedrooms, bathrooms, price,
+  files,      
+  imageFiles,  
+}) => {
+  const token = localStorage.getItem('token');
+  if (!user?.id) throw new Error('Utilizador não autenticado');
 
-    const formData = new FormData();
-    formData.append('title',       title);
-    formData.append('description', description ?? '');
-    formData.append('squareFeet',  squareFeet  ?? '');
-    formData.append('price',       price       ?? 0);
-    formData.append('file',        file);
+  const formData = new FormData();
+  formData.append('title',       title);
+  formData.append('description', description ?? '');
+  formData.append('topology',    topology    ?? '');
+  formData.append('category',    category    ?? '');
+  formData.append('squareFeet',  squareFeet  ?? '');
+  formData.append('bedrooms',    bedrooms    ?? 0);
+  formData.append('bathrooms',   bathrooms   ?? 0);
+  formData.append('price',       price       ?? 0);
 
+  
+  files.forEach(f      => formData.append('projectFiles', f));
+  imageFiles.forEach(f => formData.append('imageFiles',   f));
 
-    const res = await fetch(`http://localhost:5000/api/dashboard/${user.id}`, {
-      method:  'POST',
-      headers: { Authorization: `Bearer ${token}` },
-      body:    formData,
-    });
+  const res = await fetch(`http://localhost:5000/api/dashboard/${user.id}`, {
+    method:  'POST',
+    headers: { Authorization: `Bearer ${token}` }, 
+    body:    formData,
+  });
 
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.detail || 'Erro ao inserir planta');
-    }
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.detail || 'Erro ao inserir planta');
+  }
 
-    const data = await res.json();
-    const nova  = data.data?.[0];
-    if (nova) {
-      setPlans(prev => [...prev, {
-        id:          nova.id,
-        title:       nova.nome,
-        description: nova.descricao    ?? '',
-        squareFeet:  nova.dimensao     ?? 0,
-        price:       nova.orcamento    ?? 0,
-        image:       nova.imagens?.[0] ?? nova.plantas_arquivo ?? null,
-        category:    nova.categoria    ?? '',
-        bedrooms:    nova.quartos      ?? 0,
-        bathrooms:   nova.banheiros    ?? 0,
-        featured:    false,
-      }]);
-    }
-    return data;
-  };
+  const data = await res.json();
+  const nova = data.data?.[0];
+  if (nova) {
+    setPlans(prev => [...prev, {
+      id:          nova.id,
+      title:       nova.nome,
+      description: nova.descricao    ?? '',
+      squareFeet:  nova.dimensao     ?? 0,
+      price:       nova.orcamento    ?? 0,
+      image:       nova.imagens?.[0] ?? nova.plantas_arquivo ?? null,
+      category:    nova.categoria    ?? '',
+      bedrooms:    nova.quartos      ?? 0,
+      bathrooms:   nova.banheiros    ?? 0,
+      featured:    false,
+    }]);
+  }
+  return data;
+};
 
   const deletar = async (plantId) => {
     const token = localStorage.getItem('token');
