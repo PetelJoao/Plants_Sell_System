@@ -52,7 +52,7 @@ export default function PlansPage() {
   // Filter and search plans
   const filteredPlans = useMemo(() => {
     return plans.filter((plan) => {
-      const matchesSearch = plan.title.toLowerCase().includes(searchQuery.toLowerCase())
+      const matchesSearch = plan.title?.toLowerCase().includes(searchQuery.toLowerCase())
       const isActive = planStatuses[plan.id] !== false
       const matchesStatus =
         statusFilter === "Todas" || (statusFilter === "ativas" && isActive) || (statusFilter === "inativas" && !isActive)

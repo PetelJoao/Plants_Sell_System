@@ -40,13 +40,13 @@ interface PlanDetailModalProps {
 
 export function PlanDetailModal({ open, onOpenChange, plan }: PlanDetailModalProps) {
   const { toast } = useToast()
- const [selectedImage, setSelectedImage] = useState(plan.image || "")
+ const [selectedImage, setSelectedImage] = useState(plan.image || "/placeholder.png")
   const [userRating, setUserRating] = useState(0)
   const [userComment, setUserComment] = useState("")
   const [showAllReviews, setShowAllReviews] = useState(false)
 
   // Mock data for images and documents
-const images = [plan.image || "", plan.image || "", plan.image || ""]
+const images = [plan.image || "/placeholder.png", plan.image || "/placeholder.png", plan.image || "/placeholder.png"]
   const documents = [
     { id: 1, name: "Floor_Plan_Level_1.pdf" },
     { id: 2, name: "Floor_Plan_Level_2.pdf" },

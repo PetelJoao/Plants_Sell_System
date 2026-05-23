@@ -15,35 +15,38 @@ import { useOrder, type Plan } from "@/Context/order-context"
 import { PlanUploadDialog } from "./plan-upload-dialog"
 import { usePlans } from "@/Context/plans-context"
 import { PlanDetailModal } from "./plan-detail-modal"
-import { useAuth }         from "@/Context/AuthContext"
+import { useAuth } from "@/Context/AuthContext"
 export function ArchitecturalPlans() {
- // const [plans, setPlans] = useState<Plan[]>([]);
+  const [plans, setPlans] = useState<Plan[]>([]);
   const [filter, setFilter] = useState<string>("All");
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null)
   const [detailModalOpen, setDetailModalOpen] = useState(false)
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false)
   const { addToOrder } = useOrder() 
   const { toast } = useToast()
-  const { plans, addPlan } = usePlans()
+ // const { plans, addPlan } = usePlans()
   const { user, loading,  carregar, deletar } = useAuth() as any
 
-  useEffect(() => {
-    async function load() {
-      const data = await carregar()
-      if (!data) {
-        toast({
-          title:       "Erro",
-          description: "Não foi possível carregar as plantas.",
-          variant:     "destructive",
-        })
-      }
+useEffect(() => {
+  async function load() {
+    const data = await carregar()
+    if (!data) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar as plantas.",
+        variant: "destructive",
+      })
+      return
     }
-    load()
-
-  }, [])
+    setPlans(data)
+  }
+  load()
+}, [])
   
   const handlePlanAdded = (newPlan: Plan) => {
-    addPlan(newPlan)
+    setPlans((prevPlans) => [...prevPlans, newPlan])
+
+    
   }
    const handleAddToOrder = (plan: Plan) => {
     addToOrder(plan)
@@ -55,7 +58,7 @@ export function ArchitecturalPlans() {
   }
 
   const filteredPlans = filter === "All" ? plans : plans.filter((plan) => plan.category === filter)
-
+  
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -91,10 +94,11 @@ export function ArchitecturalPlans() {
            }}
           >
             <div className="relative aspect-video">
-
+           
             <Image
+              
                 src={(plan.image) || Porshe}
-                alt={plan.description}
+                alt={plan.title ?? plan.description ?? "Planta arquitectónica"}
                 width={500} 
                 height={300}
               />
@@ -154,6 +158,7 @@ export function ArchitecturalPlans() {
               <Button>Comprar planta</Button>
             </CardFooter>
           </Card>
+       
         ))}
       </div>
        <PlanUploadDialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen} onPlanAdded={handlePlanAdded} />

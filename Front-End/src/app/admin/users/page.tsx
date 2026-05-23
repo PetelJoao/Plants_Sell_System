@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo , useEffect} from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -29,12 +29,12 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { MoreHorizontal, Shield, Ban } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-
+import { useAuth } from "@/Context/AuthContext"
 interface User {
   id: number
   name: string
   email: string
-  role: "Architect" | "Client"
+  role: "cliente" | "arquiteto" | "admin"
   registeredDate: string
   status: "Active" | "Suspended" | "Banned"
   avatar: string
@@ -45,7 +45,7 @@ const initialUsers: User[] = [
     id: 1,
     name: "João Silva",
     email: "joao@example.com",
-    role: "Architect",
+    role: "arquiteto",
     registeredDate: "2024-01-15",
     status: "Active",
     avatar: "JS",
@@ -54,7 +54,7 @@ const initialUsers: User[] = [
     id: 2,
     name: "Maria Santos",
     email: "maria@example.com",
-    role: "Client",
+    role: "cliente",
     registeredDate: "2024-02-20",
     status: "Active",
     avatar: "MS",
@@ -63,7 +63,7 @@ const initialUsers: User[] = [
     id: 3,
     name: "Carlos Costa",
     email: "carlos@example.com",
-    role: "Architect",
+    role: "arquiteto",
     registeredDate: "2024-01-10",
     status: "Suspended",
     avatar: "CC",
@@ -72,7 +72,7 @@ const initialUsers: User[] = [
     id: 4,
     name: "Ana Oliveira",
     email: "ana@example.com",
-    role: "Client",
+    role: "cliente",
     registeredDate: "2024-03-05",
     status: "Banned",
     avatar: "AO",
@@ -81,20 +81,32 @@ const initialUsers: User[] = [
 
 export default function UsersPage() {
   const { toast } = useToast()
+  const { CarregarUsuarios , SuspenderUser , BanUser } = useAuth() as any 
   const [users, setUsers] = useState<User[]>(initialUsers)
   const [searchQuery, setSearchQuery] = useState("")
-  const [roleFilter, setRoleFilter] = useState<"All" | "Architect" | "Client">("All")
+  const [roleFilter, setRoleFilter] = useState<"All" | "arquiteto" | "cliente" | "admin">("All")
   const [statusFilter, setStatusFilter] = useState<"All" | "Active" | "Suspended" | "Banned">("All")
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [actionType, setActionType] = useState<"suspend" | "ban" | null>(null)
   const [suspendDialogOpen, setSuspendDialogOpen] = useState(false)
   const [banDialogOpen, setBanDialogOpen] = useState(false)
 
+  useEffect(() => {
+    const loadUsers = async () => {
+      const userData = await CarregarUsuarios();
+      if (userData) {
+        setUsers(userData);
+      }
+    };
+
+    loadUsers();
+  },[]);
+
   const filteredUsers = useMemo(() => {
     return users.filter((user) => {
       const matchesSearch =
-        user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchQuery.toLowerCase())
+        user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.email?.toLowerCase().includes(searchQuery.toLowerCase())
       const matchesRole = roleFilter === "All" || user.role === roleFilter
       const matchesStatus = statusFilter === "All" || user.status === statusFilter
       return matchesSearch && matchesRole && matchesStatus
@@ -113,33 +125,59 @@ export default function UsersPage() {
     setBanDialogOpen(true)
   }
 
-  const confirmSuspend = () => {
+  const confirmSuspend =  async () => {
     if (selectedUser) {
-      setUsers((prev) =>
-        prev.map((u) => (u.id === selectedUser.id ? { ...u, status: "Suspended" } : u))
-      )
-      toast({
-        title: "User Suspended",
-        description: `${selectedUser.name} has been suspended.`,
-      })
-      setSuspendDialogOpen(false)
+      try{
+        await SuspenderUser(selectedUser.id)
+          
+        setUsers((prev) =>
+          prev.map((u) => (u.id === selectedUser.id ? { ...u, status: "Suspended" } : u))
+        )
+        toast({
+          title: "User Suspended",
+          description: `${selectedUser.name} has been suspended.`,
+        })
+        
+      }
+      catch(err){
+        toast({
+          title: "Error",
+          description: `Failed to suspend ${selectedUser.name}. Please try again.`,
+          variant: "destructive",
+        })
+      }
+     setSuspendDialogOpen(false)
       setSelectedUser(null)
     }
   }
 
-  const confirmBan = () => {
+  const confirmBan = async () => {
     if (selectedUser) {
-      setUsers((prev) =>
+       try{
+        await BanUser(selectedUser.id)
+          
+         setUsers((prev) =>
         prev.map((u) => (u.id === selectedUser.id ? { ...u, status: "Banned" } : u))
       )
-      toast({
+         toast({
         title: "User Banned",
         description: `${selectedUser.name} has been permanently banned.`,
       })
-      setBanDialogOpen(false)
+        
+      }
+      catch(err){
+        toast({
+          title: "Error",
+          description: `Failed to Ban ${selectedUser.name}. Please try again.`,
+          variant: "destructive",
+        })
+      }
+     setSuspendDialogOpen(false)
       setSelectedUser(null)
     }
-  }
+
+    }
+  
 
   const getStatusColor = (status: User["status"]) => {
     switch (status) {
@@ -173,7 +211,7 @@ export default function UsersPage() {
               />
             </div>
             <div className="flex gap-2">
-              {(["All", "Architect", "Client"] as const).map((filter) => (
+              {(["All", "arquiteto", "cliente", "admin"] as const).map((filter) => (
                 <Button
                   key={filter}
                   variant={roleFilter === filter ? "default" : "outline"}

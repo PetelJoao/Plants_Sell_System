@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends
-from models.admin_model import AdminCarregarPlantas, AdminCarregarDenuncia , AdminDelPlant , AdminFinalizarDenuncia
+from models.admin_model import AdminCarregarPlantas, AdminCarregarDenuncia , AdminDelPlant , AdminFinalizarDenuncia, AdminAlluser , BanUser , SuspenderUser
 from middlewares.auth import get_current_user
 admin_router = APIRouter(tags=["admin"])
 
@@ -25,3 +25,17 @@ async def LoadDenuncias():
 async def FinalizarDenuncias(denuncia_id:str , user = Depends(get_current_user)):
 
     return await AdminFinalizarDenuncia(denuncia_id)
+
+@admin_router.get("/users")
+async def LoadUsers():
+    return await AdminAlluser()
+
+@admin_router.put("/users/ban/{user_id}")
+async def BanirUser(user_id:str ):
+    
+    return await BanUser(user_id)
+
+@admin_router.put("/users/suspend/{user_id}")
+async def SuspendUser(user_id:str ):
+    
+    return await SuspenderUser(user_id)

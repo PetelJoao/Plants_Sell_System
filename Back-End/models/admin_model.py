@@ -59,6 +59,32 @@ async def AdminCarregarPlantas():
     response = supabase.table("planta").select("*").execute()
     return response.data
 
+async def AdminAlluser():
+    supabase = get_supabase_admin()
+    response = supabase.table("usuario").select("id","nome","email","tipo","estado").execute()
+    return response.data
 
+async def BanUser(user_id:str):
+    id_user = user_id
+    supabase = get_supabase_admin()
+    
+    response = (
+        supabase.table("usuario")
+        .update({"estado":"banned"})
+        .eq("id",id_user)
+        .execute()
+    )
+    return  JSONResponse(status_code=200 , content={"message":"Usuário banido com sucesso! ", "data":response.data})
 
+async def SuspenderUser(user_id:str):
+    id_user = user_id
+    supabase = get_supabase_admin()
+    
+    response = (
+        supabase.table("usuario")
+        .update({"estado":"suspended"})
+        .eq("id",id_user)
+        .execute()
+    )
+    return  JSONResponse(status_code=200 , content={"message":"Usuário suspenso com sucesso! ", "data":response.data})
 

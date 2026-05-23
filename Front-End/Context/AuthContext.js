@@ -46,7 +46,68 @@ export function AuthProvider({ children }) {
     setUser(null);
     setPlans([]);
   };
+  const SuspenderUser = async(user_id) => {
+    try{
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:5000/api/admin/users/suspend/${user_id}`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
+      const data = await response.json();
+      return data;
+    } catch (err) {
+      console.error('Erro ao suspender usuário:', err);
+      return null;
+    }
+  }
+
+  const BanUser = async(user_id) => {
+    try{
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:5000/api/admin/users/ban/${user_id}`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      
+      const data = await response.json();
+      return data;
+    } catch (err) {
+      console.error('Erro ao Banir usuário:', err);
+      return null;
+    }
+  }
+
+  const CarregarUsuarios = async () => 
+  {
+    try{
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/admin/users',
+      {
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      }  
+    );
+    if (!response.ok) throw new Error('Erro ao carregar usuários');
+    const data = await response.json();
+    const mapped =data.map(u => ({
+      id: u.id,
+      name: u.nome,
+      email: u.email,
+      role: u.tipo,
+      status: u.estado,
+    }))
+
+    return mapped;
+    } 
+    catch (err) {
+      console.error('Erro ao carregar usuários:', err);
+      return null;
+    }
+
+  }
+
+
+  
   const carregar = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -66,7 +127,7 @@ export function AuthProvider({ children }) {
         bedrooms:    p.quartos      ?? 0,
         bathrooms:   p.banheiros    ?? 0,
         featured:    p.destaque     ?? false,
-        dono:        p.dono,          // ← ADICIONAR
+        dono:        p.dono,        
 
         
       }));
@@ -148,7 +209,7 @@ export function AuthProvider({ children }) {
     : null;
 
   return (
-    <AuthContext.Provider value={{ user: profile, rawUser: user, loading, plans, login, logout, carregar, inserir, deletar }}>
+    <AuthContext.Provider value={{ user: profile, rawUser: user, loading, plans, login, logout, carregar, inserir, deletar , CarregarUsuarios , SuspenderUser , BanUser}}>
       {children}
     </AuthContext.Provider>
   );
