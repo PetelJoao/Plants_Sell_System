@@ -88,3 +88,12 @@ async def SuspenderUser(user_id:str):
     )
     return  JSONResponse(status_code=200 , content={"message":"Usuário suspenso com sucesso! ", "data":response.data})
 
+async def GetAdminDashboard():
+    supabase = get_supabase_admin()
+    response = (
+        supabase.from_("dashboard_admin")
+        .select("*")
+        .single()
+        .execute()
+    )
+    return response.data

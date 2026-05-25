@@ -1,5 +1,5 @@
 "use client"
-import { useState, useMemo } from "react"
+import { useState, useMemo , useEffect} from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -34,12 +34,14 @@ import { RevenueGoalCard } from "@/components/revenue-goal-card"
 import { WithdrawalModal } from "@/components/withdrawal-modal"
 import DashboardLayout from "@/app/dashboard/components/dashboard-layout"
 import { usePlans, type ArchitectPlan } from "@/Context/plans-context"
+import { useAuth } from "@/Context/AuthContext"
 
 export default function PlansPage() {
   const { toast } = useToast()
-  const { plans, addPlan, updatePlan, deletePlan } = usePlans()
+  const { addPlan, updatePlan, deletePlan } = usePlans()
   const [uploadOpen, setUploadOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
+  const [plans , setPlans] = useState<ArchitectPlan[]>([])
   const [selectedPlan, setSelectedPlan] = useState<ArchitectPlan | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<"Todas" | "ativas" | "inativas">("Todas")
@@ -48,6 +50,17 @@ export default function PlansPage() {
     Object.fromEntries(plans.map((p) => [p.id, true]))
   )
   const [withdrawalOpen, setWithdrawalOpen] = useState(false)
+  const  {GerenciarPlantas , MinhasPlantas , deletar , solicitarSaque}  = useAuth() as any
+  const [stats, setStats] = useState({
+    totalUploaded: 0,
+    sold: 0,
+    revenue: 0,
+    active: 0,
+    inactive: 0,
+    
+
+
+  })
 
   // Filter and search plans
   const filteredPlans = useMemo(() => {
@@ -60,18 +73,29 @@ export default function PlansPage() {
     })
   }, [plans, searchQuery, statusFilter, planStatuses])
 
-  // Calculate stats
-  const stats = useMemo(() => {
-    const activePlans = plans.filter((p) => planStatuses[p.id] !== false)
-    const totalRevenue = plans.reduce((sum, plan) => sum + plan.price, 0)
-    return {
-      totalUploaded: plans.length,
-      sold: Math.floor(plans.length * 0.3), // Mock calculation
-      revenue: totalRevenue,
-      active: activePlans.length,
-      inactive: plans.length - activePlans.length,
+  useEffect(() => {
+    const LoadPlansStatuses = async () => {
+      try {
+        const data = await GerenciarPlantas()
+        const myPlans = await MinhasPlantas()
+        setPlans(myPlans)
+        setStats({
+      totalUploaded: data.total_plantas      ?? 1,
+      sold:          data.plantas_vendidas   ?? 0,
+      revenue:       data.saldo_disponivel      ?? 0,
+      active:        data.plantas_ativas     ?? 0,
+      inactive:      data.plantas_inativas   ?? 0,
+    });
+
+      }
+      catch (error) {
+        throw new Error("Falha ao carregar os estados das plantas: " + error)
+      }
+
     }
-  }, [plans, planStatuses])
+    LoadPlansStatuses()
+    
+  }, [])
 
   const handlePlanAdded = (newPlan: any) => {
     addPlan(newPlan)
@@ -100,9 +124,12 @@ export default function PlansPage() {
     setPlanToDelete(plan)
   }
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (planToDelete) {
-      deletePlan(planToDelete.id)
+
+      try{
+        await deletar(planToDelete.id)
+        deletePlan(planToDelete.id)
       setPlanStatuses((prev) => {
         const newStatuses = { ...prev }
         delete newStatuses[planToDelete.id]
@@ -112,6 +139,10 @@ export default function PlansPage() {
         title: "Plan Deleted",
         description: "Your floor plan has been permanently deleted.",
       })
+      }
+      catch (error) {        throw new Error("Falha ao deletar a planta: " + error)
+      }
+    
       setPlanToDelete(null)
     }
   }
@@ -129,11 +160,19 @@ export default function PlansPage() {
     })
   }
 
-  const handleWithdrawalConfirm = (amount: number, iban: string) => {
+  const handleWithdrawalConfirm = async(amount: number, iban: string) => {
+    try {
+      const response = await solicitarSaque();
+      const data = response.data;
+    }
+    catch (error) {
+      throw new Error("Falha ao solicitar saque: " + error)
+    }
     toast({
       title: "Withdrawal Initiated",
       description: `$${amount.toLocaleString()} will be transferred to ${iban.slice(-4)}... within 2-3 business days.`,
     })
+
   }
 
   return (

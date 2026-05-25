@@ -8,6 +8,7 @@ Estrutura real:
   O id de arquiteto/cliente é o mesmo que usuario.id (auth.uid())
 """
 
+from fastapi import HTTPException
 import stripe
 import os
 from models.db import get_supabase_admin
@@ -221,3 +222,52 @@ async def verificar_sessao(session_id: str):
         "stripe_status": session.payment_status,
         "compra":        compra_res.data,
     }
+
+async def solicitar_saque(arquiteto_id: dict):
+    Arquiteto_id = arquiteto_id["id"]
+
+  
+    arq = (
+        supabase.table("arquiteto")
+        .select("saldo_disponivel","IBAN")
+        .eq("id", Arquiteto_id)
+        .single()
+        .execute()
+    )
+
+    saldo = arq.data["saldo_disponivel"]
+    iban = arq.data["IBAN"]
+    if saldo <= 0:
+        raise HTTPException(status_code=400, detail="Sem saldo para sacar")
+
+  
+    pedido_existente = (
+        supabase.table("Withdrawal_request")
+        .select("id")
+        .eq("arquiteto_id", Arquiteto_id)
+        .eq("estado", "pending")
+        .execute()
+    )
+
+    if pedido_existente.data:
+        raise HTTPException(status_code=400, detail="Já existe um pedido de saque pendente")
+
+    #
+    supabase.table("Withdrawal_request").insert({
+        "arquiteto_id": Arquiteto_id,
+        "valor": saldo,
+        "estado": "pending",
+        "IBAN": iban,
+    }).execute()
+
+    return {"mensagem": "Pedido de saque criado, aguarda aprovação", "valor": saldo}
+
+async def aprovar_transferencia(request_id: str):
+    req = request_id
+
+    supabase.table("Withdrawal_request").update({
+        "estado": "completed",
+    }).eq("id", req["id"]).execute()
+
+    return {"mensagem":  "Pedido de saque aprovado."}
+    

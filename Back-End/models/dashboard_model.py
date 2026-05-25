@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 from typing import List, Optional
 from models.db import get_supabase_admin
 
+
 async def all_plants():
     supabase = get_supabase_admin()
     response = supabase.table("planta").select("*").execute()
@@ -16,6 +17,31 @@ async def DeletePlants(plant_id: str):
     response = supabase.table("planta").delete().eq("id", plant_id).execute()
     return JSONResponse(status_code=200, content={"message": "Planta deletada", "data": response.data})
 
+async def ManagePlants(user: dict):
+    supabase = get_supabase_admin()
+    response = supabase.from_("dashboard_gestao_plantas").select("*").eq("arquiteto_id", user["id"]).execute()
+    if not response.data:
+        return {
+            "arquiteto_id":       user["id"],
+            "saldo_disponivel":   0,
+            "total_plantas":      0,
+            "plantas_ativas":     0,
+            "plantas_inativas":   0,
+            "plantas_vendidas":   0,
+            "receita_total":      0,
+            "progresso_elite_pct": 0,
+            "faltam_para_elite":  10000,
+        }
+
+    return response.data[0]
+    
+    return response.data
+
+async def MyPlants(user: dict):
+    supabase = get_supabase_admin()
+    response = supabase.table("planta").select("*").eq("dono", user["id"]).execute()
+    
+    return response.data
 
 async def upload_plants(
     user_id:      str,
@@ -138,10 +164,7 @@ async def upload_plants(
 
 # ── Endpoint para download após compra ───────────────────────────────────────
 async def get_download_urls(plant_id: str, buyer_user_id: str):
-    """
-    Gera URLs assinadas (válidas por 1 hora) apenas para compradores confirmados.
-    Chame este endpoint depois de verificar a compra no teu sistema de pagamentos.
-    """
+  
     supabase = get_supabase_admin()
 
     # 1. Verificar se a compra existe e está confirmada

@@ -1,6 +1,6 @@
 from fastapi import APIRouter , Depends , UploadFile , File , Form
 from middlewares.auth import get_current_user
-from models.dashboard_model import all_plants , upload_plants , DeletePlants
+from models.dashboard_model import all_plants , upload_plants , DeletePlants , ManagePlants , MyPlants
 from typing import List
 dashboard_router =  APIRouter(tags=["dashboard"])
 
@@ -8,6 +8,17 @@ dashboard_router =  APIRouter(tags=["dashboard"])
 async def LoadDashboard(user = Depends(get_current_user)):
 
     return await  all_plants()
+
+@dashboard_router.get("/manage")
+async def LoadManagePlants(user: dict = Depends(get_current_user)):
+  
+    return await ManagePlants(user)
+
+@dashboard_router.get("/myplants")
+async def LoadMyPlants(user: dict = Depends(get_current_user)):
+    return await MyPlants(user)
+
+
 
 @dashboard_router.post("/{user_id}")
 async def SavePlants(

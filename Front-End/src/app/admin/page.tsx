@@ -2,42 +2,92 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Users, AlertCircle, CreditCard, TrendingUp } from "lucide-react"
 import Link from "next/link"
-
+import { useAuth } from "@/Context/AuthContext"
+import {useEffect, useState} from "react"
 export default function AdminDashboard() {
-  const stats = [
-    {
-      title: "Total de Usuarios da Plataforma",
-      value: "1,234",
-      description: "Usuarios registados na Plataforma",
-      icon: Users,
-      color: "text-blue-600",
-      href: "/admin/users",
-    },
-    {
-      title: "Saques pendentes",
-      value: "8",
-      description: "Aguardando pagamento",
-      icon: CreditCard,
-      color: "text-yellow-600",
-      href: "/admin/withdrawals",
-    },
-    {
-      title: "Abrir relatórios",
-      value: "12",
-      description: "Reclamações não analisadas",
-      icon: AlertCircle,
-      color: "text-red-600",
-      href: "/admin/reports",
-    },
-    {
-      title: "Receita da plataforma",
-      value: "$47.5K",
-      description: "Lucro da Platafomra",
-      icon: TrendingUp,
-      color: "text-green-600",
-      href: "/admin/withdrawals",
-    },
-  ]
+  
+const { LoadAdmingeral } = useAuth() as any 
+const [stats, setStats] = useState([
+  {
+    title: "Total de Usuarios da Plataforma",
+    value: "0",
+    description: "Usuarios registados na Plataforma",
+    icon: Users,
+    color: "text-blue-600",
+    href: "/admin/users",
+  },
+  {
+    title: "Saques pendentes",
+    value: "0",
+    description: "Aguardando pagamento",
+    icon: CreditCard,
+    color: "text-yellow-600",
+    href: "/admin/withdrawals",
+  },
+  {
+    title: "Abrir relatórios",
+    value: "0",
+    description: "Reclamações não analisadas",
+    icon: AlertCircle,
+    color: "text-red-600",
+    href: "/admin/reports",
+  },
+  {
+    title: "Receita da plataforma",
+    value: "$0",
+    description: "Lucro da Plataforma",
+    icon: TrendingUp,
+    color: "text-green-600",
+    href: "/admin/withdrawals",
+  },
+])
+
+useEffect(() => {
+  const loadData = async () => {
+    try {
+      const data = await LoadAdmingeral();
+      console.log("DATA ADMIN:", data);
+      setStats([
+        {
+          title: "Total de Usuarios da Plataforma",
+          value: data.total_usuarios?.toLocaleString() ?? "0",
+          description: "Usuarios registados na Plataforma",
+          icon: Users,
+          color: "text-blue-600",
+          href: "/admin/users",
+        },
+        {
+          title: "Saques pendentes",
+          value: String(data.saques_pendentes ?? 0),
+          description: "Aguardando pagamento",
+          icon: CreditCard,
+          color: "text-yellow-600",
+          href: "/admin/withdrawals",
+        },
+        {
+          title: "Abrir relatórios",
+          value: String(data.denuncias_pendentes ?? 0),
+          description: "Reclamações não analisadas",
+          icon: AlertCircle,
+          color: "text-red-600",
+          href: "/admin/reports",
+        },
+        {
+          title: "Receita da plataforma",
+          value: `$${(data.receita_plataforma / 1000).toFixed(1)}K`,
+          description: "Lucro da Plataforma",
+          icon: TrendingUp,
+          color: "text-green-600",
+          href: "/admin/withdrawals",
+        },
+      ])
+    } catch (error) {
+      console.error("Erro ao carregar dados do admin:", error);
+    }
+  }
+
+  loadData()
+}, [])
 
   return (
     <div className="flex-1 space-y-6 p-8">
