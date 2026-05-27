@@ -16,7 +16,7 @@ export default function Home() {
           </button>
           </Link>
 
-          <Link href={"/Develop/login"} className="text-sm text-muted-foreground hover:text-foreground">
+          <Link href={"/login"} className="text-sm text-muted-foreground hover:text-foreground">
             Login
           </Link>
           </nav>

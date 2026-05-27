@@ -16,6 +16,7 @@ import { PlanUploadDialog } from "./plan-upload-dialog"
 import { usePlans } from "@/Context/plans-context"
 import { PlanDetailModal } from "./plan-detail-modal"
 import { useAuth }         from "@/Context/AuthContext"
+import { RealtimeChat } from '@/components/realtime-chat'
 export function ArchitecturalPlans() {
  // const [plans, setPlans] = useState<Plan[]>([]);
   const [filter, setFilter] = useState<string>("All");
@@ -148,6 +149,10 @@ export function ArchitecturalPlans() {
                   <span className="text-muted-foreground">Casas de banho:</span> {plan.bathrooms}
                 </div>
               </div>
+              <div onClick={(e) => e.stopPropagation()}>
+  <RealtimeChat roomName={`plan-${plan.id}`} username={user?.name ?? 'Anónimo'} />
+</div>
+              
             </CardContent>
             <CardFooter className="flex justify-between">
               <div className="font-bold text-lg">KZ {plan.price} AOA</div>

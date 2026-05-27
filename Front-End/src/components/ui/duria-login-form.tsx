@@ -1,5 +1,9 @@
 'use client'
 
+import type React from "react"
+import { useRouter } from "next/navigation"
+import { Label } from "@/components/ui/label"
+import { useAuth } from "@/Context/AuthContext"
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -38,6 +42,10 @@ export function DuriaLoginForm() {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [apiError, setApiError] = useState('')
+    const router = useRouter()
+    const [error, setError] = useState<string>("")
+    const [loading, setLoading] = useState(false)
+    const { login } = useAuth() as any;
 
   // 2. Inicialização do React Hook Form com o resolver do Zod
   const form = useForm<LoginFormData>({
@@ -50,17 +58,20 @@ export function DuriaLoginForm() {
 
   // 3. Função de Submissão (Garante dados 100% validados aqui dentro)
   const onSubmit = async (data: LoginFormData) => {
+    setError("")
+    setLoading(true)
+
+    const email = data.email as string
+    const password = data.password as string
+
+
     setApiError('')
     setIsLoading(true)
 
     try {
       // Simulação da chamada de API (o corno não vai reclamar agora!)
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      // Os dados já chegam limpos e validados aqui pelo Zod
-      console.log('[v0] Login attempt:', data)
-      
-      // router.push('/dashboard')
+       await login(email, password); // - atualiza o user no contexto
+      router.push("/dashboard") // - redireciona para o dashboard;
     } catch (err) {
       setApiError('Falha no login. Por favor, verifique as suas credenciais.')
     } finally {

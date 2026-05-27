@@ -1,12 +1,11 @@
 'use client';
-import { createContext, useContext, useState, useEffect } from 'react';
-
-const AuthContext = createContext(null);
+import { useState, useEffect } from 'react';
+import { AuthContext } from './AuthContext';
 
 export function AuthProvider({ children }) {
-  const [user, setUser]       = useState(null);
+  const [user, setUser]   = useState(null);
   const [loading, setLoading] = useState(true);
-  const [plans, setPlans]     = useState([]);
+  const [plans, setPlans] = useState([]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -47,6 +46,14 @@ export function AuthProvider({ children }) {
     setPlans([]);
   };
 
+  const register = async (formData, tipo) => {
+    const endpoint = `http://localhost:5000/api/auth/register/${tipo}`;
+    const res  = await fetch(endpoint, { method: 'POST', body: formData });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Erro ao criar conta');
+    return data;
+  };
+
   const carregar = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -66,9 +73,7 @@ export function AuthProvider({ children }) {
         bedrooms:    p.quartos      ?? 0,
         bathrooms:   p.banheiros    ?? 0,
         featured:    p.destaque     ?? false,
-        dono:        p.dono,          // ← ADICIONAR
-
-        
+        dono:        p.dono,
       }));
       setPlans(mapped);
       return mapped;
@@ -78,66 +83,43 @@ export function AuthProvider({ children }) {
     }
   };
 
-
- const inserir = async ({
-  title, description, topology, category,
-  squareFeet, bedrooms, bathrooms, price,
-  files,      
-  imageFiles,  
-}) => {
-  const token = localStorage.getItem('token');
-  if (!user?.id) throw new Error('Utilizador não autenticado');
-
-  const formData = new FormData();
-  formData.append('title',       title);
-  formData.append('description', description ?? '');
-  formData.append('topology',    topology    ?? '');
-  formData.append('category',    category    ?? '');
-  formData.append('squareFeet',  squareFeet  ?? '');
-  formData.append('bedrooms',    bedrooms    ?? 0);
-  formData.append('bathrooms',   bathrooms   ?? 0);
-  formData.append('price',       price       ?? 0);
-
-  
-  files.forEach(f      => formData.append('projectFiles', f));
-  imageFiles.forEach(f => formData.append('imageFiles',   f));
-
-  const res = await fetch(`http://localhost:5000/api/dashboard/${user.id}`, {
-    method:  'POST',
-    headers: { Authorization: `Bearer ${token}` }, 
-    body:    formData,
-  });
-
-  if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.detail || 'Erro ao inserir planta');
-  }
-
-  const data = await res.json();
-  const nova = data.data?.[0];
-  if (nova) {
-    setPlans(prev => [...prev, {
-      id:          nova.id,
-      title:       nova.nome,
-      description: nova.descricao    ?? '',
-      squareFeet:  nova.dimensao     ?? 0,
-      price:       nova.orcamento    ?? 0,
-      image:       nova.imagens?.[0] ?? nova.plantas_arquivo ?? null,
-      category:    nova.categoria    ?? '',
-      bedrooms:    nova.quartos      ?? 0,
-      bathrooms:   nova.banheiros    ?? 0,
-      featured:    false,
-    }]);
-  }
-  return data;
-};
+  const inserir = async ({ title, description, topology, category, squareFeet, bedrooms, bathrooms, price, files, imageFiles }) => {
+    const token = localStorage.getItem('token');
+    if (!user?.id) throw new Error('Utilizador não autenticado');
+    const formData = new FormData();
+    formData.append('title',       title);
+    formData.append('description', description ?? '');
+    formData.append('topology',    topology    ?? '');
+    formData.append('category',    category    ?? '');
+    formData.append('squareFeet',  squareFeet  ?? '');
+    formData.append('bedrooms',    bedrooms    ?? 0);
+    formData.append('bathrooms',   bathrooms   ?? 0);
+    formData.append('price',       price       ?? 0);
+    files.forEach(f      => formData.append('projectFiles', f));
+    imageFiles.forEach(f => formData.append('imageFiles',   f));
+    const res = await fetch(`http://localhost:5000/api/dashboard/${user.id}`, {
+      method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: formData,
+    });
+    if (!res.ok) { const err = await res.json(); throw new Error(err.detail || 'Erro ao inserir planta'); }
+    const data = await res.json();
+    const nova = data.data?.[0];
+    if (nova) {
+      setPlans(prev => [...prev, {
+        id: nova.id, title: nova.nome, description: nova.descricao ?? '',
+        squareFeet: nova.dimensao ?? 0, price: nova.orcamento ?? 0,
+        image: nova.imagens?.[0] ?? nova.plantas_arquivo ?? null,
+        category: nova.categoria ?? '', bedrooms: nova.quartos ?? 0,
+        bathrooms: nova.banheiros ?? 0, featured: false,
+      }]);
+    }
+    return data;
+  };
 
   const deletar = async (plantId) => {
     const token = localStorage.getItem('token');
-    const res = await fetch(
-      `http://localhost:5000/api/dashboard/DeletarPlanta/${plantId}`,
-      { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } }
-    );
+    const res = await fetch(`http://localhost:5000/api/dashboard/DeletarPlanta/${plantId}`, {
+      method: 'DELETE', headers: { Authorization: `Bearer ${token}` },
+    });
     if (!res.ok) throw new Error('Erro ao deletar planta');
     setPlans(prev => prev.filter(p => p.id !== plantId));
     return res.json();
@@ -148,10 +130,11 @@ export function AuthProvider({ children }) {
     : null;
 
   return (
-    <AuthContext.Provider value={{ user: profile, rawUser: user, loading, plans, login, logout, carregar, inserir, deletar }}>
+    <AuthContext.Provider value={{
+      user: profile, rawUser: user, loading, plans,
+      login, logout, register, carregar, inserir, deletar,
+    }}>
       {children}
     </AuthContext.Provider>
   );
 }
-
-export const useAuth = () => useContext(AuthContext);
