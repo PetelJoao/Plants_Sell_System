@@ -30,53 +30,19 @@ import {
 import { MoreHorizontal, Shield, Ban } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/Context/AuthContext"
+
 interface User {
   id: number
-  name: string
+  nome: string
   email: string
-  role: "cliente" | "arquiteto" | "admin"
-  registeredDate: string
-  status: "Active" | "Suspended" | "Banned"
+  tipo: "cliente" | "arquiteto" | "administrador"
+  data_registro: string
+  estado: "Activo" | "Suspenso" | "Banido"
   avatar: string
 }
 
 const initialUsers: User[] = [
-  {
-    id: 1,
-    name: "João Silva",
-    email: "joao@example.com",
-    role: "arquiteto",
-    registeredDate: "2024-01-15",
-    status: "Active",
-    avatar: "JS",
-  },
-  {
-    id: 2,
-    name: "Maria Santos",
-    email: "maria@example.com",
-    role: "cliente",
-    registeredDate: "2024-02-20",
-    status: "Active",
-    avatar: "MS",
-  },
-  {
-    id: 3,
-    name: "Carlos Costa",
-    email: "carlos@example.com",
-    role: "arquiteto",
-    registeredDate: "2024-01-10",
-    status: "Suspended",
-    avatar: "CC",
-  },
-  {
-    id: 4,
-    name: "Ana Oliveira",
-    email: "ana@example.com",
-    role: "cliente",
-    registeredDate: "2024-03-05",
-    status: "Banned",
-    avatar: "AO",
-  },
+
 ]
 
 export default function UsersPage() {
@@ -84,10 +50,10 @@ export default function UsersPage() {
   const { CarregarUsuarios , SuspenderUser , BanUser } = useAuth() as any 
   const [users, setUsers] = useState<User[]>(initialUsers)
   const [searchQuery, setSearchQuery] = useState("")
-  const [roleFilter, setRoleFilter] = useState<"All" | "arquiteto" | "cliente" | "admin">("All")
-  const [statusFilter, setStatusFilter] = useState<"All" | "Active" | "Suspended" | "Banned">("All")
+  const [roleFilter, setRoleFilter] = useState<"Todos" | "arquiteto" | "cliente" | "administrador">("Todos")
+  const [statusFilter, setStatusFilter] = useState<"Todos" | "Activo" | "Suspenso" | "Banido">("Todos")
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
-  const [actionType, setActionType] = useState<"suspend" | "ban" | null>(null)
+  const [actionType, setActionType] = useState<"suspender" | "banir" | null>(null)
   const [suspendDialogOpen, setSuspendDialogOpen] = useState(false)
   const [banDialogOpen, setBanDialogOpen] = useState(false)
 
@@ -105,23 +71,23 @@ export default function UsersPage() {
   const filteredUsers = useMemo(() => {
     return users.filter((user) => {
       const matchesSearch =
-        user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.nome?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         user.email?.toLowerCase().includes(searchQuery.toLowerCase())
-      const matchesRole = roleFilter === "All" || user.role === roleFilter
-      const matchesStatus = statusFilter === "All" || user.status === statusFilter
+      const matchesRole = roleFilter === "Todos" || user.tipo === roleFilter
+      const matchesStatus = statusFilter === "Todos" || user.estado === statusFilter
       return matchesSearch && matchesRole && matchesStatus
     })
   }, [users, searchQuery, roleFilter, statusFilter])
 
   const handleSuspend = (user: User) => {
     setSelectedUser(user)
-    setActionType("suspend")
+    setActionType("suspender")
     setSuspendDialogOpen(true)
   }
 
   const handleBan = (user: User) => {
     setSelectedUser(user)
-    setActionType("ban")
+    setActionType("banir")
     setBanDialogOpen(true)
   }
 
@@ -131,18 +97,18 @@ export default function UsersPage() {
         await SuspenderUser(selectedUser.id)
           
         setUsers((prev) =>
-          prev.map((u) => (u.id === selectedUser.id ? { ...u, status: "Suspended" } : u))
+          prev.map((u) => (u.id === selectedUser.id ? { ...u, status: "Suspenso" } : u))
         )
         toast({
-          title: "User Suspended",
-          description: `${selectedUser.name} has been suspended.`,
+          title: "Usuario Suspenso",
+          description: `${selectedUser.nome}Foi Suspenso.`,
         })
         
       }
       catch(err){
         toast({
-          title: "Error",
-          description: `Failed to suspend ${selectedUser.name}. Please try again.`,
+          title: "Erro",
+          description: `Falha para suspender ${selectedUser.nome}.Por favor tente novamente.`,
           variant: "destructive",
         })
       }
@@ -157,18 +123,18 @@ export default function UsersPage() {
         await BanUser(selectedUser.id)
           
          setUsers((prev) =>
-        prev.map((u) => (u.id === selectedUser.id ? { ...u, status: "Banned" } : u))
+        prev.map((u) => (u.id === selectedUser.id ? { ...u, status: "Banido" } : u))
       )
          toast({
-        title: "User Banned",
-        description: `${selectedUser.name} has been permanently banned.`,
+        title: "Usuario Banido",
+        description: `${selectedUser.nome}Foi permanentemente Banido da plataforma.`,
       })
         
       }
       catch(err){
         toast({
           title: "Error",
-          description: `Failed to Ban ${selectedUser.name}. Please try again.`,
+          description: `Falha ao Banir ${selectedUser.nome}. Por favro tente Novamente.`,
           variant: "destructive",
         })
       }
@@ -179,13 +145,13 @@ export default function UsersPage() {
     }
   
 
-  const getStatusColor = (status: User["status"]) => {
+  const getStatusColor = (status: User["estado"]) => {
     switch (status) {
-      case "Active":
+      case "Activo":
         return "bg-green-50 text-green-700 border-green-200"
-      case "Suspended":
+      case "Suspenso":
         return "bg-yellow-50 text-yellow-700 border-yellow-200"
-      case "Banned":
+      case "Banido":
         return "bg-red-50 text-red-700 border-red-200"
       default:
         return "bg-slate-50 text-slate-700 border-slate-200"
@@ -195,8 +161,8 @@ export default function UsersPage() {
   return (
     <div className="flex-1 space-y-6 p-8">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Users Management</h1>
-        <p className="text-muted-foreground">Manage platform users and their access levels</p>
+        <h1 className="text-3xl font-bold tracking-tight">Gestão de Usuarios</h1>
+        <p className="text-muted-foreground">Gerencie os usuarios da plataforma</p>
       </div>
 
       <Card>
@@ -204,14 +170,14 @@ export default function UsersPage() {
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="flex-1">
               <Input
-                placeholder="Search by name or email..."
+                placeholder="Pesquise pelo nome ou pelo email"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="max-w-sm"
               />
             </div>
             <div className="flex gap-2">
-              {(["All", "arquiteto", "cliente", "admin"] as const).map((filter) => (
+              {(["Todos", "arquiteto", "cliente", "administrador"] as const).map((filter) => (
                 <Button
                   key={filter}
                   variant={roleFilter === filter ? "default" : "outline"}
@@ -224,7 +190,7 @@ export default function UsersPage() {
               ))}
             </div>
             <div className="flex gap-2">
-              {(["All", "Active", "Suspended", "Banned"] as const).map((filter) => (
+              {(["Todos", "Activo", "Suspenso", "Banido"] as const).map((filter) => (
                 <Button
                   key={filter}
                   variant={statusFilter === filter ? "default" : "outline"}
@@ -244,12 +210,12 @@ export default function UsersPage() {
             <Table>
               <TableHeader>
                 <TableRow className="border-slate-200">
-                  <TableHead className="font-semibold">Name</TableHead>
+                  <TableHead className="font-semibold">Nome</TableHead>
                   <TableHead className="font-semibold">Email</TableHead>
-                  <TableHead className="font-semibold">Role</TableHead>
-                  <TableHead className="font-semibold">Registered</TableHead>
-                  <TableHead className="font-semibold">Status</TableHead>
-                  <TableHead className="text-right font-semibold">Actions</TableHead>
+                  <TableHead className="font-semibold">Tipo</TableHead>
+                  <TableHead className="font-semibold">Registrado</TableHead>
+                  <TableHead className="font-semibold">Estado</TableHead>
+                  <TableHead className="text-right font-semibold">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -260,15 +226,15 @@ export default function UsersPage() {
                         <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-semibold">
                           {user.avatar}
                         </div>
-                        {user.name}
+                        {user.nome}
                       </div>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">{user.email}</TableCell>
-                    <TableCell>{user.role}</TableCell>
-                    <TableCell className="text-sm">{user.registeredDate}</TableCell>
+                    <TableCell>{user.tipo}</TableCell>
+                    <TableCell className="text-sm">{user.data_registro}</TableCell>
                     <TableCell>
-                      <Badge variant="outline" className={getStatusColor(user.status)}>
-                        {user.status}
+                      <Badge variant="outline" className={getStatusColor(user.estado)}>
+                        {user.estado}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
@@ -279,13 +245,13 @@ export default function UsersPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          {user.status !== "Suspended" && (
+                          {user.estado !== "Suspenso" && (
                             <DropdownMenuItem onClick={() => handleSuspend(user)}>
                               <Shield className="mr-2 h-4 w-4" />
-                              Suspend
+                              Suspenso
                             </DropdownMenuItem>
                           )}
-                          {user.status !== "Banned" && (
+                          {user.estado !== "Banido" && (
                             <DropdownMenuItem
                               onClick={() => handleBan(user)}
                               className="text-destructive focus:text-destructive"
@@ -308,14 +274,14 @@ export default function UsersPage() {
       {/* Suspend Dialog */}
       <AlertDialog open={suspendDialogOpen} onOpenChange={setSuspendDialogOpen}>
         <AlertDialogContent>
-          <AlertDialogTitle>Suspend User</AlertDialogTitle>
+          <AlertDialogTitle>Suspender usuário</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to suspend {selectedUser?.name}? They will temporarily lose access to the platform.
+          Tem certeza de que deseja suspender {selectedUser?.nome}? Eles perderão temporariamente o acesso à plataforma.
           </AlertDialogDescription>
           <div className="flex gap-2 justify-end">
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={confirmSuspend} className="bg-yellow-600 hover:bg-yellow-700">
-              Suspend
+              Suspender
             </AlertDialogAction>
           </div>
         </AlertDialogContent>
@@ -324,17 +290,17 @@ export default function UsersPage() {
       {/* Ban Dialog */}
       <AlertDialog open={banDialogOpen} onOpenChange={setBanDialogOpen}>
         <AlertDialogContent>
-          <AlertDialogTitle>Ban User</AlertDialogTitle>
+          <AlertDialogTitle>Banir usuário</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to permanently ban {selectedUser?.name}? This action is irreversible.
+            Tem certeza de que deseja banir permanentemente {selectedUser?.nome}? Essa ação é irreversível.
           </AlertDialogDescription>
           <div className="flex gap-2 justify-end">
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmBan}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Ban Permanently
+              Banir Permanentemente
             </AlertDialogAction>
           </div>
         </AlertDialogContent>

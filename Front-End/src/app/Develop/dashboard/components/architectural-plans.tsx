@@ -17,13 +17,13 @@ import { usePlans } from "@/Context/plans-context"
 import { PlanDetailModal } from "./plan-detail-modal"
 import { useAuth } from "@/Context/AuthContext"
 export function ArchitecturalPlans() {
-  const [plans, setPlans] = useState<Plan[]>([]);
-  const [filter, setFilter] = useState<string>("All");
-  const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null)
-  const [detailModalOpen, setDetailModalOpen] = useState(false)
-  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false)
-  const { addToOrder } = useOrder() 
-  const { toast } = useToast()
+const [plans, setPlans] = useState<Plan[]>([]);
+const [filter, setFilter] = useState<string>("All");
+const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null)
+const [detailModalOpen, setDetailModalOpen] = useState(false)
+const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false)
+const { addToOrder } = useOrder() 
+const { toast } = useToast()
  // const { plans, addPlan } = usePlans()
   const { user, loading,  carregar, deletar } = useAuth() as any
 
@@ -45,8 +45,6 @@ useEffect(() => {
   
   const handlePlanAdded = (newPlan: Plan) => {
     setPlans((prevPlans) => [...prevPlans, newPlan])
-
-    
   }
    const handleAddToOrder = (plan: Plan) => {
     addToOrder(plan)

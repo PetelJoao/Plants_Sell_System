@@ -1,4 +1,4 @@
-import DashboardLayout from "@/app/dashboard/components/dashboard-layout"
+import DashboardLayout from "@/app/Develop/dashboard/components/dashboard-layout"
 import { ArchitecturalPlans } from "@/app/dashboard/components/architectural-plans"
 import { useAuth } from "@/Context/AuthContext"
 

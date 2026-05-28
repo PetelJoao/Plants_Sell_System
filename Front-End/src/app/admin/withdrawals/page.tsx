@@ -25,50 +25,31 @@ import { useToast } from "@/hooks/use-toast"
 
 interface Withdrawal {
   id: number
-  architectName: string
-  architectAvatar: string
+  Arquiteto_nome: string
+  Arquiteto_avatar: string
   iban: string
-  amount: number
+  Quantidade: number
   requestDate: string
-  status: "Pending" | "Paid"
-  proofUrl?: string
+  estado: "Pendente" | "Pago"
+  ComprovanteUrl?: string
 }
 
 const initialWithdrawals: Withdrawal[] = [
   {
     id: 1,
-    architectName: "João Silva",
-    architectAvatar: "JS",
+     Arquiteto_nome: "João Silva",
+     Arquiteto_avatar: "JS",
     iban: "PT50 **** **** 1234",
-    amount: 5000,
+    Quantidade: 5000,
     requestDate: "2024-03-10",
-    status: "Pending",
-  },
-  {
-    id: 2,
-    architectName: "Maria Santos",
-    architectAvatar: "MS",
-    iban: "PT50 **** **** 5678",
-    amount: 3500,
-    requestDate: "2024-03-08",
-    status: "Paid",
-    proofUrl: "/proof-001.pdf",
-  },
-  {
-    id: 3,
-    architectName: "Carlos Costa",
-    architectAvatar: "CC",
-    iban: "PT50 **** **** 9012",
-    amount: 7200,
-    requestDate: "2024-03-05",
-    status: "Pending",
+    estado: "Pendente",
   },
 ]
 
 export default function WithdrawalsPage() {
   const { toast } = useToast()
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>(initialWithdrawals)
-  const [statusFilter, setStatusFilter] = useState<"All" | "Pending" | "Paid">("All")
+  const [statusFilter, setStatusFilter] = useState<"Todos" | "Pendente" | "Pago">("Todos")
   const [searchQuery, setSearchQuery] = useState("")
   const [expandedId, setExpandedId] = useState<number | null>(null)
   const [sheetOpen, setSheetOpen] = useState(false)
@@ -77,8 +58,8 @@ export default function WithdrawalsPage() {
 
   const filteredWithdrawals = useMemo(() => {
     return withdrawals.filter((w) => {
-      const matchesSearch = w.architectName.toLowerCase().includes(searchQuery.toLowerCase())
-      const matchesStatus = statusFilter === "All" || w.status === statusFilter
+      const matchesSearch = w.Arquiteto_nome.toLowerCase().includes(searchQuery.toLowerCase())
+      const matchesStatus = statusFilter === "Todos" || w.estado === statusFilter
       return matchesSearch && matchesStatus
     })
   }, [withdrawals, searchQuery, statusFilter])
@@ -93,21 +74,21 @@ export default function WithdrawalsPage() {
       setWithdrawals((prev) =>
         prev.map((w) =>
           w.id === selectedWithdrawal.id
-            ? { ...w, status: "Paid", proofUrl: URL.createObjectURL(uploadedFile) }
+            ? { ...w, status: "Pago", proofUrl: URL.createObjectURL(uploadedFile) }
             : w
         )
       )
       toast({
-        title: "Withdrawal Marked as Paid",
-        description: `${selectedWithdrawal.architectName}'s withdrawal has been processed.`,
+        title: "Saque marcado como pago.",
+        description: `${selectedWithdrawal.Arquiteto_nome}O pedido de saque foi processado.`,
       })
       setSheetOpen(false)
       setSelectedWithdrawal(null)
       setUploadedFile(null)
     } else {
       toast({
-        title: "Error",
-        description: "Please upload a payment proof file.",
+        title: "Erro",
+        description: "Por favor, envie um comprovante de pagamento.",
         variant: "destructive",
       })
     }
@@ -116,8 +97,8 @@ export default function WithdrawalsPage() {
   return (
     <div className="flex-1 space-y-6 p-8">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Withdrawals Management</h1>
-        <p className="text-muted-foreground">Manage withdrawal requests and payment proofs</p>
+        <h1 className="text-3xl font-bold tracking-tight">Gerenciamento de Saques</h1>
+        <p className="text-muted-foreground">Gerenciar solicitações de saque e comprovantes de pagamento</p>
       </div>
 
       <Card>
@@ -125,14 +106,14 @@ export default function WithdrawalsPage() {
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="flex-1">
               <Input
-                placeholder="Search by architect name..."
+                placeholder="Pesquisar por nome do arquiteto.."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="max-w-sm"
               />
             </div>
             <div className="flex gap-2">
-              {(["All", "Pending", "Paid"] as const).map((filter) => (
+              {(["Todos", "Pendente", "Pago"] as const).map((filter) => (
                 <Button
                   key={filter}
                   variant={statusFilter === filter ? "default" : "outline"}
@@ -153,12 +134,12 @@ export default function WithdrawalsPage() {
               <TableHeader>
                 <TableRow className="border-slate-200">
                   <TableHead className="font-semibold"></TableHead>
-                  <TableHead className="font-semibold">Architect</TableHead>
+                  <TableHead className="font-semibold">Arquiteto</TableHead>
                   <TableHead className="font-semibold">IBAN</TableHead>
-                  <TableHead className="font-semibold">Amount</TableHead>
-                  <TableHead className="font-semibold">Request Date</TableHead>
-                  <TableHead className="font-semibold">Status</TableHead>
-                  <TableHead className="text-right font-semibold">Actions</TableHead>
+                  <TableHead className="font-semibold">Quantia</TableHead>
+                  <TableHead className="font-semibold">Data da solicitação</TableHead>
+                  <TableHead className="font-semibold">Estado</TableHead>
+                  <TableHead className="text-right font-semibold">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -178,24 +159,24 @@ export default function WithdrawalsPage() {
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-semibold">
-                          {withdrawal.architectAvatar}
+                          {withdrawal.Arquiteto_avatar}
                         </div>
-                        {withdrawal.architectName}
+                        {withdrawal.Arquiteto_nome}
                       </div>
                     </TableCell>
                     <TableCell className="text-sm font-mono">{withdrawal.iban}</TableCell>
-                    <TableCell className="font-semibold">${withdrawal.amount.toLocaleString()}</TableCell>
+                    <TableCell className="font-semibold">${withdrawal.Quantidade.toLocaleString()}</TableCell>
                     <TableCell className="text-sm">{withdrawal.requestDate}</TableCell>
                     <TableCell>
                       <Badge
                         variant="outline"
                         className={
-                          withdrawal.status === "Paid"
+                          withdrawal.estado === "Pago"
                             ? "bg-green-50 text-green-700 border-green-200"
                             : "bg-yellow-50 text-yellow-700 border-yellow-200"
                         }
                       >
-                        {withdrawal.status}
+                        {withdrawal.estado}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
@@ -205,7 +186,7 @@ export default function WithdrawalsPage() {
                         onClick={() => handleManage(withdrawal)}
                         className="text-blue-600 hover:text-blue-700 border-blue-200"
                       >
-                        Manage
+                        Gerenciar
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -222,32 +203,32 @@ export default function WithdrawalsPage() {
           {selectedWithdrawal && (
             <>
               <SheetHeader>
-                <SheetTitle>Withdrawal Details</SheetTitle>
+                <SheetTitle>Detalhes do saque</SheetTitle>
                 <SheetDescription>
-                  Manage withdrawal request for {selectedWithdrawal.architectName}
+                  Gerenciar solicitação de saque para {selectedWithdrawal.Arquiteto_nome}
                 </SheetDescription>
               </SheetHeader>
 
-              <div className="space-y-6 py-6">
+              <div className="space-y-6 py-6 overflow-y-auto h-[calc(100vh-80px)]">
                 {/* Request Details */}
                 <div className="space-y-4 border-b border-slate-200 pb-6">
-                  <h3 className="font-semibold text-foreground">Request Information</h3>
+                  <h3 className="font-semibold text-foreground">Solicitar informações</h3>
                   <div className="grid gap-4">
                     <div>
-                      <p className="text-sm text-muted-foreground">Architect Name</p>
-                      <p className="font-medium">{selectedWithdrawal.architectName}</p>
+                      <p className="text-sm text-muted-foreground">Nome do Arquiteto</p>
+                      <p className="font-medium">{selectedWithdrawal.Arquiteto_nome}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">IBAN (Full)</p>
-                      <p className="font-medium font-mono text-sm">PT50 1234 1234 1234 1234</p>
+                      <p className="text-sm text-muted-foreground">IBAN (Completo)</p>
+                      <p className="font-medium font-mono text-sm">AO.006.0000.1234.1234.1234</p>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <p className="text-sm text-muted-foreground">Amount</p>
-                        <p className="font-semibold text-lg">${selectedWithdrawal.amount.toLocaleString()}</p>
+                        <p className="text-sm text-muted-foreground">Quantidade</p>
+                        <p className="font-semibold text-lg">${selectedWithdrawal.Quantidade.toLocaleString()}</p>
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Request Date</p>
+                        <p className="text-sm text-muted-foreground">Data da solicitação</p>
                         <p className="font-medium">{selectedWithdrawal.requestDate}</p>
                       </div>
                     </div>
@@ -256,20 +237,20 @@ export default function WithdrawalsPage() {
 
                 {/* Payment Proof Upload */}
                 <div className="space-y-4">
-                  <h3 className="font-semibold text-foreground">Payment Proof</h3>
+                  <h3 className="font-semibold text-foreground">Comprovante de pagamento</h3>
 
-                  {selectedWithdrawal.status === "Paid" && selectedWithdrawal.proofUrl ? (
+                  {selectedWithdrawal.estado === "Pago" && selectedWithdrawal.ComprovanteUrl ? (
                     <div className="border border-slate-200 rounded-lg p-4 space-y-3">
                       <div className="flex items-center gap-2">
                         <Download className="h-4 w-4 text-blue-600" />
-                        <span className="text-sm font-medium">Proof Document</span>
+                        <span className="text-sm font-medium">Documento comprovativo</span>
                       </div>
                       <Button
                         variant="outline"
                         size="sm"
                         className="w-full text-blue-600 hover:text-blue-700 border-blue-200"
                       >
-                        Download Proof
+                        Baixar comprovante
                       </Button>
                     </div>
                   ) : (
@@ -287,14 +268,14 @@ export default function WithdrawalsPage() {
                       >
                         <Upload className="h-6 w-6 text-muted-foreground" />
                         <div className="text-sm">
-                          <span className="font-medium text-blue-600 hover:text-blue-700">Upload proof</span>
-                          <span className="text-muted-foreground"> or drag and drop</span>
+                          <span className="font-medium text-blue-600 hover:text-blue-700">Carregar comprovante</span>
+                          <span className="text-muted-foreground"> ou arraste e solte</span>
                         </div>
-                        <p className="text-xs text-muted-foreground">PDF or image (max 10MB)</p>
+                        <p className="text-xs text-muted-foreground">PDF ou image (max 10MB)</p>
                       </label>
                       {uploadedFile && (
                         <div className="text-sm text-green-600 font-medium">
-                          File selected: {uploadedFile.name}
+                          Ficheiro Selecionado: {uploadedFile.name}
                         </div>
                       )}
                     </div>
@@ -302,21 +283,21 @@ export default function WithdrawalsPage() {
                 </div>
 
                 {/* Actions */}
-                {selectedWithdrawal.status === "Pending" && (
+                {selectedWithdrawal.estado === "Pendente" && (
                   <div className="flex gap-2 pt-6 border-t border-slate-200">
                     <Button
                       variant="outline"
                       className="flex-1"
                       onClick={() => setSheetOpen(false)}
                     >
-                      Cancel
+                      Cancelar
                     </Button>
                     <Button
                       className="flex-1 bg-blue-500 hover:bg-blue-600"
                       onClick={handleMarkAsPaid}
                       disabled={!uploadedFile}
                     >
-                      Mark as Paid
+                      Marcar como Pago
                     </Button>
                   </div>
                 )}

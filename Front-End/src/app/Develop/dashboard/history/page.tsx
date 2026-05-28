@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
-import DashboardLayout from "@/app/dashboard/components/dashboard-layout"
+import DashboardLayout from "@/app/Develop/dashboard/components/dashboard-layout"
 import Image from "next/image"
 import HousePic from "@/assets/images/Casa.jpeg"
 import Porshe from "@/assets/images/Porsche.jpeg"

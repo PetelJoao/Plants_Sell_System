@@ -91,10 +91,11 @@ export function AuthProvider({ children }) {
     const data = await response.json();
     const mapped =data.map(u => ({
       id: u.id,
-      name: u.nome,
+      nome: u.nome,
       email: u.email,
-      role: u.tipo,
-      status: u.estado,
+      tipo: u.tipo,
+      estado: u.estado,
+      //avatar:u.foto_pessoal,--Tem q estar a receber algo de genero Petel
     }))
 
     return mapped;

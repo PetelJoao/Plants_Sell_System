@@ -122,24 +122,24 @@ useEffect(() => {
 
       <Card className="border-slate-200">
         <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
-          <CardDescription>Common admin tasks</CardDescription>
+          <CardTitle>Ações rápidas</CardTitle>
+          <CardDescription>Tarefas administrativas:</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
             <Link href="/admin/users">
               <p className="text-sm font-medium text-blue-600 hover:text-blue-700 cursor-pointer">
-                Manage Users →
+              Gerenciar usuários →
               </p>
             </Link>
             <Link href="/admin/withdrawals">
               <p className="text-sm font-medium text-blue-600 hover:text-blue-700 cursor-pointer">
-                Process Withdrawals →
+               Processar Saques →
               </p>
             </Link>
             <Link href="/admin/reports">
               <p className="text-sm font-medium text-blue-600 hover:text-blue-700 cursor-pointer">
-                Review Reports →
+                Revisar denúncias →
               </p>
             </Link>
           </div>

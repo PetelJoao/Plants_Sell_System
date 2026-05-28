@@ -28,11 +28,11 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { DollarSign, FileText, Home, MoreHorizontal, Plus, Trash2, Edit, Eye, EyeOff, TrendingUp } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import {PlanUploadDialog} from "@/app/dashboard/components/plan-upload-dialog"
+import {PlanUploadDialog} from "@/app/Develop/dashboard/components/plan-upload-dialog"
 import { PlanEditDialog } from "@/components/plan-edit-dialog"
 import { RevenueGoalCard } from "@/components/revenue-goal-card"
 import { WithdrawalModal } from "@/components/withdrawal-modal"
-import DashboardLayout from "@/app/dashboard/components/dashboard-layout"
+import DashboardLayout from "@/app/Develop/dashboard/components/dashboard-layout"
 import { usePlans, type ArchitectPlan } from "@/Context/plans-context"
 import { useAuth } from "@/Context/AuthContext"
 
@@ -57,9 +57,6 @@ export default function PlansPage() {
     revenue: 0,
     active: 0,
     inactive: 0,
-    
-
-
   })
 
   // Filter and search plans
@@ -186,7 +183,7 @@ export default function PlansPage() {
         </div>
         <Button onClick={() => setUploadOpen(true)} className="bg-blue-500 hover:bg-blue-600">
           <Plus className="mr-2 h-4 w-4" />
-          Upload New Plan
+         Carregar Planta
         </Button>
       </div>
 

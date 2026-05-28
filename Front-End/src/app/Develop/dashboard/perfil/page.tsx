@@ -1,3 +1,4 @@
+"use client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -6,9 +7,12 @@ import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
-import DashboardLayout from "@/app/dashboard/components/dashboard-layout"
+import DashboardLayout from "@/app/Develop/dashboard/components/dashboard-layout"
+import { useAuth } from "@/Context/AuthContext"
+
 
 export default function Perfil() {
+  const { user, loading } = useAuth() as any;
   return (
     <DashboardLayout>
       <div className="flex flex-col gap-6 p-6 md:p-8">
@@ -34,7 +38,10 @@ export default function Perfil() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="first-name">Primeiro Nome</Label>
-                    <Input id="first-name" defaultValue="John" />
+                    {!loading  && (
+                              <Input id="first-name" defaultValue={user?.nome ?? ""} />
+                            )}
+                    
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="last-name">Ultimo Nome</Label>
@@ -43,7 +50,10 @@ export default function Perfil() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" defaultValue="john.doe@example.com" />
+                  {!loading && (
+                    <Input id="email" type="email" defaultValue={user?.email ?? ""} />
+                  )}
+                  
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="phone">Número de Telefone</Label>
