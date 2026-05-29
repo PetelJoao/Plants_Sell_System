@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useEffect,useMemo } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -21,6 +21,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet"
 import { ChevronDown, Upload, Download } from "lucide-react"
+import { useAuth} from "@/Context/AuthContext"
 import { useToast } from "@/hooks/use-toast"
 
 interface Withdrawal {
@@ -55,10 +56,22 @@ export default function WithdrawalsPage() {
   const [sheetOpen, setSheetOpen] = useState(false)
   const [selectedWithdrawal, setSelectedWithdrawal] = useState<Withdrawal | null>(null)
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
+  const { CarregarSaques , PagarSaque } = useAuth() as any 
+
+
+  useEffect(() => {
+    
+    const loadWithdrawals = async () => {
+      const data = await CarregarSaques()
+      console.log("Saques carregados:", data)
+      setWithdrawals(data)
+    }
+    loadWithdrawals()
+  },[])
 
   const filteredWithdrawals = useMemo(() => {
     return withdrawals.filter((w) => {
-      const matchesSearch = w.Arquiteto_nome.toLowerCase().includes(searchQuery.toLowerCase())
+      const matchesSearch = w.Arquiteto_nome?.toLowerCase().includes(searchQuery.toLowerCase())
       const matchesStatus = statusFilter === "Todos" || w.estado === statusFilter
       return matchesSearch && matchesStatus
     })
@@ -69,30 +82,31 @@ export default function WithdrawalsPage() {
     setSheetOpen(true)
   }
 
-  const handleMarkAsPaid = () => {
-    if (selectedWithdrawal && uploadedFile) {
-      setWithdrawals((prev) =>
-        prev.map((w) =>
-          w.id === selectedWithdrawal.id
-            ? { ...w, status: "Pago", proofUrl: URL.createObjectURL(uploadedFile) }
-            : w
-        )
-      )
-      toast({
-        title: "Saque marcado como pago.",
-        description: `${selectedWithdrawal.Arquiteto_nome}O pedido de saque foi processado.`,
-      })
-      setSheetOpen(false)
-      setSelectedWithdrawal(null)
-      setUploadedFile(null)
-    } else {
-      toast({
-        title: "Erro",
-        description: "Por favor, envie um comprovante de pagamento.",
-        variant: "destructive",
-      })
-    }
+  const handleMarkAsPaid = async () => {
+  if (!selectedWithdrawal || !uploadedFile) {
+    toast({ title: "Erro", description: "Por favor, envie um comprovante.", variant: "destructive" })
+    return
   }
+
+  const result = await PagarSaque(selectedWithdrawal.id, uploadedFile)
+
+  if (result) {
+    setWithdrawals(prev =>
+      prev.map(w =>
+        w.id === selectedWithdrawal.id
+          ? { ...w, estado: "Pago", ComprovanteUrl: result.comprovativo_url }
+          : w
+      )
+    )
+    toast({ title: "Saque marcado como pago.", description: `Pedido de ${selectedWithdrawal.Arquiteto_nome} processado.` })
+    setSheetOpen(false)
+    setSelectedWithdrawal(null)
+    setUploadedFile(null)
+  } else {
+    toast({ title: "Erro", description: "Falha ao processar pagamento.", variant: "destructive" })
+  }
+}
+
 
   return (
     <div className="flex-1 space-y-6 p-8">
@@ -220,7 +234,7 @@ export default function WithdrawalsPage() {
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">IBAN (Completo)</p>
-                      <p className="font-medium font-mono text-sm">AO.006.0000.1234.1234.1234</p>
+                      <p className="font-medium font-mono text-sm">AO.006.{selectedWithdrawal.iban}</p>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>

@@ -50,7 +50,7 @@ export default function PlansPage() {
     Object.fromEntries(plans.map((p) => [p.id, true]))
   )
   const [withdrawalOpen, setWithdrawalOpen] = useState(false)
-  const  {GerenciarPlantas , MinhasPlantas , deletar , solicitarSaque}  = useAuth() as any
+  const  {GerenciarPlantas , MinhasPlantas , deletar , solicitarSaque , loading}  = useAuth() as any
   const [stats, setStats] = useState({
     totalUploaded: 0,
     sold: 0,
@@ -126,11 +126,13 @@ export default function PlansPage() {
 
       try{
         await deletar(planToDelete.id)
+      
         deletePlan(planToDelete.id)
       setPlanStatuses((prev) => {
         const newStatuses = { ...prev }
         delete newStatuses[planToDelete.id]
         return newStatuses
+  
       })
       toast({
         title: "Plan Deleted",
@@ -159,7 +161,7 @@ export default function PlansPage() {
 
   const handleWithdrawalConfirm = async(amount: number, iban: string) => {
     try {
-      const response = await solicitarSaque();
+      const response = await solicitarSaque(amount);
       const data = response.data;
     }
     catch (error) {

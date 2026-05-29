@@ -179,7 +179,12 @@ const solicitarSaque = async (valor) => {
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ valor })
     });
-    if (!res.ok) throw new Error('Erro ao solicitar saque');
+    if (!res.ok) {
+
+      const err = await res.json()
+      console.log("Erro:", err.detail)  
+      throw new Error('Erro ao solicitar saque');
+    }
     const data = await res.json();
     return data;
   } catch (err) {
@@ -187,7 +192,59 @@ const solicitarSaque = async (valor) => {
     return null;
   }
 }
-  
+const CarregarSaques = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    const res = await fetch('http://localhost:5000/api/admin/withdrawals', {
+      headers: { 
+        Authorization: `Bearer ${token}`, 
+        'Content-Type': 'application/json' 
+      },
+    });
+
+    if (!res.ok) throw new Error('Erro ao carregar saques');
+
+    const data = await res.json();
+
+    const mapped = data.map(s => ({
+    id: s.id,
+    Arquiteto_nome: s.architectName,
+    Arquiteto_avatar: s.architectAvatar ?? "",
+    iban: s.iban,
+    Quantidade: s.amount,
+    requestDate: s.requestDate,
+    estado: s.status === "Paid" ? "Pago" : "Pendente",
+    ComprovanteUrl: s.proofUrl ?? undefined,
+  }));
+
+  return mapped;
+
+  } catch (err) {
+    console.error('Erro ao carregar saques:', err);
+    return null;
+  }
+};
+
+const PagarSaque = async (withdrawal_id, file) => {
+  try {
+    const token = localStorage.getItem('token');
+    const formData = new FormData();
+    formData.append('comprovativo', file);
+
+    const res = await fetch(`http://localhost:5000/api/admin/withdrawals/${withdrawal_id}/pagar`, {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    });
+
+    if (!res.ok) throw new Error('Erro ao marcar como pago');
+    return await res.json();
+  } catch (err) {
+    console.error('Erro ao marcar como pago:', err);
+    return null;
+  }
+};
+
   const carregar = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -276,7 +333,7 @@ const solicitarSaque = async (valor) => {
   const deletar = async (plantId) => {
     const token = localStorage.getItem('token');
     const res = await fetch(
-      `http://localhost:5000/api/dashboard/DeletarPlanta/${plantId}`,
+      `http://localhost:5000/api/dashboard/${plantId}`,
       { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } }
     );
     if (!res.ok) throw new Error('Erro ao deletar planta');
@@ -289,7 +346,7 @@ const solicitarSaque = async (valor) => {
     : null;
 
   return (
-    <AuthContext.Provider value={{ user: profile, rawUser: user, loading, plans, login, logout, carregar, inserir, deletar , CarregarUsuarios , SuspenderUser , BanUser, GerenciarPlantas , MinhasPlantas , solicitarSaque , LoadAdmingeral}}>
+    <AuthContext.Provider value={{ user: profile, rawUser: user, loading, plans, login, logout, carregar, inserir, deletar , CarregarUsuarios , SuspenderUser , BanUser, GerenciarPlantas , MinhasPlantas , solicitarSaque , LoadAdmingeral , CarregarSaques , PagarSaque}}>
       {children}
     </AuthContext.Provider>
   );

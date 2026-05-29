@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Depends
-from models.admin_model import AdminCarregarPlantas, AdminCarregarDenuncia , AdminDelPlant , AdminFinalizarDenuncia, AdminAlluser , BanUser, GetAdminDashboard , SuspenderUser
+from fastapi import APIRouter, Depends , UploadFile, File
+from models.admin_model import AdminCarregarPlantas, AdminCarregarDenuncia , AdminDelPlant , AdminFinalizarDenuncia, AdminAlluser , BanUser, GetAdminDashboard , SuspenderUser , GetAdminDashboardWithdrawals , MarcarSaqueComoPago
 from middlewares.auth import get_current_user
 admin_router = APIRouter(tags=["admin"])
 
@@ -12,6 +12,18 @@ async def LoadGeral():
 async def LoadPlants(user = Depends(get_current_user)):
 
     return await AdminCarregarPlantas()
+
+@admin_router.get("/withdrawals")
+async def LoadWithdrawals(user = Depends(get_current_user)):
+    return await GetAdminDashboardWithdrawals()
+
+@admin_router.put("/withdrawals/{withdrawal_id}/pagar")
+async def PagarWithdrawal(
+    withdrawal_id: str,
+    comprovativo: UploadFile = File(...),
+    user=Depends(get_current_user)
+):
+    return await MarcarSaqueComoPago(withdrawal_id, comprovativo)
 
 
 @admin_router.delete("/dashboard/{plant_id}")

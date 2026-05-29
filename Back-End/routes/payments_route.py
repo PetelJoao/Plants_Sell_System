@@ -199,8 +199,9 @@ async def get_minhas_compras(user=Depends(get_current_user)):
 # Made by Petel - 2026-05-24
 @router.put("/solicitar-saque")
 async def solicitar_saque_route(user: dict = Depends(get_current_user)):
-
+    
         return await solicitar_saque(arquiteto_id=user["id"])
+
 
 
 @router.put("/aprovar-saque")

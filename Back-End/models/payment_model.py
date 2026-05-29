@@ -223,8 +223,8 @@ async def verificar_sessao(session_id: str):
         "compra":        compra_res.data,
     }
 
-async def solicitar_saque(arquiteto_id: dict):
-    Arquiteto_id = arquiteto_id["id"]
+async def solicitar_saque(arquiteto_id: str):
+    Arquiteto_id = arquiteto_id
 
   
     arq = (
@@ -262,12 +262,3 @@ async def solicitar_saque(arquiteto_id: dict):
 
     return {"mensagem": "Pedido de saque criado, aguarda aprovação", "valor": saldo}
 
-async def aprovar_transferencia(request_id: str):
-    req = request_id
-
-    supabase.table("Withdrawal_request").update({
-        "estado": "completed",
-    }).eq("id", req["id"]).execute()
-
-    return {"mensagem":  "Pedido de saque aprovado."}
-    
