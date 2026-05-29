@@ -22,66 +22,43 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog"
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { AlertCircle } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
 interface Report {
   id: number
-  reporterName: string
-  reporterAvatar: string
-  reportedName: string
-  reportedType: "User" | "Content"
-  category: "Inappropriate content" | "Fraud" | "Spam" | "Other"
-  description: string
-  dateSubmitted: string
-  status: "Open" | "Under Review" | "Resolved"
-  notes?: string
+  Nome_denuncia: string
+  Denunciador_avatar: string
+  Denunciado: string
+  Tipo_denuncia: string
+  categoria: string
+  descricao: string
+  data: string
+  estado: "Aberto" | "Sob Revisão" | "Resolvido"
+  notas?: string
 }
 
 const initialReports: Report[] = [
   {
     id: 1,
-    reporterName: "Alice Johnson",
-    reporterAvatar: "AJ",
-    reportedName: "Suspicious User #123",
-    reportedType: "User",
-    category: "Fraud",
-    description:
-      "This user is selling fake architectural plans with watermarks. Multiple customers have complained about quality.",
-    dateSubmitted: "2024-03-12",
-    status: "Open",
-  },
-  {
-    id: 2,
-    reporterName: "Bob Wilson",
-    reporterAvatar: "BW",
-    reportedName: "Plan #456",
-    reportedType: "Content",
-    category: "Inappropriate content",
-    description: "The uploaded plan contains offensive images and is not suitable for the platform.",
-    dateSubmitted: "2024-03-10",
-    status: "Under Review",
-    notes: "Content has been flagged. Waiting for architect response.",
-  },
-  {
-    id: 3,
-    reporterName: "Carol Davis",
-    reporterAvatar: "CD",
-    reportedName: "Marketing User",
-    reportedType: "User",
-    category: "Spam",
-    description: "User is posting spam links in comments and messages.",
-    dateSubmitted: "2024-03-08",
-    status: "Resolved",
-    notes: "User has been suspended.",
+    Nome_denuncia: "Alice Johnson",
+    Denunciador_avatar: "AJ",
+    Denunciado: "Suspicious User #123",
+    Tipo_denuncia: "Usuario",
+    categoria: "Fraude",
+    descricao:
+      "Este usuário está vendendo plantas arquitetônicas falsas com marcas d'água. Vários clientes reclamaram da qualidade.",
+    data: "2024-03-12",
+    estado: "Aberto",
   },
 ]
 
 export default function ReportsPage() {
   const { toast } = useToast()
   const [reports, setReports] = useState<Report[]>(initialReports)
-  const [statusFilter, setStatusFilter] = useState<"All" | "Open" | "Under Review" | "Resolved">(
-    "All"
+  const [statusFilter, setStatusFilter] = useState<"Todos" | "Aberto" | "Sob Revisão" | "Resolvido">(
+    "Todos"
   )
   const [categoryFilter, setCategoryFilter] = useState<"All" | string>("All")
   const [searchQuery, setSearchQuery] = useState("")
@@ -89,26 +66,26 @@ export default function ReportsPage() {
   const [selectedReport, setSelectedReport] = useState<Report | null>(null)
   const [adminNotes, setAdminNotes] = useState("")
 
-  const categories = ["All", "Inappropriate content", "Fraud", "Spam", "Other"]
+  const categories = ["Todos", "Conteúdo Inapropriado", "Fraude", "Spam", "Outro"]
 
   const filteredReports = useMemo(() => {
     return reports.filter((report) => {
       const matchesSearch =
-        report.reporterName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        report.reportedName.toLowerCase().includes(searchQuery.toLowerCase())
-      const matchesStatus = statusFilter === "All" || report.status === statusFilter
-      const matchesCategory = categoryFilter === "All" || report.category === categoryFilter
+        report.Nome_denuncia.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        report.Denunciado.toLowerCase().includes(searchQuery.toLowerCase())
+      const matchesStatus = statusFilter === "Todos" || report.estado === statusFilter
+      const matchesCategory = categoryFilter === "Todos" || report.categoria === categoryFilter
       return matchesSearch && matchesStatus && matchesCategory
     })
   }, [reports, searchQuery, statusFilter, categoryFilter])
 
   const handleViewDetails = (report: Report) => {
     setSelectedReport(report)
-    setAdminNotes(report.notes || "")
+    setAdminNotes(report.notas || "")
     setDetailOpen(true)
   }
 
-  const handleStatusChange = (newStatus: Report["status"]) => {
+  const handleStatusChange = (newStatus: Report["estado"]) => {
     if (selectedReport) {
       setReports((prev) =>
         prev.map((r) =>
@@ -117,19 +94,19 @@ export default function ReportsPage() {
       )
       setSelectedReport((prev) => (prev ? { ...prev, status: newStatus, notes: adminNotes } : null))
       toast({
-        title: "Report Updated",
-        description: `Report status changed to ${newStatus}.`,
+        title: "Denúncia Atualizada",
+        description: `Estado da Denúnicia atualizado para ${newStatus}.`,
       })
     }
   }
 
-  const getStatusColor = (status: Report["status"]) => {
+  const getStatusColor = (status: Report["estado"]) => {
     switch (status) {
-      case "Open":
+      case "Aberto":
         return "bg-red-50 text-red-700 border-red-200"
-      case "Under Review":
+      case "Sob Revisão":
         return "bg-yellow-50 text-yellow-700 border-yellow-200"
-      case "Resolved":
+      case "Resolvido":
         return "bg-green-50 text-green-700 border-green-200"
       default:
         return "bg-slate-50 text-slate-700 border-slate-200"
@@ -139,8 +116,8 @@ export default function ReportsPage() {
   return (
     <div className="flex-1 space-y-6 p-8">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Reports Management</h1>
-        <p className="text-muted-foreground">Review and manage user reports and complaints</p>
+        <h1 className="text-3xl font-bold tracking-tight">Gerenciador de Denúncias</h1>
+        <p className="text-muted-foreground">Analisar e gerenciar as reclamações dos usuários.</p>
       </div>
 
       <Card>
@@ -148,7 +125,7 @@ export default function ReportsPage() {
           <div className="flex flex-col gap-4">
             <div className="flex-1">
               <Input
-                placeholder="Search by reporter or reported name..."
+                placeholder="Pesquisar por nome do denunciador ou do denunciado..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="max-w-sm"
@@ -156,7 +133,7 @@ export default function ReportsPage() {
             </div>
             <div className="flex flex-wrap gap-2">
               <div className="flex gap-2">
-                {(["All", "Open", "Under Review", "Resolved"] as const).map((filter) => (
+                {(["Todos", "Aberto", "Sob Revisão", "Resolvido"] as const).map((filter) => (
                   <Button
                     key={filter}
                     variant={statusFilter === filter ? "default" : "outline"}
@@ -190,12 +167,12 @@ export default function ReportsPage() {
             <Table>
               <TableHeader>
                 <TableRow className="border-slate-200">
-                  <TableHead className="font-semibold">Reporter</TableHead>
-                  <TableHead className="font-semibold">Reported</TableHead>
-                  <TableHead className="font-semibold">Category</TableHead>
-                  <TableHead className="font-semibold">Date</TableHead>
-                  <TableHead className="font-semibold">Status</TableHead>
-                  <TableHead className="text-right font-semibold">Actions</TableHead>
+                  <TableHead className="font-semibold">Denuciador</TableHead>
+                  <TableHead className="font-semibold">Denunciado</TableHead>
+                  <TableHead className="font-semibold">Categoria</TableHead>
+                  <TableHead className="font-semibold">Data</TableHead>
+                  <TableHead className="font-semibold">Estado</TableHead>
+                  <TableHead className="text-right font-semibold">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -204,24 +181,24 @@ export default function ReportsPage() {
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-semibold">
-                          {report.reporterAvatar}
+                          {report.Denunciador_avatar}
                         </div>
-                        {report.reporterName}
+                        {report.Nome_denuncia}
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="space-y-1">
-                        <p className="font-medium text-sm">{report.reportedName}</p>
+                        <p className="font-medium text-sm">{report.Denunciado}</p>
                         <Badge variant="outline" className="text-xs">
-                          {report.reportedType}
+                          {report.Tipo_denuncia}
                         </Badge>
                       </div>
                     </TableCell>
-                    <TableCell className="text-sm">{report.category}</TableCell>
-                    <TableCell className="text-sm">{report.dateSubmitted}</TableCell>
+                    <TableCell className="text-sm">{report.categoria}</TableCell>
+                    <TableCell className="text-sm">{report.data}</TableCell>
                     <TableCell>
-                      <Badge variant="outline" className={getStatusColor(report.status)}>
-                        {report.status}
+                      <Badge variant="outline" className={getStatusColor(report.estado)}>
+                        {report.estado}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
@@ -231,7 +208,7 @@ export default function ReportsPage() {
                         onClick={() => handleViewDetails(report)}
                         className="text-blue-600 hover:text-blue-700 border-blue-200"
                       >
-                        View Details
+                        Ver Detalhes
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -242,110 +219,112 @@ export default function ReportsPage() {
         </CardContent>
       </Card>
 
-      {/* Detail Modal */}
-      <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
-        <DialogContent className="max-w-2xl">
-          {selectedReport && (
-            <>
-              <DialogHeader>
-                <DialogTitle>Report Details</DialogTitle>
-                <DialogDescription>Review and manage this report</DialogDescription>
-              </DialogHeader>
+      {/* Modelo detalhado de Denúnica */}
 
-              <div className="space-y-6 py-4">
-                {/* Report Summary */}
-                <div className="space-y-4 border-b border-slate-200 pb-6">
-                  <h3 className="font-semibold flex items-center gap-2 text-foreground">
-                    <AlertCircle className="h-4 w-4" />
-                    Report Information
-                  </h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Category</p>
-                      <p className="font-medium">{selectedReport.category}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Date Submitted</p>
-                      <p className="font-medium">{selectedReport.dateSubmitted}</p>
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Description</p>
-                    <p className="text-sm mt-1">{selectedReport.description}</p>
-                  </div>
-                </div>
+      <Sheet open={detailOpen} onOpenChange={setDetailOpen}>
 
-                {/* Reporter Info */}
-                <div className="space-y-4 border-b border-slate-200 pb-6">
-                  <h3 className="font-semibold text-foreground">Reporter</h3>
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center font-semibold">
-                      {selectedReport.reporterAvatar}
-                    </div>
-                    <div>
-                      <p className="font-medium">{selectedReport.reporterName}</p>
-                      <p className="text-sm text-muted-foreground">Verified User</p>
-                    </div>
-                  </div>
-                </div>
+  <SheetContent className="w-full sm:w-[540px]">
+    {selectedReport && (
+      <>
+        <SheetHeader>
+          <SheetTitle>Detalhe das Denúncias</SheetTitle>
+          <SheetDescription>Analise e gerencie as Denúncias</SheetDescription>
+        </SheetHeader>
 
-                {/* Reported Info */}
-                <div className="space-y-4 border-b border-slate-200 pb-6">
-                  <h3 className="font-semibold text-foreground">Reported {selectedReport.reportedType}</h3>
-                  <div>
-                    <p className="font-medium">{selectedReport.reportedName}</p>
-                    <Badge variant="outline" className="mt-2">
-                      {selectedReport.reportedType}
-                    </Badge>
-                  </div>
-                </div>
-
-                {/* Admin Notes */}
-                <div className="space-y-4">
-                  <h3 className="font-semibold text-foreground">Admin Notes</h3>
-                  <Textarea
-                    placeholder="Add internal notes about this report..."
-                    value={adminNotes}
-                    onChange={(e) => setAdminNotes(e.target.value)}
-                    className="resize-none"
-                    rows={4}
-                  />
-                </div>
-
-                {/* Status Actions */}
-                <div className="flex gap-2 pt-4 border-t border-slate-200">
-                  {selectedReport.status !== "Open" && (
-                    <Button
-                      variant="outline"
-                      className="flex-1"
-                      onClick={() => handleStatusChange("Open")}
-                    >
-                      Mark as Open
-                    </Button>
-                  )}
-                  {selectedReport.status !== "Under Review" && (
-                    <Button
-                      variant="outline"
-                      className="flex-1"
-                      onClick={() => handleStatusChange("Under Review")}
-                    >
-                      Mark Under Review
-                    </Button>
-                  )}
-                  {selectedReport.status !== "Resolved" && (
-                    <Button
-                      className="flex-1 bg-green-600 hover:bg-green-700"
-                      onClick={() => handleStatusChange("Resolved")}
-                    >
-                      Mark Resolved
-                    </Button>
-                  )}
-                </div>
+        <div className="space-y-6 py-6 overflow-y-auto h-[calc(100vh-80px)]">
+          {/* Report Summary */}
+          <div className="space-y-4 border-b border-slate-200 pb-6">
+            <h3 className="font-semibold flex items-center gap-2 text-foreground">
+              <AlertCircle className="h-4 w-4" />
+              Informação da Denúncia
+            </h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Categoria</p>
+                <p className="font-medium">{selectedReport.categoria}</p>
               </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+              <div>
+                <p className="text-sm text-muted-foreground">Date Submitted</p>
+                <p className="font-medium">{selectedReport.data}</p>
+              </div>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Description</p>
+              <p className="text-sm mt-1">{selectedReport.descricao}</p>
+            </div>
+          </div>
+
+          {/* Reporter Info */}
+          <div className="space-y-4 border-b border-slate-200 pb-6">
+            <h3 className="font-semibold text-foreground">Reporter</h3>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center font-semibold">
+                {selectedReport.Denunciador_avatar}
+              </div>
+              <div>
+                <p className="font-medium">{selectedReport.Nome_denuncia}</p>
+                <p className="text-sm text-muted-foreground">Verified User</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Reported Info */}
+          <div className="space-y-4 border-b border-slate-200 pb-6">
+            <h3 className="font-semibold text-foreground">Reported {selectedReport.Tipo_denuncia}</h3>
+            <div>
+              <p className="font-medium">{selectedReport.Denunciado}</p>
+              <Badge variant="outline" className="mt-2">
+                {selectedReport.Tipo_denuncia}
+              </Badge>
+            </div>
+          </div>
+
+          {/* Admin Notes */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-foreground">Notas do administrador</h3>
+            <Textarea
+              placeholder="Add internal notes about this report..."
+              value={adminNotes}
+              onChange={(e) => setAdminNotes(e.target.value)}
+              className="resize-none"
+              rows={4}
+            />
+          </div>
+
+          {/* Status Actions */}
+          <div className="flex gap-2 pt-4 border-t border-slate-200">
+            {selectedReport.estado !== "Aberto" && (
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => handleStatusChange("Aberto")}
+              >
+                Marcar como aberto
+              </Button>
+            )}
+            {selectedReport.estado !== "Sob Revisão" && (
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => handleStatusChange("Sob Revisão")}
+              >
+               Em revisão
+              </Button>
+            )}
+            {selectedReport.estado !== "Resolvido" && (
+              <Button
+                className="flex-1 bg-green-600 hover:bg-green-700"
+                onClick={() => handleStatusChange("Resolvido")}
+              >
+                Resolvido
+              </Button>
+            )}
+          </div>
+        </div>
+      </>
+    )}
+  </SheetContent>
+</Sheet>
     </div>
   )
 }

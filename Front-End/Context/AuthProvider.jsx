@@ -45,6 +45,204 @@ export function AuthProvider({ children }) {
     setUser(null);
     setPlans([]);
   };
+  const SuspenderUser = async(user_id) => {
+    try{
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:5000/api/admin/users/suspend/${user_id}`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const data = await response.json();
+      return data;
+    } catch (err) {
+      console.error('Erro ao suspender usuário:', err);
+      return null;
+    }
+  }
+
+  const BanUser = async(user_id) => {
+    try{
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:5000/api/admin/users/ban/${user_id}`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      
+      const data = await response.json();
+      return data;
+    } catch (err) {
+      console.error('Erro ao Banir usuário:', err);
+      return null;
+    }
+  }
+
+  const CarregarUsuarios = async () => 
+  {
+    try{
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/admin/users',
+      {
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      }  
+    );
+    if (!response.ok) throw new Error('Erro ao carregar usuários');
+    const data = await response.json();
+    const mapped =data.map(u => ({
+      id: u.id,
+      nome: u.nome,
+      email: u.email,
+      tipo: u.tipo,
+      estado: u.estado,
+      //avatar:u.foto_pessoal,--Tem q estar a receber algo de genero Petel
+    }))
+
+    return mapped;
+    } 
+    catch (err) {
+      console.error('Erro ao carregar usuários:', err);
+      return null;
+    }
+
+  }
+
+const GerenciarPlantas = async () =>
+{
+   try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:5000/api/dashboard/manage', {
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      });
+      if (!res.ok) throw new Error('Erro ao buscar dados das plantas');
+      const data = await res.json();
+      return data
+    }
+  catch (err) {
+      console.error('Erro ao buscar dados das plantas:', err);
+      return null;
+    }
+}
+const LoadAdmingeral =async () =>
+{
+  try {
+    const token = localStorage.getItem('token');
+    const res = await fetch('http://localhost:5000/api/admin/', {
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    });
+    if (!res.ok) throw new Error('Erro ao carregar  dados gerais do admin');
+    const data = await res.json();
+    return data
+  }
+  catch (err) {
+      console.error('Erro ao carregar  dados gerais do admin:', err);
+      return null;
+    }
+}
+
+const MinhasPlantas = async () =>{
+  try {
+    const token = localStorage.getItem('token');
+    const res = await fetch('http://localhost:5000/api/dashboard/myplants', {
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    });
+    if (!res.ok) throw new Error('Erro ao buscar dados das plantas');
+    const data = await res.json();
+    const mapped = data.map(p => ({
+        id:          p.id,
+        title:       p.nome,
+        description: p.descricao    ?? '',
+        squareFeet:  p.dimensao     ?? 0,
+        price:       p.orcamento    ?? 0,
+        image:       p.imagens?.[0] ?? p.plantas_arquivo ?? null,
+        category:    p.categoria    ?? '',
+        bedrooms:    p.quartos      ?? 0,
+        bathrooms:   p.banheiros    ?? 0,
+        featured:    p.destaque     ?? false,
+        dono:        p.dono,        
+
+      }));
+
+    return mapped;
+  } catch (err) {
+    console.error('Erro ao buscar dados das plantas:', err);
+    return null;
+  }
+}
+
+const solicitarSaque = async (valor) => { 
+
+  try {
+    const token = localStorage.getItem('token');
+    const res = await fetch('http://localhost:5000/api/payments/solicitar-saque', {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ valor })
+    });
+    if (!res.ok) {
+
+      const err = await res.json()
+      console.log("Erro:", err.detail)  
+      throw new Error('Erro ao solicitar saque');
+    }
+    const data = await res.json();
+    return data;
+  } catch (err) {
+    console.error('Erro ao solicitar saque:', err);
+    return null;
+  }
+}
+const CarregarSaques = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    const res = await fetch('http://localhost:5000/api/admin/withdrawals', {
+      headers: { 
+        Authorization: `Bearer ${token}`, 
+        'Content-Type': 'application/json' 
+      },
+    });
+
+    if (!res.ok) throw new Error('Erro ao carregar saques');
+
+    const data = await res.json();
+
+    const mapped = data.map(s => ({
+    id: s.id,
+    Arquiteto_nome: s.architectName,
+    Arquiteto_avatar: s.architectAvatar ?? "",
+    iban: s.iban,
+    Quantidade: s.amount,
+    requestDate: s.requestDate,
+    estado: s.status === "Paid" ? "Pago" : "Pendente",
+    ComprovanteUrl: s.proofUrl ?? undefined,
+  }));
+
+  return mapped;
+
+  } catch (err) {
+    console.error('Erro ao carregar saques:', err);
+    return null;
+  }
+};
+
+const PagarSaque = async (withdrawal_id, file) => {
+  try {
+    const token = localStorage.getItem('token');
+    const formData = new FormData();
+    formData.append('comprovativo', file);
+
+    const res = await fetch(`http://localhost:5000/api/admin/withdrawals/${withdrawal_id}/pagar`, {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    });
+
+    if (!res.ok) throw new Error('Erro ao marcar como pago');
+    return await res.json();
+  } catch (err) {
+    console.error('Erro ao marcar como pago:', err);
+    return null;
+  }
+};
 
   const register = async (formData, tipo) => {
     const endpoint = `http://localhost:5000/api/auth/register/${tipo}`;
@@ -73,7 +271,13 @@ export function AuthProvider({ children }) {
         bedrooms:    p.quartos      ?? 0,
         bathrooms:   p.banheiros    ?? 0,
         featured:    p.destaque     ?? false,
+<<<<<<< HEAD:Front-End/Context/AuthProvider.jsx
         dono:        p.dono,
+=======
+        dono:        p.dono,        
+
+        
+>>>>>>> 8ac45811663928eb8a8233ce6f8bf5fcee39ed29:Front-End/Context/AuthContext.js
       }));
       setPlans(mapped);
       return mapped;
@@ -117,9 +321,16 @@ export function AuthProvider({ children }) {
 
   const deletar = async (plantId) => {
     const token = localStorage.getItem('token');
+<<<<<<< HEAD:Front-End/Context/AuthProvider.jsx
     const res = await fetch(`http://localhost:5000/api/dashboard/DeletarPlanta/${plantId}`, {
       method: 'DELETE', headers: { Authorization: `Bearer ${token}` },
     });
+=======
+    const res = await fetch(
+      `http://localhost:5000/api/dashboard/${plantId}`,
+      { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } }
+    );
+>>>>>>> 8ac45811663928eb8a8233ce6f8bf5fcee39ed29:Front-End/Context/AuthContext.js
     if (!res.ok) throw new Error('Erro ao deletar planta');
     setPlans(prev => prev.filter(p => p.id !== plantId));
     return res.json();
@@ -130,10 +341,14 @@ export function AuthProvider({ children }) {
     : null;
 
   return (
+<<<<<<< HEAD:Front-End/Context/AuthProvider.jsx
     <AuthContext.Provider value={{
       user: profile, rawUser: user, loading, plans,
       login, logout, register, carregar, inserir, deletar,
     }}>
+=======
+    <AuthContext.Provider value={{ user: profile, rawUser: user, loading, plans, login, logout, carregar, inserir, deletar , CarregarUsuarios , SuspenderUser , BanUser, GerenciarPlantas , MinhasPlantas , solicitarSaque , LoadAdmingeral , CarregarSaques , PagarSaque}}>
+>>>>>>> 8ac45811663928eb8a8233ce6f8bf5fcee39ed29:Front-End/Context/AuthContext.js
       {children}
     </AuthContext.Provider>
   );

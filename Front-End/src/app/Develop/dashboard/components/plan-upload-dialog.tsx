@@ -333,7 +333,7 @@ const clearFile = () => {
                 name="squareFeet"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Tamanha (m²)</FormLabel>
+                    <FormLabel>Tamanho (m²)</FormLabel>
                     <FormControl>
                       <Input type="number" min="0" step="1" {...field} />
                     </FormControl>

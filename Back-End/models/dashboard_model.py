@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 from typing import List, Optional
 from models.db import get_supabase_admin
 
+
 async def all_plants():
     supabase = get_supabase_admin()
     response = supabase.table("planta").select("*").execute()
@@ -13,9 +14,54 @@ async def all_plants():
 
 async def DeletePlants(plant_id: str):
     supabase = get_supabase_admin()
-    response = supabase.table("planta").delete().eq("id", plant_id).execute()
-    return JSONResponse(status_code=200, content={"message": "Planta deletada", "data": response.data})
 
+    # Busca os paths dos ficheiros antes de deletar
+    planta = supabase.table("planta").select("imagens, plantas_arquivo").eq("id", plant_id).single().execute()
+    
+    imagens = planta.data.get("imagens", []) or []
+    arquivos = planta.data.get("plantas_arquivo", []) or []
+
+    # Extrai os paths das URLs públicas das imagens
+    def url_to_path(url: str) -> str:
+        # A URL pública tem formato: .../storage/v1/object/public/PlansStoraga/PATH
+        return url.split("/PlansStoraga/")[-1]
+
+    image_paths   = [url_to_path(u) for u in imagens]
+    archive_paths = arquivos  # já são paths directos
+
+    all_paths = f'{image_paths} + {archive_paths}'
+    if all_paths:
+        supabase.storage.from_("PlansStoraga").remove(all_paths)
+
+    # Deleta o registo
+    response = supabase.table("planta").delete().eq("id", plant_id).execute()
+    return JSONResponse(status_code=200, content={"message": "Planta e ficheiros deletados", "data": response.data})
+
+async def ManagePlants(user: dict):
+    supabase = get_supabase_admin()
+    response = supabase.from_("dashboard_gestao_plantas").select("*").eq("arquiteto_id", user["id"]).execute()
+    if not response.data:
+        return {
+            "arquiteto_id":       user["id"],
+            "saldo_disponivel":   0,
+            "total_plantas":      0,
+            "plantas_ativas":     0,
+            "plantas_inativas":   0,
+            "plantas_vendidas":   0,
+            "receita_total":      0,
+            "progresso_elite_pct": 0,
+            "faltam_para_elite":  10000,
+        }
+
+    return response.data[0]
+    
+    return response.data
+
+async def MyPlants(user: dict):
+    supabase = get_supabase_admin()
+    response = supabase.table("planta").select("*").eq("dono", user["id"]).execute()
+    
+    return response.data
 
 async def upload_plants(
     user_id:      str,
@@ -46,16 +92,11 @@ async def upload_plants(
     print(f"  bedrooms:     {bedrooms}")
     print(f"  bathrooms:    {bathrooms}")
     print(f"  price:        {price}")
-    print(f"  imageFile:    {[f.filename for f in imageFile]}")
+    print(f"  imageFiles:   {[f.filename for f in imageFiles]}")
     print(f"  projectFiles: {[f.filename for f in projectFiles]}")
     print("=" * 60)
 
-    if not imageFile or len(imageFile) == 0:
-        raise HTTPException(status_code=422, detail="Nenhuma imagem pública enviada.")
-
-    if not projectFiles or len(projectFiles) == 0:
-        raise HTTPException(status_code=422, detail="Nenhum arquivo de projeto enviado.")
-
+    
     try:
         supabase = get_supabase_admin()
         timestamp = datetime.datetime.now().strftime("%d%m%Y_%H%M%S")
@@ -63,7 +104,7 @@ async def upload_plants(
         # ── 1. Upload das imagens públicas (galeria) ──────────────────────────
         image_urls: List[str] = []
 
-        for img in imageFile:
+        for img in imageFiles:
             contents  = await img.read()
             file_path = f"plantas/{user_id}/{timestamp}/imagens/{img.filename}"
 
@@ -97,19 +138,18 @@ async def upload_plants(
 
         # ── 3. Inserir na tabela ──────────────────────────────────────────────
         planta_db = {
-            "nome":            title,
-            "descricao":       description,
-            "tipologia":       topology,
-            "categoria":       category,
-            "dimensao":        squareFeet,
-            "quartos":         bedrooms,
-            "casas_de_banho":  bathrooms,
-            "dono":            user_id,
-            "orcamento":       price,
-            # Lista de URLs públicas para exibição na galeria
-            "imagens":         image_urls,
-            # Lista de paths privados para download após compra
-            "plantas_arquivo": project_file_urls,
+            "nome":             title,
+            "descricao":        description,
+            "dimensao":         squareFeet,
+            "dono":             user_id,
+            "orcamento":        price,
+            "imagens":          image_urls,
+            "plantas_arquivo":  project_file_urls,
+            "estado":           "ativo",        
+            "categoria":        category,
+            "quartos":          bedrooms,
+            "banheiros":        bathrooms,     
+            "tipologia":        topology,
         }
 
         print(f"DEBUG: a inserir na tabela: {planta_db}")
@@ -138,10 +178,7 @@ async def upload_plants(
 
 # ── Endpoint para download após compra ───────────────────────────────────────
 async def get_download_urls(plant_id: str, buyer_user_id: str):
-    """
-    Gera URLs assinadas (válidas por 1 hora) apenas para compradores confirmados.
-    Chame este endpoint depois de verificar a compra no teu sistema de pagamentos.
-    """
+  
     supabase = get_supabase_admin()
 
     # 1. Verificar se a compra existe e está confirmada

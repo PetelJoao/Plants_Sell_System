@@ -2,7 +2,6 @@
 // Dashboard do Arquiteto — ver as suas vendas e solicitar transferências
 
 "use client";
-
 import { useEffect, useState } from "react";
 import { useArquitetoPayments, Compra } from "@/hooks/usePayments";
 import { Button } from "@/components/ui/button";
@@ -29,7 +28,7 @@ import {
   Clock,
   TrendingUp,
 } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 export default function ArquitetoPagamentosPage() {
   const { compras, loading, error, carregar, solicitarTransferencia } =

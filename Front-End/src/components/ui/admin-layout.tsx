@@ -31,18 +31,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   //const { open, toggleSidebar } = useSidebar()--Ver isso depois é o mambo q faz a side bar entrar e sair
 
   const navigationItems = [
+      {
+      name: "Painel",
+      href: "/admin",
+      icon: LayoutDashboard,
+    },
     {
-      name: "Users",
+      name: "Usuários",
       href: "/admin/users",
       icon: Users,
     },
     {
-      name: "Withdrawals",
+      name: "Saques",
       href: "/admin/withdrawals",
       icon: CreditCard,
     },
     {
-      name: "Reports",
+      name: "Denúncias",
       href: "/admin/reports",
       icon: AlertCircle,
     },
@@ -58,7 +63,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <Building2 className="w-5 h-5 text-white" />
               </div>
               <h1 className="text-lg font-bold text-foreground group-data-[collapsible=icon]:hidden">
-                Duria Admin
+                Administração do Duria 
               </h1>
             </div>
           </SidebarHeader>
@@ -90,7 +95,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               onClick={() => window.location.href = "/"}
             >
               <LogOut className="h-4 w-4 mr-2" />
-              <span className="group-data-[collapsible=icon]:hidden">Logout</span>
+              <span className="group-data-[collapsible=icon]:hidden">Terminar Sessão</span>
             </Button>
           </SidebarFooter>
         </Sidebar>
@@ -98,9 +103,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="flex-1 flex flex-col">
           {/* Admin Top Bar */}
           <div className="border-b border-slate-200 bg-white h-16 flex items-center justify-between px-8">
-            <h2 className="text-xl font-semibold text-foreground">Admin Dashboard</h2>
+            <h2 className="text-xl font-semibold text-foreground">Bem-vindo novamente...</h2>
             <div className="flex items-center gap-4">
-              <span className="text-sm text-muted-foreground">Admin User</span>
+              <span className="text-sm text-muted-foreground">Administrador</span>
               <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center">
                 <span className="text-sm font-medium text-slate-700">A</span>
               </div>

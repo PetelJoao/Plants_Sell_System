@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 from models.payment_model import (
     criar_sessao_checkout,
     confirmar_pagamento,
+    solicitar_saque,
     solicitar_transferencia,
     aprovar_transferencia,
     listar_compras,
@@ -194,3 +195,17 @@ async def get_minhas_compras(user=Depends(get_current_user)):
         return await listar_compras_arquiteto(arquiteto_id=user["id"])
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+# Made by Petel - 2026-05-24
+@router.put("/solicitar-saque")
+async def solicitar_saque_route(user: dict = Depends(get_current_user)):
+    
+        return await solicitar_saque(arquiteto_id=user["id"])
+
+
+
+@router.put("/aprovar-saque")
+async def aprovar_saque_route(request_id: str, user: dict = Depends(get_current_user)):
+        if user.get("role") != "admin":
+            raise HTTPException(status_code=403, detail="Apenas o admin pode aprovar saques.")
+        return await aprovar_transferencia(request_id=request_id)

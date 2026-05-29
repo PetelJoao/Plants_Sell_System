@@ -7,7 +7,8 @@ import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
-import DashboardLayout from "@/app/dashboard/components/dashboard-layout"
+
+import DashboardLayout from "@/app/Develop/dashboard/components/dashboard-layout"
 import { useAuth } from "@/Context/AuthContext"
 
 

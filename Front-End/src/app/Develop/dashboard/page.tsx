@@ -1,5 +1,5 @@
-import DashboardLayout from "@/app/dashboard/components/dashboard-layout"
-import { ArchitecturalPlans } from "@/app/dashboard/components/architectural-plans"
+import DashboardLayout from "@/app/Develop/dashboard/components/dashboard-layout"
+import { ArchitecturalPlans } from "@/app/Develop/dashboard/components/architectural-plans"
 
 export default function DashboardPage() {
   return (
