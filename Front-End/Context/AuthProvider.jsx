@@ -271,13 +271,7 @@ const PagarSaque = async (withdrawal_id, file) => {
         bedrooms:    p.quartos      ?? 0,
         bathrooms:   p.banheiros    ?? 0,
         featured:    p.destaque     ?? false,
-<<<<<<< HEAD:Front-End/Context/AuthProvider.jsx
         dono:        p.dono,
-=======
-        dono:        p.dono,        
-
-        
->>>>>>> 8ac45811663928eb8a8233ce6f8bf5fcee39ed29:Front-End/Context/AuthContext.js
       }));
       setPlans(mapped);
       return mapped;
@@ -321,16 +315,9 @@ const PagarSaque = async (withdrawal_id, file) => {
 
   const deletar = async (plantId) => {
     const token = localStorage.getItem('token');
-<<<<<<< HEAD:Front-End/Context/AuthProvider.jsx
-    const res = await fetch(`http://localhost:5000/api/dashboard/DeletarPlanta/${plantId}`, {
-      method: 'DELETE', headers: { Authorization: `Bearer ${token}` },
-    });
-=======
-    const res = await fetch(
-      `http://localhost:5000/api/dashboard/${plantId}`,
-      { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } }
-    );
->>>>>>> 8ac45811663928eb8a8233ce6f8bf5fcee39ed29:Front-End/Context/AuthContext.js
+const res = await fetch(`http://localhost:5000/api/dashboard/DeletarPlanta/${plantId}`, {
+  method: 'DELETE', headers: { Authorization: `Bearer ${token}` },
+});
     if (!res.ok) throw new Error('Erro ao deletar planta');
     setPlans(prev => prev.filter(p => p.id !== plantId));
     return res.json();
@@ -341,14 +328,7 @@ const PagarSaque = async (withdrawal_id, file) => {
     : null;
 
   return (
-<<<<<<< HEAD:Front-End/Context/AuthProvider.jsx
-    <AuthContext.Provider value={{
-      user: profile, rawUser: user, loading, plans,
-      login, logout, register, carregar, inserir, deletar,
-    }}>
-=======
-    <AuthContext.Provider value={{ user: profile, rawUser: user, loading, plans, login, logout, carregar, inserir, deletar , CarregarUsuarios , SuspenderUser , BanUser, GerenciarPlantas , MinhasPlantas , solicitarSaque , LoadAdmingeral , CarregarSaques , PagarSaque}}>
->>>>>>> 8ac45811663928eb8a8233ce6f8bf5fcee39ed29:Front-End/Context/AuthContext.js
+      <AuthContext.Provider value={{ user: profile, rawUser: user, loading, plans, login, logout, carregar, inserir, deletar, CarregarUsuarios, SuspenderUser, BanUser, GerenciarPlantas, MinhasPlantas, solicitarSaque, LoadAdmingeral, CarregarSaques, PagarSaque}}>
       {children}
     </AuthContext.Provider>
   );
