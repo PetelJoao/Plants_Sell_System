@@ -15,9 +15,9 @@ import { useOrder, type Plan } from "@/Context/order-context"
 import { PlanUploadDialog } from "./plan-upload-dialog"
 import { usePlans } from "@/Context/plans-context"
 import { PlanDetailModal } from "./plan-detail-modal"
+import { useAuth } from "@/Context/AuthContext"
+//import { RealtimeChat } from '@/components/realtime-chat'
 
-import { useAuth }         from "@/Context/AuthContext"
-import { RealtimeChat } from '@/components/realtime-chat'
 export function ArchitecturalPlans() {
 const [plans, setPlans] = useState<Plan[]>([]);
 const [filter, setFilter] = useState<string>("All");
@@ -153,7 +153,7 @@ useEffect(() => {
                 </div>
               </div>
               <div onClick={(e) => e.stopPropagation()}>
-  <RealtimeChat roomName={`plan-${plan.id}`} username={user?.name ?? 'Anónimo'} />
+    {/*<RealtimeChat roomName={`plan-${plan.id}`} username={user?.name ?? 'Anónimo'} /> */}
 </div>
               
             </CardContent>

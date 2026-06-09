@@ -39,8 +39,8 @@ export function WithdrawalModal({
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
     toast({
-      title: 'Copied',
-      description: 'IBAN copied to clipboard',
+      title: 'Copiado',
+      description: 'IBAN copiedo.',
       duration: 2000,
     })
   }
@@ -49,16 +49,16 @@ export function WithdrawalModal({
     const withdrawAmount = parseFloat(amount)
     if (isNaN(withdrawAmount) || withdrawAmount <= 0) {
       toast({
-        title: 'Invalid Amount',
-        description: 'Please enter a valid amount',
+        title: 'Valor inválido',
+        description: 'Por favor, insira um valor válido.',
         variant: 'destructive',
       })
       return
     }
     if (withdrawAmount > availableAmount) {
       toast({
-        title: 'Amount Exceeds Available',
-        description: `Maximum available: $${availableAmount.toLocaleString()}`,
+        title: 'O valor excede o disponível.',
+        description: `Máximo disponível: $${availableAmount.toLocaleString()}`,
         variant: 'destructive',
       })
       return
@@ -73,10 +73,10 @@ export function WithdrawalModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <DollarSign className="h-5 w-5 text-blue-500" />
-            Withdraw Funds
+            Retirar fundos
           </DialogTitle>
           <DialogDescription>
-            Transfer your earnings to your bank account
+            Transfira seus ganhos para sua conta bancária.
           </DialogDescription>
         </DialogHeader>
 
@@ -84,7 +84,7 @@ export function WithdrawalModal({
           {/* Available Amount */}
           <div className="space-y-2">
             <Label className="text-xs font-semibold text-muted-foreground uppercase">
-              Available Balance
+             Saldo disponível
             </Label>
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <p className="text-2xl font-bold text-blue-900">
@@ -96,7 +96,7 @@ export function WithdrawalModal({
           {/* Withdrawal Amount Input */}
           <div className="space-y-2">
             <Label htmlFor="amount" className="text-sm font-medium">
-              Amount to Withdraw
+              Valor a sacar
             </Label>
             <div className="relative">
               <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
@@ -113,13 +113,13 @@ export function WithdrawalModal({
               />
             </div>
             <p className="text-xs text-muted-foreground">
-              Maximum: ${availableAmount.toLocaleString()}
+              Máximo: ${availableAmount.toLocaleString()}
             </p>
           </div>
 
           {/* Bank Account Info */}
           <div className="space-y-2">
-            <Label className="text-sm font-medium">Bank Account (IBAN)</Label>
+            <Label className="text-sm font-medium">Conta bancária (IBAN)</Label>
             <div className="flex gap-2">
               <Input
                 type="text"
@@ -142,7 +142,7 @@ export function WithdrawalModal({
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              Funds will be transferred to this account within 2-3 business days
+              Os fundos serão transferidos para esta conta dentro de 2 a 3 dias úteis.
             </p>
           </div>
         </div>
@@ -153,14 +153,14 @@ export function WithdrawalModal({
             variant="outline"
             onClick={() => onOpenChange(false)}
           >
-            Cancel
+            Cancelar
           </Button>
           <Button
             type="button"
             onClick={handleConfirm}
             className="bg-blue-500 hover:bg-blue-600 text-white"
           >
-            Confirm Withdrawal
+            Confirmar Saque
           </Button>
         </DialogFooter>
       </DialogContent>

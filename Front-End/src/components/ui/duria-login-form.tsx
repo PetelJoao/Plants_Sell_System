@@ -71,7 +71,7 @@ export function DuriaLoginForm() {
     try {
       // Simulação da chamada de API (o corno não vai reclamar agora!)
        await login(email, password); // - atualiza o user no contexto
-      router.push("/dashboard") // - redireciona para o dashboard;
+      router.push("/Develop/dashboard") // - redireciona para o dashboard;
     } catch (err) {
       setApiError('Falha no login. Por favor, verifique as suas credenciais.')
     } finally {

@@ -13,8 +13,8 @@ interface RevenueGoalCardProps {
 }
 
 export function RevenueGoalCard({ revenue, onWithdrawClick }: RevenueGoalCardProps) {
-  const WITHDRAWAL_MIN = 2000
-  const WITHDRAWAL_MAX = 10000
+  const WITHDRAWAL_MIN = 200
+  const WITHDRAWAL_MAX = 1000
   
   const isLocked = revenue < WITHDRAWAL_MIN
   const isElite = revenue >= WITHDRAWAL_MAX
@@ -31,12 +31,12 @@ export function RevenueGoalCard({ revenue, onWithdrawClick }: RevenueGoalCardPro
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
             <DollarSign className="h-4 w-4 text-blue-500" />
-            Revenue & Withdrawal
+           Receita e Saque
           </CardTitle>
           {isElite && (
             <Badge className="bg-blue-100 text-blue-700 border-blue-200 flex items-center gap-1">
               <Trophy className="h-3 w-3" />
-              Elite Seller
+              Vendedor Elite
             </Badge>
           )}
         </div>
@@ -46,7 +46,7 @@ export function RevenueGoalCard({ revenue, onWithdrawClick }: RevenueGoalCardPro
         {/* Revenue Amount */}
         <div className="flex items-baseline gap-2">
           <span className="text-3xl font-bold text-slate-900">${revenue.toLocaleString()}</span>
-          <span className="text-sm text-muted-foreground">earned</span>
+          <span className="text-sm text-muted-foreground">Ganhos</span>
         </div>
 
         {/* Progress Bar with Milestones */}
@@ -62,13 +62,13 @@ export function RevenueGoalCard({ revenue, onWithdrawClick }: RevenueGoalCardPro
                 style={{ left: `${minThresholdPercent}%` }}
               >
                 <div className="w-1 h-3 bg-blue-400" />
-                <span className="text-xs font-medium text-blue-600 whitespace-nowrap">$2K</span>
+                <span className="text-xs font-medium text-blue-600 whitespace-nowrap">$200</span>
               </div>
               
               {/* Max threshold marker */}
               <div className="absolute top-0 right-0 transform translate-x-1/2 flex flex-col items-center">
                 <div className="w-1 h-3 bg-blue-600" />
-                <span className="text-xs font-medium text-blue-700 whitespace-nowrap">$10K</span>
+                <span className="text-xs font-medium text-blue-700 whitespace-nowrap">$1000</span>
               </div>
             </div>
           </div>
@@ -76,11 +76,11 @@ export function RevenueGoalCard({ revenue, onWithdrawClick }: RevenueGoalCardPro
           {/* Status Label */}
           <p className="text-xs text-muted-foreground">
             {isLocked ? (
-              <>Withdrawal available from <span className="font-semibold text-slate-700">${WITHDRAWAL_MIN.toLocaleString()}</span></>
+              <>Saque disponivel a partir de <span className="font-semibold text-slate-700">${WITHDRAWAL_MIN.toLocaleString()}</span></>
             ) : isElite ? (
-              <>Elite status unlocked! You can withdraw anytime.</>
+              <>Status Elite desbloqueado! Você pode sacar quando quiser.</>
             ) : (
-              <>${(WITHDRAWAL_MAX - revenue).toLocaleString()} to elite status</>
+              <>${(WITHDRAWAL_MAX - revenue).toLocaleString()} para o status de elite</>
             )}
           </p>
         </div>
@@ -104,12 +104,12 @@ export function RevenueGoalCard({ revenue, onWithdrawClick }: RevenueGoalCardPro
                   {isLocked ? (
                     <>
                       <Lock className="mr-2 h-4 w-4" />
-                      Withdraw Funds
+                     Retirar fundos
                     </>
                   ) : (
                     <>
                       <DollarSign className="mr-2 h-4 w-4" />
-                      Withdraw Funds
+                     Retirar fundos
                     </>
                   )}
                 </Button>
@@ -117,7 +117,7 @@ export function RevenueGoalCard({ revenue, onWithdrawClick }: RevenueGoalCardPro
             </TooltipTrigger>
             {isLocked && (
               <TooltipContent className="bg-slate-900 text-white border-0">
-                <p className="text-sm">Reach ${WITHDRAWAL_MIN.toLocaleString()} to unlock withdrawal</p>
+                <p className="text-sm">Reach ${WITHDRAWAL_MIN.toLocaleString()} para desbloquear saque</p>
               </TooltipContent>
             )}
           </Tooltip>

@@ -1,5 +1,4 @@
 "use client"
-
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -25,16 +24,16 @@ export default function OrdersPage() {
   const handleRemoveOrder = (orderId: string, planTitle: string) => {
     removeFromOrder(orderId)
     toast({
-      title: "Order Removed",
-      description: `${planTitle} has been removed from your orders.`,
+      title: "Pedido removido",
+      description: `${planTitle} Foi removido dos seus pedidos.`,
       duration: 3000,
     })
   }
 
   const handleBuyIndividual = (planTitle: string, price: number) => {
     toast({
-      title: "Purchase Initiated",
-      description: `Starting purchase flow for ${planTitle} ($${price})...`,
+      title: "Compra iniciada",
+      description: `Iniciando fluxo de compra para ${planTitle} ($${price})...`,
       duration: 3000,
     })
   }
@@ -43,8 +42,8 @@ export default function OrdersPage() {
     const totalItems = orders.length
     const totalPrice = orders.reduce((sum, order) => sum + order.plan.price, 0)
     toast({
-      title: "Purchase Initiated",
-      description: `Starting purchase flow for ${totalItems} item(s) totaling $${totalPrice}...`,
+      title: "Compra iniciada",
+      description: `Iniciando fluxo de compra para ${totalItems} item(s) totalizando $${totalPrice}...`,
       duration: 3000,
     })
   }
@@ -62,8 +61,8 @@ export default function OrdersPage() {
 
         {orders.length === 0 ? (
           <div className="text-center py-12">
-            <h3 className="text-lg font-medium">Your cart is empty</h3>
-            <p className="text-muted-foreground mt-1">Adicione planos no painel de controle para começar.</p>
+            <h3 className="text-lg font-medium">Seu carrinho está vazio</h3>
+            <p className="text-muted-foreground mt-1">Adicione plantas pela dashboard para começar.</p>
           </div>
         ) : (
           <div className="space-y-6">
