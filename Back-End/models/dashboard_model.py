@@ -202,7 +202,7 @@ async def get_download_urls(plant_id: str, buyer_user_id: str):
             detail="Nenhum ficheiro técnico disponível para esta planta.",
         )
     
-    paths: List[str] = planta.data["plantas_arquivo"]
+    
 
     signed_urls = []
     for path in paths:

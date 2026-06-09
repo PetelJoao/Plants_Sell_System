@@ -377,18 +377,18 @@ const PagarSaque = async (withdrawal_id, file) => {
 
   const deletar = async (plantId) => {
     const token = localStorage.getItem('token');
-const res = await fetch(`http://localhost:5000/api/dashboard/DeletarPlanta/${plantId}`, {
+const res = await fetch(`http://localhost:5000/api/dashboard/${plantId}`, {
   method: 'DELETE', headers: { Authorization: `Bearer ${token}` },
 });
     if (!res.ok) throw new Error('Erro ao deletar planta');
     setPlans(prev => prev.filter(p => p.id !== plantId));
     return res.json();
   };
-    // Adicionar junto às outras funções no AuthProvider
+  
  const CarregarEventos = async () => {
   try {
     const token = localStorage.getItem('token');
-    // ✅ guarda: não faz fetch sem token válido
+    
     if (!token) {
       console.warn('CarregarEventos: sem token, abortando.');
       return null;
@@ -664,7 +664,6 @@ const ComprarTudo = async (success_url = '', cancel_url = '') => {
     : null;
 
   return (
-<<<<<<< HEAD
       <AuthContext.Provider value={{ user: profile, 
         rawUser: user, 
         loading, plans ,
@@ -681,6 +680,8 @@ const ComprarTudo = async (success_url = '', cancel_url = '') => {
         inserir, 
         deletar, 
         CarregarUsuarios, 
+        carregarhistorico,
+        BtnDonwloadPlant,
         SuspenderUser, 
         BanUser, 
         GerenciarPlantas,
@@ -700,9 +701,6 @@ const ComprarTudo = async (success_url = '', cancel_url = '') => {
         LimparCarrinho,
         ComprarItem,
         ComprarTudo,}}>
-=======
-      <AuthContext.Provider value={{ user: profile, rawUser: user, loading, plans, login, logout, carregar, inserir, deletar, CarregarUsuarios, SuspenderUser, BanUser, GerenciarPlantas, MinhasPlantas, solicitarSaque, LoadAdmingeral, CarregarSaques, PagarSaque , carregarDenuncias , carregarhistorico , BtnDonwloadPlant}}>
->>>>>>> b1762a99e51149b608de4a4c29fdd7f9b8f5032f
       {children}
     </AuthContext.Provider>
   );
