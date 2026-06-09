@@ -664,46 +664,48 @@ const ComprarTudo = async (success_url = '', cancel_url = '') => {
     : null;
 
   return (
-<<<<<<< HEAD
-      <AuthContext.Provider value={{ user: profile, 
-        rawUser: user, 
-        loading, plans ,
-        forgotPassword, 
-        resetPassword, 
-        CarregarEventosDisponiveis, 
-        CarregarMinhasInscricoes, 
-        InscreverEvento, 
-        EnviarProposta, 
-        register, 
-        login, 
-        logout, 
-        carregar, 
-        inserir, 
-        deletar, 
-        CarregarUsuarios, 
-        SuspenderUser, 
-        BanUser, 
-        GerenciarPlantas,
-         MinhasPlantas, 
-         solicitarSaque, 
-         LoadAdmingeral, 
-         CarregarSaques, 
-         PagarSaque, 
-         CarregarEventos, 
-         CriarEvento, 
-         CarregarEventoDetalhe, 
-         CarregarInscricoes,
-         DecidirInscricao, 
-         AdicionarAoCarrinho,
-        RemoverDoCarrinho,
-        ListarCarrinho,
-        LimparCarrinho,
-        ComprarItem,
-        ComprarTudo,}}>
-=======
-      <AuthContext.Provider value={{ user: profile, rawUser: user, loading, plans, login, logout, carregar, inserir, deletar, CarregarUsuarios, SuspenderUser, BanUser, GerenciarPlantas, MinhasPlantas, solicitarSaque, LoadAdmingeral, CarregarSaques, PagarSaque , carregarDenuncias , carregarhistorico , BtnDonwloadPlant}}>
->>>>>>> b1762a99e51149b608de4a4c29fdd7f9b8f5032f
-      {children}
-    </AuthContext.Provider>
-  );
+  <AuthContext.Provider value={{ 
+    user: profile, 
+    rawUser: user, 
+    loading, 
+    plans,
+    login,
+    logout,
+    carregar,
+    inserir,
+    deletar,
+    CarregarUsuarios,
+    SuspenderUser,
+    BanUser,
+    GerenciarPlantas,
+    MinhasPlantas,
+    solicitarSaque,
+    LoadAdmingeral,
+    CarregarSaques,
+    PagarSaque,
+    carregarDenuncias,
+    carregarhistorico,
+    BtnDonwloadPlant,
+    ComprarTudo,
+    ComprarItem,
+    AdicionarAoCarrinho,
+    RemoverDoCarrinho,
+    ListarCarrinho,
+    LimparCarrinho,
+    CarregarEventos,
+    CriarEvento,
+    CarregarEventoDetalhe,
+    CarregarInscricoes,
+    DecidirInscricao,
+    CarregarEventosDisponiveis,
+    CarregarMinhasInscricoes,
+    InscreverEvento,
+    EnviarProposta,
+    forgotPassword,
+    resetPassword,
+    register,
+  }}>
+    {children}
+  </AuthContext.Provider>
+);
 }
