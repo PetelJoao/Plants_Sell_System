@@ -664,8 +664,48 @@ const ComprarTudo = async (success_url = '', cancel_url = '') => {
     : null;
 
   return (
-      <AuthContext.Provider value={{ user: profile, rawUser: user, loading, plans, login, logout, carregar, inserir, deletar, CarregarUsuarios, SuspenderUser, BanUser, GerenciarPlantas, MinhasPlantas, solicitarSaque, LoadAdmingeral, CarregarSaques, PagarSaque , carregarDenuncias , carregarhistorico , BtnDonwloadPlant}}>
-      {children}
-    </AuthContext.Provider>
-  );
+  <AuthContext.Provider value={{ 
+    user: profile, 
+    rawUser: user, 
+    loading, 
+    plans,
+    login,
+    logout,
+    carregar,
+    inserir,
+    deletar,
+    CarregarUsuarios,
+    SuspenderUser,
+    BanUser,
+    GerenciarPlantas,
+    MinhasPlantas,
+    solicitarSaque,
+    LoadAdmingeral,
+    CarregarSaques,
+    PagarSaque,
+    carregarDenuncias,
+    carregarhistorico,
+    BtnDonwloadPlant,
+    ComprarTudo,
+    ComprarItem,
+    AdicionarAoCarrinho,
+    RemoverDoCarrinho,
+    ListarCarrinho,
+    LimparCarrinho,
+    CarregarEventos,
+    CriarEvento,
+    CarregarEventoDetalhe,
+    CarregarInscricoes,
+    DecidirInscricao,
+    CarregarEventosDisponiveis,
+    CarregarMinhasInscricoes,
+    InscreverEvento,
+    EnviarProposta,
+    forgotPassword,
+    resetPassword,
+    register,
+  }}>
+    {children}
+  </AuthContext.Provider>
+);
 }
