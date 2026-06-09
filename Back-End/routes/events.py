@@ -5,7 +5,7 @@ from uuid import UUID
 from datetime import datetime
 
 from middlewares.auth import get_current_user
-from models.db import get_supabase_admin
+from models.db import get_supabase_admin  # ← único import de DB necessário
 
 events_router = APIRouter()
 
@@ -34,294 +34,179 @@ class DecisaoInscricao(BaseModel):
 
 @events_router.post("/", status_code=status.HTTP_201_CREATED)
 async def criar_evento(evento: EventoCreate, current_user=Depends(get_current_user)):
-    """Cliente cria um novo evento/projecto."""
-    conn = get_db_connection()
-    try:
-        cur = conn.cursor()
+    supabase = get_supabase_admin()
 
-        # Verificar que o utilizador é cliente
-        cur.execute("SELECT id FROM cliente WHERE id = %s", (str(current_user["id"]),))
-        if not cur.fetchone():
-            raise HTTPException(status_code=403, detail="Apenas clientes podem criar eventos.")
+    # Verificar que é cliente
+    cliente = supabase.table("cliente").select("id").eq("id", str(current_user["id"])).execute()
+    if not cliente.data:
+        raise HTTPException(status_code=403, detail="Apenas clientes podem criar eventos.")
 
-        cur.execute(
-            """
-            INSERT INTO evento (descricao, data_inicio, data_fim, imagens, id_dono)
-            VALUES (%s, %s, %s, %s, %s)
-            RETURNING id, estado, descricao, data_inicio, data_fim, imagens, criado_em
-            """,
-            (
-                evento.descricao,
-                evento.data_inicio,
-                evento.data_fim,
-                evento.imagens,
-                str(current_user["id"]),
-            ),
-        )
-        novo = cur.fetchone()
-        conn.commit()
-        return {
-            "id": str(novo[0]),
-            "estado": novo[1],
-            "descricao": novo[2],
-            "data_inicio": novo[3],
-            "data_fim": novo[4],
-            "imagens": novo[5],
-            "criado_em": novo[6],
-        }
-    finally:
-        cur.close()
-        conn.close()
+    res = supabase.table("evento").insert({
+        "descricao":   evento.descricao,
+        "data_inicio": evento.data_inicio.isoformat() if evento.data_inicio else None,
+        "data_fim":    evento.data_fim.isoformat()    if evento.data_fim    else None,
+        "imagens":     evento.imagens,
+        "id_dono":     str(current_user["id"]),
+    }).execute()
+
+    if not res.data:
+        raise HTTPException(status_code=500, detail="Erro ao criar evento.")
+
+    return res.data[0]
 
 
 # ─── Cliente: Listar os seus eventos ────────────────────────────────────────
 
 @events_router.get("/meus", summary="Eventos do cliente autenticado")
 async def listar_meus_eventos(current_user=Depends(get_current_user)):
-    conn = get_db_connection()
-    try:
-        cur = conn.cursor()
-        cur.execute(
-            """
-            SELECT e.id, e.estado, e.descricao, e.data_inicio, e.data_fim,
-                   e.imagens, e.criado_em,
-                   COUNT(i.id) AS total_inscricoes
-            FROM evento e
-            LEFT JOIN inscricao i ON i.idevento = e.id
-            WHERE e.id_dono = %s
-            GROUP BY e.id
-            ORDER BY e.criado_em DESC
-            """,
-            (str(current_user["id"]),),
-        )
-        rows = cur.fetchall()
-        return [
-            {
-                "id": str(r[0]),
-                "estado": r[1],
-                "descricao": r[2],
-                "data_inicio": r[3],
-                "data_fim": r[4],
-                "imagens": r[5],
-                "criado_em": r[6],
-                "total_inscricoes": r[7],
-            }
-            for r in rows
-        ]
-    finally:
-        cur.close()
-        conn.close()
+    supabase = get_supabase_admin()
+
+    res = supabase.table("evento") \
+        .select("*, inscricao(id)") \
+        .eq("id_dono", str(current_user["id"])) \
+        .order("criado_em", desc=True) \
+        .execute()
+
+    if res.data is None:
+        raise HTTPException(status_code=500, detail="Erro ao carregar eventos.")
+
+    # mapeia total_inscricoes a partir do join
+    eventos = []
+    for e in res.data:
+        inscricoes = e.pop("inscricao", []) or []
+        e["total_inscricoes"] = len(inscricoes)
+        eventos.append(e)
+
+    return eventos
 
 
 # ─── Arquiteto: Listar eventos disponíveis (abertos) ────────────────────────
 
 @events_router.get("/disponiveis", summary="Eventos abertos para inscrição")
 async def listar_eventos_disponiveis(current_user=Depends(get_current_user)):
-    conn = get_db_connection()
-    try:
-        cur = conn.cursor()
-        cur.execute(
-            """
-            SELECT e.id, e.estado, e.descricao, e.data_inicio, e.data_fim,
-                   e.imagens, e.criado_em,
-                   u.nome AS nome_dono,
-                   EXISTS(
-                       SELECT 1 FROM inscricao i
-                       WHERE i.idevento = e.id AND i.idarquiteto = %s
-                   ) AS ja_inscrito
-            FROM evento e
-            JOIN cliente c ON c.id = e.id_dono
-            JOIN usuario u ON u.id = c.id
-            WHERE e.estado = 'aberto'
-            ORDER BY e.criado_em DESC
-            """,
-            (str(current_user["id"]),),
-        )
-        rows = cur.fetchall()
-        return [
-            {
-                "id": str(r[0]),
-                "estado": r[1],
-                "descricao": r[2],
-                "data_inicio": r[3],
-                "data_fim": r[4],
-                "imagens": r[5],
-                "criado_em": r[6],
-                "nome_dono": r[7],
-                "ja_inscrito": r[8],
-            }
-            for r in rows
-        ]
-    finally:
-        cur.close()
-        conn.close()
+    supabase = get_supabase_admin()
 
+    res = supabase.table("evento") \
+        .select("*, cliente(usuario(nome)), inscricao(idarquiteto)") \
+        .eq("estado", "aberto") \
+        .order("criado_em", desc=True) \
+        .execute()
+
+    if res.data is None:
+        raise HTTPException(status_code=500, detail="Erro ao carregar eventos.")
+
+    eventos = []
+    for e in res.data:
+        inscricoes   = e.pop("inscricao", []) or []
+        cliente_data = e.pop("cliente",   {}) or {}
+        e["nome_dono"]   = cliente_data.get("usuario", {}).get("nome")
+        e["ja_inscrito"] = any(
+            str(i["idarquiteto"]) == str(current_user["id"]) for i in inscricoes
+        )
+        eventos.append(e)
+
+    return eventos
+
+
+# ─── Arquiteto: Ver as suas inscrições ──────────────────────────────────────
+
+@events_router.get("/arquiteto/inscricoes", summary="Inscrições do arquitecto autenticado")
+async def minhas_inscricoes_arquiteto(current_user=Depends(get_current_user)):
+    print("USER RECEBIDO:", current_user)   # ← variável, não função
+
+    supabase = get_supabase_admin()
+
+    arq = supabase.table("arquiteto").select("id").eq("id", str(current_user["id"])).execute()
+    if not arq.data:
+        raise HTTPException(status_code=403, detail="Apenas arquitectos podem aceder a este recurso.")
+
+    res = supabase.table("inscricao") \
+        .select("*, evento(*), proposta(*)") \
+        .eq("idarquiteto", str(current_user["id"])) \
+        .order("dataingresso", desc=True) \
+        .execute()
+
+    return res.data or []
 
 # ─── Detalhe de um evento ────────────────────────────────────────────────────
 
 @events_router.get("/{evento_id}")
 async def detalhe_evento(evento_id: UUID, current_user=Depends(get_current_user)):
-    conn = get_db_connection()
-    try:
-        cur = conn.cursor()
-        cur.execute(
-            """
-            SELECT e.id, e.estado, e.descricao, e.data_inicio, e.data_fim,
-                   e.imagens, e.criado_em, e.id_dono,
-                   u.nome AS nome_dono
-            FROM evento e
-            JOIN cliente c ON c.id = e.id_dono
-            JOIN usuario u ON u.id = c.id
-            WHERE e.id = %s
-            """,
-            (str(evento_id),),
-        )
-        row = cur.fetchone()
-        if not row:
-            raise HTTPException(status_code=404, detail="Evento não encontrado.")
+    supabase = get_supabase_admin()
 
-        return {
-            "id": str(row[0]),
-            "estado": row[1],
-            "descricao": row[2],
-            "data_inicio": row[3],
-            "data_fim": row[4],
-            "imagens": row[5],
-            "criado_em": row[6],
-            "id_dono": str(row[7]),
-            "nome_dono": row[8],
-        }
-    finally:
-        cur.close()
-        conn.close()
+    res = supabase.table("evento") \
+        .select("*, cliente(usuario(nome))") \
+        .eq("id", str(evento_id)) \
+        .single() \
+        .execute()
+
+    if not res.data:
+        raise HTTPException(status_code=404, detail="Evento não encontrado.")
+
+    e            = res.data
+    cliente_data = e.pop("cliente", {}) or {}
+    e["nome_dono"] = cliente_data.get("usuario", {}).get("nome")
+    return e
 
 
 # ─── Arquiteto: Inscrever-se num evento ─────────────────────────────────────
 
 @events_router.post("/inscricao", status_code=status.HTTP_201_CREATED)
 async def inscrever_em_evento(dados: InscricaoCreate, current_user=Depends(get_current_user)):
-    conn = get_db_connection()
-    try:
-        cur = conn.cursor()
+    supabase = get_supabase_admin()
 
-        # Verificar que é arquiteto
-        cur.execute("SELECT id FROM arquiteto WHERE id = %s", (str(current_user["id"]),))
-        if not cur.fetchone():
-            raise HTTPException(status_code=403, detail="Apenas arquitectos podem inscrever-se.")
+    # Verificar que é arquiteto
+    arq = supabase.table("arquiteto").select("id").eq("id", str(current_user["id"])).execute()
+    if not arq.data:
+        raise HTTPException(status_code=403, detail="Apenas arquitectos podem inscrever-se.")
 
-        # Verificar que o evento existe e está aberto
-        cur.execute("SELECT estado FROM evento WHERE id = %s", (str(dados.idevento),))
-        evento = cur.fetchone()
-        if not evento:
-            raise HTTPException(status_code=404, detail="Evento não encontrado.")
-        if evento[0] != "aberto":
-            raise HTTPException(status_code=400, detail="Este evento já não aceita inscrições.")
+    # Verificar evento aberto
+    ev = supabase.table("evento").select("estado").eq("id", str(dados.idevento)).single().execute()
+    if not ev.data:
+        raise HTTPException(status_code=404, detail="Evento não encontrado.")
+    if ev.data["estado"] != "aberto":
+        raise HTTPException(status_code=400, detail="Este evento já não aceita inscrições.")
 
-        # Verificar inscrição duplicada
-        cur.execute(
-            "SELECT id FROM inscricao WHERE idevento = %s AND idarquiteto = %s",
-            (str(dados.idevento), str(current_user["id"])),
-        )
-        if cur.fetchone():
-            raise HTTPException(status_code=409, detail="Já está inscrito neste evento.")
+    # Verificar duplicado
+    dup = supabase.table("inscricao") \
+        .select("id") \
+        .eq("idevento",    str(dados.idevento)) \
+        .eq("idarquiteto", str(current_user["id"])) \
+        .execute()
+    if dup.data:
+        raise HTTPException(status_code=409, detail="Já está inscrito neste evento.")
 
-        cur.execute(
-            """
-            INSERT INTO inscricao (idevento, idarquiteto)
-            VALUES (%s, %s)
-            RETURNING id, dataingresso, estado
-            """,
-            (str(dados.idevento), str(current_user["id"])),
-        )
-        nova = cur.fetchone()
-        conn.commit()
-        return {"id": str(nova[0]), "dataingresso": nova[1], "estado": nova[2]}
-    finally:
-        cur.close()
-        conn.close()
+    res = supabase.table("inscricao").insert({
+        "idevento":    str(dados.idevento),
+        "idarquiteto": str(current_user["id"]),
+    }).execute()
+
+    if not res.data:
+        raise HTTPException(status_code=500, detail="Erro ao inscrever.")
+
+    return res.data[0]
 
 
-# ─── Cliente: Ver inscrições de um evento (com dados do arquiteto) ───────────
+# ─── Cliente: Ver inscrições de um evento ───────────────────────────────────
 
 @events_router.get("/{evento_id}/inscricoes")
 async def listar_inscricoes_evento(evento_id: UUID, current_user=Depends(get_current_user)):
-    conn = get_db_connection()
-    try:
-        cur = conn.cursor()
+    supabase = get_supabase_admin()
 
-        # Confirmar que o cliente é dono do evento
-        cur.execute(
-            "SELECT id_dono FROM evento WHERE id = %s", (str(evento_id),)
-        )
-        row = cur.fetchone()
-        if not row:
-            raise HTTPException(status_code=404, detail="Evento não encontrado.")
-        if str(row[0]) != str(current_user["id"]):
-            raise HTTPException(status_code=403, detail="Acesso negado.")
+    # Confirmar que é dono
+    ev = supabase.table("evento").select("id_dono").eq("id", str(evento_id)).single().execute()
+    if not ev.data:
+        raise HTTPException(status_code=404, detail="Evento não encontrado.")
+    if str(ev.data["id_dono"]) != str(current_user["id"]):
+        raise HTTPException(status_code=403, detail="Acesso negado.")
 
-        cur.execute(
-            """
-            SELECT
-                i.id            AS inscricao_id,
-                i.dataingresso,
-                i.estado        AS estado_inscricao,
-                u.id            AS arquiteto_id,
-                u.nome,
-                u.email,
-                u.telefone,
-                a.endereco,
-                a.foto_pessoal,
-                a.cedula_profissional,
-                a.bio,
-                a.nif,
-                a.avaliacao,
-                p.id            AS proposta_id,
-                p.valor,
-                p.prazo_dias,
-                p.mensagem      AS proposta_mensagem,
-                p.criada_em     AS proposta_criada_em
-            FROM inscricao i
-            JOIN arquiteto a ON a.id = i.idarquiteto
-            JOIN usuario u ON u.id = a.id
-            LEFT JOIN proposta p ON p.id_inscricao = i.id
-            WHERE i.idevento = %s
-            ORDER BY i.dataingresso DESC
-            """,
-            (str(evento_id),),
-        )
-        rows = cur.fetchall()
-        return [
-            {
-                "inscricao_id": str(r[0]),
-                "dataingresso": r[1],
-                "estado": r[2],
-                "arquiteto": {
-                    "id": str(r[3]),
-                    "nome": r[4],
-                    "email": r[5],
-                    "telefone": r[6],
-                    "endereco": r[7],
-                    "foto_pessoal": r[8],
-                    "cedula_profissional": r[9],
-                    "bio": r[10],
-                    "nif": r[11],
-                    "avaliacao": r[12],
-                },
-                "proposta": {
-                    "id": str(r[13]) if r[13] else None,
-                    "valor": float(r[14]) if r[14] else None,
-                    "prazo_dias": r[15],
-                    "mensagem": r[16],
-                    "criada_em": r[17],
-                }
-                if r[13]
-                else None,
-            }
-            for r in rows
-        ]
-    finally:
-        cur.close()
-        conn.close()
+    res = supabase.table("inscricao") \
+        .select("*, arquiteto(*, usuario(*)), proposta(*)") \
+        .eq("idevento", str(evento_id)) \
+        .order("dataingresso", desc=True) \
+        .execute()
+
+    return res.data or []
 
 
 # ─── Cliente: Aceitar/Rejeitar arquitecto ───────────────────────────────────
@@ -333,155 +218,71 @@ async def decidir_inscricao(
     current_user=Depends(get_current_user),
 ):
     if decisao.estado not in ("aceite", "rejeitado"):
-        raise HTTPException(status_code=400, detail="Estado inválido. Use 'aceite' ou 'rejeitado'.")
+        raise HTTPException(status_code=400, detail="Use 'aceite' ou 'rejeitado'.")
 
-    conn = get_db_connection()
-    try:
-        cur = conn.cursor()
+    supabase = get_supabase_admin()
 
-        # Verificar que a inscrição existe e pertence a um evento do cliente
-        cur.execute(
-            """
-            SELECT i.id, e.id_dono, e.id AS evento_id
-            FROM inscricao i
-            JOIN evento e ON e.id = i.idevento
-            WHERE i.id = %s
-            """,
-            (str(inscricao_id),),
-        )
-        row = cur.fetchone()
-        if not row:
-            raise HTTPException(status_code=404, detail="Inscrição não encontrada.")
-        if str(row[1]) != str(current_user["id"]):
-            raise HTTPException(status_code=403, detail="Acesso negado.")
+    # Verificar inscrição e dono do evento
+    ins = supabase.table("inscricao") \
+        .select("id, idarquiteto, evento(id, id_dono)") \
+        .eq("id", str(inscricao_id)) \
+        .single() \
+        .execute()
 
-        evento_id = row[2]
+    if not ins.data:
+        raise HTTPException(status_code=404, detail="Inscrição não encontrada.")
+    if str(ins.data["evento"]["id_dono"]) != str(current_user["id"]):
+        raise HTTPException(status_code=403, detail="Acesso negado.")
 
-        # Actualizar estado da inscrição
-        cur.execute(
-            "UPDATE inscricao SET estado = %s WHERE id = %s",
-            (decisao.estado, str(inscricao_id)),
-        )
+    evento_id    = ins.data["evento"]["id"]
+    idarquiteto  = ins.data["idarquiteto"]
 
-        # Se aceite → atribuir arquiteto ao evento e mudar estado para em_andamento
-        if decisao.estado == "aceite":
-            cur.execute(
-                """
-                UPDATE evento
-                SET estado = 'em_andamento',
-                    id_arquiteto = (SELECT idarquiteto FROM inscricao WHERE id = %s)
-                WHERE id = %s
-                """,
-                (str(inscricao_id), str(evento_id)),
-            )
-            # Rejeitar automaticamente as restantes inscrições pendentes
-            cur.execute(
-                """
-                UPDATE inscricao
-                SET estado = 'rejeitado'
-                WHERE idevento = %s AND id != %s AND estado = 'pendente'
-                """,
-                (str(evento_id), str(inscricao_id)),
-            )
+    # Actualizar estado da inscrição
+    supabase.table("inscricao").update({"estado": decisao.estado}).eq("id", str(inscricao_id)).execute()
 
-        conn.commit()
-        return {"message": f"Inscrição marcada como '{decisao.estado}' com sucesso."}
-    finally:
-        cur.close()
-        conn.close()
+    if decisao.estado == "aceite":
+        # Evento passa a em_andamento com arquiteto atribuído
+        supabase.table("evento").update({
+            "estado":       "em_andamento",
+            "id_arquiteto": str(idarquiteto),
+        }).eq("id", str(evento_id)).execute()
+
+        # Rejeitar restantes inscrições pendentes
+        supabase.table("inscricao") \
+            .update({"estado": "rejeitado"}) \
+            .eq("idevento", str(evento_id)) \
+            .neq("id", str(inscricao_id)) \
+            .eq("estado", "pendente") \
+            .execute()
+
+    return {"message": f"Inscrição marcada como '{decisao.estado}' com sucesso."}
 
 
 # ─── Arquiteto: Submeter proposta ───────────────────────────────────────────
 
 @events_router.post("/proposta", status_code=status.HTTP_201_CREATED)
 async def criar_proposta(proposta: PropostaCreate, current_user=Depends(get_current_user)):
-    conn = get_db_connection()
-    try:
-        cur = conn.cursor()
+    supabase = get_supabase_admin()
 
-        # Verificar que a inscrição pertence ao arquiteto
-        cur.execute(
-            "SELECT id FROM inscricao WHERE id = %s AND idarquiteto = %s",
-            (str(proposta.id_inscricao), str(current_user["id"])),
-        )
-        if not cur.fetchone():
-            raise HTTPException(status_code=403, detail="Acesso negado.")
+    # Verificar que a inscrição pertence ao arquiteto
+    ins = supabase.table("inscricao") \
+        .select("id") \
+        .eq("id",          str(proposta.id_inscricao)) \
+        .eq("idarquiteto", str(current_user["id"])) \
+        .execute()
+    if not ins.data:
+        raise HTTPException(status_code=403, detail="Acesso negado.")
 
-        cur.execute(
-            """
-            INSERT INTO proposta (id_inscricao, valor, prazo_dias, mensagem)
-            VALUES (%s, %s, %s, %s)
-            RETURNING id, valor, prazo_dias, mensagem, criada_em
-            """,
-            (str(proposta.id_inscricao), proposta.valor, proposta.prazo_dias, proposta.mensagem),
-        )
-        nova = cur.fetchone()
-        conn.commit()
-        return {
-            "id": str(nova[0]),
-            "valor": float(nova[1]),
-            "prazo_dias": nova[2],
-            "mensagem": nova[3],
-            "criada_em": nova[4],
-        }
-    finally:
-        cur.close()
-        conn.close()
+    res = supabase.table("proposta").insert({
+        "id_inscricao": str(proposta.id_inscricao),
+        "valor":        proposta.valor,
+        "prazo_dias":   proposta.prazo_dias,
+        "mensagem":     proposta.mensagem,
+    }).execute()
+
+    if not res.data:
+        raise HTTPException(status_code=500, detail="Erro ao criar proposta.")
+
+    return res.data[0]
 
 
-@events_router.get("/arquiteto/inscricoes", summary="Inscrições do arquitecto autenticado")
-async def minhas_inscricoes_arquiteto(current_user=Depends(get_current_user)):
-    conn = get_db_connection()
-    try:
-        cur = conn.cursor()
-
-        cur.execute("SELECT id FROM arquiteto WHERE id = %s", (str(current_user["id"]),))
-        if not cur.fetchone():
-            raise HTTPException(status_code=403, detail="Apenas arquitectos podem aceder a este recurso.")
-
-        cur.execute(
-            """
-            SELECT
-                i.id            AS inscricao_id,
-                i.dataingresso,
-                i.estado,
-                e.id            AS evento_id,
-                e.descricao     AS evento_descricao,
-                e.estado        AS evento_estado,
-                p.id            AS proposta_id,
-                p.valor,
-                p.prazo_dias,
-                p.mensagem,
-                p.criada_em     AS proposta_criada_em
-            FROM inscricao i
-            JOIN evento e ON e.id = i.idevento
-            LEFT JOIN proposta p ON p.id_inscricao = i.id
-            WHERE i.idarquiteto = %s
-            ORDER BY i.dataingresso DESC
-            """,
-            (str(current_user["id"]),),
-        )
-        rows = cur.fetchall()
-        return [
-            {
-                "inscricao_id": str(r[0]),
-                "dataingresso": r[1],
-                "estado": r[2],
-                "evento_id": str(r[3]),
-                "evento_descricao": r[4],
-                "evento_estado": r[5],
-                "proposta": {
-                    "id": str(r[6]),
-                    "valor": float(r[7]),
-                    "prazo_dias": r[8],
-                    "mensagem": r[9],
-                    "criada_em": r[10],
-                }
-                if r[6]
-                else None,
-            }
-            for r in rows
-        ]
-    finally:
-        cur.close()
-        conn.close()

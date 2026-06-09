@@ -1,13 +1,8 @@
 "use client";
+
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-
-const headers = () => ({
-  "Content-Type": "application/json",
-  Authorization: `Bearer ${typeof window !== "undefined" ? localStorage.getItem("token") : ""}`,
-});
+import { useAuth } from "@/Context/AuthContext";
 
 // ─── Tipos ────────────────────────────────────────────────────────────────
 interface Arquiteto {
@@ -51,48 +46,43 @@ interface Evento {
   nome_dono: string;
 }
 
-interface EstadoBadgeProps {
-  estado: string;
-}
-
-interface EstarelasProps {
-  valor: number;
-}
-
-interface CardArquitetoProps {
-  inscricao: Inscricao;
-  onDecisao: (inscricaoId: string, decisao: string) => Promise<void>;
-  eventoEstado: string;
-}
-
-// ─── Estado badge ─────────────────────────────────────────────────────────
-function EstadoBadge({ estado }: EstadoBadgeProps) {
+// ─── Sub-componentes ──────────────────────────────────────────────────────
+function EstadoBadge({ estado }: { estado: string }) {
   const map: Record<string, { label: string; cls: string }> = {
-    aberto: { label: "Aberto", cls: "badge-aberto" },
-    em_andamento: { label: "Em andamento", cls: "badge-andamento" },
-    finalizado: { label: "Finalizado", cls: "badge-finalizado" },
-    pendente: { label: "Pendente", cls: "badge-pendente" },
-    aceite: { label: "Aceite", cls: "badge-aceite" },
-    rejeitado: { label: "Rejeitado", cls: "badge-rejeitado" },
+    aberto:       { label: "Aberto",       cls: "badge-aberto"     },
+    em_andamento: { label: "Em andamento", cls: "badge-andamento"  },
+    finalizado:   { label: "Finalizado",   cls: "badge-finalizado" },
+    pendente:     { label: "Pendente",     cls: "badge-pendente"   },
+    aceite:       { label: "Aceite",       cls: "badge-aceite"     },
+    rejeitado:    { label: "Rejeitado",    cls: "badge-rejeitado"  },
   };
   const { label, cls } = map[estado] || { label: estado, cls: "" };
   return <span className={`badge ${cls}`}>{label}</span>;
 }
 
-function Estrelas({ valor }: EstarelasProps) {
+function Estrelas({ valor }: { valor: number }) {
   return (
     <span className="estrelas">
       {[1, 2, 3, 4, 5].map((i) => (
-        <span key={i} style={{ color: i <= valor ? "#F5A623" : "#DDD" }}>★</span>
+        <span key={i} className={i <= valor ? "star-on" : "star-off"}>★</span>
       ))}
     </span>
   );
 }
 
-function CardArquiteto({ inscricao, onDecisao, eventoEstado }: CardArquitetoProps) {
+function CardArquiteto({
+  inscricao,
+  onDecisao,
+  eventoEstado,
+}: {
+  inscricao: Inscricao;
+  onDecisao: (id: string, decisao: string) => Promise<void>;
+  eventoEstado: string;
+}) {
   const { arquiteto, proposta, estado, inscricao_id, dataingresso } = inscricao;
-  const [expandido, setExpandido] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [expandido, setExpandido]   = useState(false);
+  const [loading, setLoading]       = useState(false);
+  const podeDecidir = eventoEstado === "aberto" && estado === "pendente";
 
   const handleDecisao = async (decisao: string) => {
     setLoading(true);
@@ -100,84 +90,80 @@ function CardArquiteto({ inscricao, onDecisao, eventoEstado }: CardArquitetoProp
     setLoading(false);
   };
 
-  const podeDecidir = eventoEstado === "aberto" && estado === "pendente";
-
   return (
-    <div className={`card-arquiteto ${estado === "aceite" ? "card-aceite" : estado === "rejeitado" ? "card-rejeitado" : ""}`}>
+    <div className={`card-arq${estado === "aceite" ? " card-aceite" : estado === "rejeitado" ? " card-rejeitado" : ""}`}>
       <div className="arq-header">
         <div className="arq-avatar">
-          {arquiteto.foto_pessoal ? (
-            <img src={arquiteto.foto_pessoal} alt={arquiteto.nome} />
-          ) : (
-            <span>{arquiteto.nome?.charAt(0).toUpperCase()}</span>
-          )}
+          {arquiteto.foto_pessoal
+            ? <img src={arquiteto.foto_pessoal} alt={arquiteto.nome} />
+            : <span>{arquiteto.nome?.charAt(0).toUpperCase()}</span>}
         </div>
-        <div className="arq-info">
+        <div className="arq-meta">
           <div className="arq-nome-row">
             <h3>{arquiteto.nome}</h3>
             <EstadoBadge estado={estado} />
           </div>
-          <p className="arq-email">✉️ {arquiteto.email}</p>
-          {arquiteto.telefone && <p className="arq-tel">📞 {arquiteto.telefone}</p>}
+          <p className="arq-sub">{arquiteto.email}</p>
+          {arquiteto.telefone && <p className="arq-sub">{arquiteto.telefone}</p>}
           <Estrelas valor={arquiteto.avaliacao} />
         </div>
       </div>
 
       {proposta && proposta.valor !== null && (
         <div className="proposta-box">
-          <h4>💼 Proposta</h4>
-          <div className="proposta-grid">
+          <p className="proposta-section-label">Proposta</p>
+          <div className="proposta-row">
             <div className="proposta-item">
-              <span className="proposta-label">Valor</span>
-              <span className="proposta-valor">
+              <span className="prop-label">Valor</span>
+              <span className="prop-val">
                 {Number(proposta.valor).toLocaleString("pt-AO", { style: "currency", currency: "AOA" })}
               </span>
             </div>
             {proposta.prazo_dias && (
               <div className="proposta-item">
-                <span className="proposta-label">Prazo</span>
-                <span className="proposta-valor">{proposta.prazo_dias} dias</span>
+                <span className="prop-label">Prazo</span>
+                <span className="prop-val">{proposta.prazo_dias} dias</span>
               </div>
             )}
           </div>
           {proposta.mensagem && (
-            <p className="proposta-mensagem">"{proposta.mensagem}"</p>
+            <p className="proposta-msg">"{proposta.mensagem}"</p>
           )}
         </div>
       )}
 
       <button className="btn-expandir" onClick={() => setExpandido(!expandido)}>
-        {expandido ? "▲ Ocultar detalhes" : "▼ Ver mais detalhes"}
+        {expandido ? "Ocultar detalhes" : "Ver mais detalhes"}
       </button>
 
       {expandido && (
         <div className="arq-detalhes">
           {arquiteto.bio && (
-            <div className="detalhe-item">
-              <span className="detalhe-label">Bio</span>
+            <div className="det-item">
+              <span className="det-label">Bio</span>
               <p>{arquiteto.bio}</p>
             </div>
           )}
           {arquiteto.cedula_profissional && (
-            <div className="detalhe-item">
-              <span className="detalhe-label">Cédula Profissional</span>
+            <div className="det-item">
+              <span className="det-label">Cédula Profissional</span>
               <p>{arquiteto.cedula_profissional}</p>
             </div>
           )}
           {arquiteto.nif && (
-            <div className="detalhe-item">
-              <span className="detalhe-label">NIF</span>
+            <div className="det-item">
+              <span className="det-label">NIF</span>
               <p>{arquiteto.nif}</p>
             </div>
           )}
           {arquiteto.endereco && (
-            <div className="detalhe-item">
-              <span className="detalhe-label">Endereço</span>
+            <div className="det-item">
+              <span className="det-label">Endereço</span>
               <p>{arquiteto.endereco}</p>
             </div>
           )}
-          <div className="detalhe-item">
-            <span className="detalhe-label">Data de inscrição</span>
+          <div className="det-item">
+            <span className="det-label">Data de inscrição</span>
             <p>{new Date(dataingresso).toLocaleString("pt-AO")}</p>
           </div>
         </div>
@@ -185,19 +171,11 @@ function CardArquiteto({ inscricao, onDecisao, eventoEstado }: CardArquitetoProp
 
       {podeDecidir && (
         <div className="acoes">
-          <button
-            className="btn-aceitar"
-            onClick={() => handleDecisao("aceite")}
-            disabled={loading}
-          >
-            ✓ Aceitar Arquitecto
+          <button className="btn-aceitar" onClick={() => handleDecisao("aceite")} disabled={loading}>
+            Aceitar Arquitecto
           </button>
-          <button
-            className="btn-rejeitar"
-            onClick={() => handleDecisao("rejeitado")}
-            disabled={loading}
-          >
-            ✕ Rejeitar
+          <button className="btn-rejeitar" onClick={() => handleDecisao("rejeitado")} disabled={loading}>
+            Rejeitar
           </button>
         </div>
       )}
@@ -207,41 +185,42 @@ function CardArquiteto({ inscricao, onDecisao, eventoEstado }: CardArquitetoProp
 
 // ─── Página principal ──────────────────────────────────────────────────────
 export default function Page() {
-  const params = useParams();
-  const router = useRouter();
+  const params   = useParams();
+  const router   = useRouter();
   const eventoId = params?.id as string;
 
-  const [evento, setEvento] = useState<Evento | null>(null);
+  // ✅ mesmo padrão do projeto — useAuth com as any
+  const { loading: authLoading, CarregarEventoDetalhe, CarregarInscricoes, DecidirInscricao } = useAuth() as any;
+
+  const [evento,     setEvento]     = useState<Evento | null>(null);
   const [inscricoes, setInscricoes] = useState<Inscricao[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [feedback, setFeedback] = useState<{ tipo: string; msg: string } | null>(null);
-  const [filtro, setFiltro] = useState("todos");
+  const [pageLoad,   setPageLoad]   = useState(true);
+  const [feedback,   setFeedback]   = useState<{ tipo: string; msg: string } | null>(null);
+  const [filtro,     setFiltro]     = useState("todos");
 
   const fetchTudo = async () => {
-    setLoading(true);
+    setPageLoad(true);
     try {
-      const [resEvento, resInscricoes] = await Promise.all([
-        fetch(`${API}/api/eventos/${eventoId}`, { headers: headers() }),
-        fetch(`${API}/api/eventos/${eventoId}/inscricoes`, { headers: headers() }),
+      const [ev, insc] = await Promise.all([
+        CarregarEventoDetalhe(eventoId),
+        CarregarInscricoes(eventoId),
       ]);
-      if (resEvento.ok) setEvento(await resEvento.json());
-      if (resInscricoes.ok) setInscricoes(await resInscricoes.json());
+      if (ev)   setEvento(ev);
+      if (insc) setInscricoes(insc);
     } finally {
-      setLoading(false);
+      setPageLoad(false);
     }
   };
 
-  useEffect(() => { if (eventoId) fetchTudo(); }, [eventoId]);
+  useEffect(() => {
+    if (authLoading) return;
+    if (eventoId) fetchTudo();
+  }, [authLoading, eventoId]);
 
   const handleDecisao = async (inscricaoId: string, decisao: string) => {
     try {
-      const res = await fetch(`${API}/api/eventos/inscricao/${inscricaoId}/decisao`, {
-        method: "PUT",
-        headers: headers(),
-        body: JSON.stringify({ estado: decisao }),
-      });
-      if (!res.ok) throw new Error((await res.json()).detail);
-      setFeedback({ tipo: "sucesso", msg: `Arquitecto ${decisao === "aceite" ? "aceite" : "rejeitado"} com sucesso!` });
+      await DecidirInscricao(inscricaoId, decisao);
+      setFeedback({ tipo: "sucesso", msg: `Arquitecto ${decisao === "aceite" ? "aceite" : "rejeitado"} com sucesso.` });
       fetchTudo();
     } catch (e) {
       setFeedback({ tipo: "erro", msg: (e as Error).message });
@@ -249,207 +228,321 @@ export default function Page() {
     setTimeout(() => setFeedback(null), 4000);
   };
 
-  const inscricoesFiltradas = inscricoes.filter((i) => {
-    if (filtro === "todos") return true;
-    return i.estado === filtro;
-  });
+  const inscricoesFiltradas = inscricoes.filter((i) =>
+    filtro === "todos" ? true : i.estado === filtro
+  );
 
-  if (loading) return <div className="loading-page">A carregar evento...</div>;
-  if (!evento) return <div className="loading-page">Evento não encontrado.</div>;
+  if (pageLoad) return <div className="loading-page">A carregar evento...</div>;
+  if (!evento)  return <div className="loading-page">Evento não encontrado.</div>;
 
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:wght@300;400;500&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
         :root {
-          --verde: #2D5016;
-          --verde-medio: #4A7C28;
-          --verde-claro: #7DB847;
-          --creme: #F5F0E8;
-          --creme-escuro: #EDE6D6;
-          --terra: #8B6914;
-          --texto: #1C1C1C;
-          --texto-suave: #6B6B6B;
-          --branco: #FFFFFF;
-          --vermelho: #C0392B;
-          --raio: 12px;
+          --bg: #F7F8FA;
+          --white: #FFFFFF;
+          --border: #E5E7EB;
+          --text: #111827;
+          --text-secondary: #6B7280;
+          --accent: #2563EB;
+          --accent-hover: #1D4ED8;
+          --accent-light: #EFF6FF;
+          --success: #16A34A;
+          --success-bg: #DCFCE7;
+          --danger: #DC2626;
+          --danger-bg: #FEF2F2;
+          --warning-bg: #FEF9C3;
+          --warning: #A16207;
+          --radius: 10px;
+          --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+          --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'DM Sans', sans-serif; background: var(--creme); color: var(--texto); }
 
-        .loading-page { display: flex; align-items: center; justify-content: center; height: 60vh; color: var(--texto-suave); font-size: 1.1rem; }
+        body {
+          font-family: 'Inter', sans-serif;
+          background: var(--bg);
+          color: var(--text);
+          min-height: 100vh;
+          font-size: 14px;
+        }
 
-        .page-topo { background: var(--verde); color: var(--creme); padding: 28px 48px; }
+        .loading-page {
+          display: flex; align-items: center; justify-content: center;
+          height: 60vh; color: var(--text-secondary); font-size: 14px;
+        }
+
+        /* ── top bar ── */
+        .top-bar {
+          background: var(--white);
+          border-bottom: 1px solid var(--border);
+          padding: 0 32px;
+          height: 56px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          position: sticky;
+          top: 0;
+          z-index: 100;
+        }
 
         .btn-voltar {
-          background: none; border: none; color: rgba(255,255,255,0.7);
-          cursor: pointer; font-family: 'DM Sans', sans-serif;
-          font-size: 0.9rem; padding: 0; margin-bottom: 16px;
-          display: flex; align-items: center; gap: 6px; transition: color 0.2s;
+          display: flex; align-items: center; gap: 6px;
+          background: none; border: 1px solid var(--border);
+          color: var(--text-secondary); padding: 6px 14px;
+          border-radius: var(--radius); font-family: 'Inter', sans-serif;
+          font-size: 13px; font-weight: 500; cursor: pointer;
+          transition: all 0.15s;
         }
-        .btn-voltar:hover { color: white; }
+        .btn-voltar:hover { background: var(--bg); color: var(--text); border-color: #D1D5DB; }
+        .btn-voltar svg { width: 14px; height: 14px; }
 
-        .topo-conteudo { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; }
-
-        .topo-info h1 {
-          font-family: 'Cormorant Garamond', serif;
-          font-size: 2rem; font-weight: 700; line-height: 1.3; margin-bottom: 12px;
+        /* ── evento header card ── */
+        .evento-header {
+          background: var(--white);
+          border-bottom: 1px solid var(--border);
+          padding: 24px 32px;
         }
 
-        .topo-meta { display: flex; gap: 16px; flex-wrap: wrap; font-size: 0.9rem; opacity: 0.85; }
-        .topo-meta span { display: flex; align-items: center; gap: 4px; }
+        .evento-header-inner {
+          max-width: 1100px;
+          margin: 0 auto;
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          gap: 24px;
+        }
 
-        .topo-stats { display: flex; gap: 12px; flex-shrink: 0; }
+        .evento-info h1 {
+          font-size: 18px; font-weight: 700;
+          color: var(--text); letter-spacing: -0.3px;
+          margin-bottom: 10px; line-height: 1.4;
+          max-width: 600px;
+        }
+
+        .evento-meta {
+          display: flex; gap: 16px; flex-wrap: wrap;
+          font-size: 12.5px; color: var(--text-secondary); align-items: center;
+        }
+
+        .evento-stats {
+          display: flex; gap: 12px; flex-shrink: 0;
+        }
+
         .stat-box {
-          background: rgba(255,255,255,0.12); border-radius: var(--raio);
-          padding: 16px 20px; text-align: center; min-width: 90px;
+          background: var(--bg);
+          border: 1px solid var(--border);
+          border-radius: var(--radius);
+          padding: 12px 18px;
+          text-align: center;
+          min-width: 80px;
         }
-        .stat-num { font-size: 1.8rem; font-weight: 700; line-height: 1; }
-        .stat-label { font-size: 0.78rem; opacity: 0.8; margin-top: 4px; }
+        .stat-num { font-size: 20px; font-weight: 700; color: var(--text); line-height: 1; }
+        .stat-label { font-size: 11px; color: var(--text-secondary); margin-top: 3px; }
 
-        .main { max-width: 1100px; margin: 0 auto; padding: 36px 48px; }
+        /* ── main content ── */
+        .main {
+          max-width: 1100px;
+          margin: 0 auto;
+          padding: 28px 32px;
+        }
 
+        /* ── feedback ── */
         .feedback {
-          padding: 14px 18px; border-radius: var(--raio);
-          margin-bottom: 24px; font-size: 0.95rem; animation: fadeIn 0.3s ease;
+          padding: 12px 16px; border-radius: var(--radius);
+          margin-bottom: 20px; font-size: 13px;
+          animation: fadeIn 0.2s ease;
         }
-        .feedback.sucesso { background: #E8F5E1; color: #2D6A1A; border-left: 4px solid var(--verde-claro); }
-        .feedback.erro { background: #FDECEA; color: var(--vermelho); border-left: 4px solid var(--vermelho); }
-        @keyframes fadeIn { from { opacity:0; transform: translateY(-8px) } to { opacity:1; transform: none } }
+        .feedback.sucesso { background: var(--success-bg); color: var(--success); border-left: 3px solid var(--success); }
+        .feedback.erro    { background: var(--danger-bg);  color: var(--danger);  border-left: 3px solid var(--danger); }
+        @keyframes fadeIn { from { opacity:0; transform: translateY(-6px) } to { opacity:1; transform: none } }
 
-        .filtros { display: flex; gap: 8px; margin-bottom: 28px; flex-wrap: wrap; }
+        /* ── filtros ── */
+        .filtros { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
         .filtro-btn {
-          padding: 8px 18px; border-radius: 20px;
-          border: 1.5px solid var(--creme-escuro);
-          background: var(--branco); color: var(--texto-suave);
-          cursor: pointer; font-family: 'DM Sans', sans-serif;
-          font-size: 0.88rem; transition: all 0.2s;
+          padding: 6px 16px; border-radius: 20px;
+          border: 1px solid var(--border);
+          background: var(--white); color: var(--text-secondary);
+          cursor: pointer; font-family: 'Inter', sans-serif;
+          font-size: 12.5px; font-weight: 500; transition: all 0.15s;
         }
-        .filtro-btn:hover { border-color: var(--verde-claro); color: var(--verde); }
-        .filtro-btn.ativo { background: var(--verde); color: white; border-color: var(--verde); }
+        .filtro-btn:hover { border-color: var(--accent); color: var(--accent); }
+        .filtro-btn.ativo { background: var(--accent); color: white; border-color: var(--accent); }
 
+        /* ── section title ── */
         .section-title {
-          font-family: 'Cormorant Garamond', serif;
-          font-size: 1.4rem; color: var(--verde); margin-bottom: 20px;
+          font-size: 15px; font-weight: 600;
+          color: var(--text); margin-bottom: 16px;
         }
 
+        /* ── grid ── */
         .inscricoes-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-          gap: 20px;
+          grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+          gap: 16px;
         }
 
-        .empty-inscricoes { text-align: center; padding: 60px; color: var(--texto-suave); grid-column: 1/-1; }
-        .empty-inscricoes .icon { font-size: 2.5rem; margin-bottom: 12px; }
-
-        .card-arquiteto {
-          background: var(--branco); border-radius: var(--raio);
-          padding: 24px; box-shadow: 0 2px 16px rgba(45,80,22,0.08);
-          border: 1.5px solid var(--creme-escuro); transition: box-shadow 0.2s;
+        .empty-box {
+          grid-column: 1/-1; text-align: center;
+          padding: 60px 20px; color: var(--text-secondary);
         }
-        .card-arquiteto:hover { box-shadow: 0 6px 24px rgba(45,80,22,0.14); }
-        .card-aceite { border-color: var(--verde-claro) !important; background: #F9FFF4; }
-        .card-rejeitado { opacity: 0.65; }
+        .empty-box p { font-size: 13.5px; }
 
-        .arq-header { display: flex; gap: 16px; margin-bottom: 16px; }
+        /* ── card arquiteto ── */
+        .card-arq {
+          background: var(--white);
+          border-radius: var(--radius);
+          padding: 20px;
+          box-shadow: var(--shadow);
+          border: 1px solid var(--border);
+          transition: box-shadow 0.15s, border-color 0.15s;
+        }
+        .card-arq:hover { box-shadow: var(--shadow-md); }
+        .card-aceite   { border-color: #86EFAC; background: #F0FDF4; }
+        .card-rejeitado { opacity: 0.6; }
+
+        .arq-header { display: flex; gap: 14px; margin-bottom: 14px; }
 
         .arq-avatar {
-          width: 56px; height: 56px; border-radius: 50%;
-          background: var(--verde); color: white;
+          width: 48px; height: 48px; border-radius: 50%;
+          background: var(--accent-light); color: var(--accent);
           display: flex; align-items: center; justify-content: center;
-          font-size: 1.4rem; font-weight: 700; flex-shrink: 0; overflow: hidden;
+          font-size: 18px; font-weight: 700; flex-shrink: 0; overflow: hidden;
+          border: 1px solid var(--border);
         }
         .arq-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
-        .arq-info { flex: 1; }
-        .arq-nome-row { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; flex-wrap: wrap; }
-        .arq-nome-row h3 { font-size: 1.05rem; font-weight: 600; }
-        .arq-email, .arq-tel { font-size: 0.85rem; color: var(--texto-suave); margin-bottom: 2px; }
-        .estrelas { font-size: 1rem; letter-spacing: 1px; }
-
-        .proposta-box { background: var(--creme); border-radius: 8px; padding: 16px; margin-bottom: 12px; }
-        .proposta-box h4 { font-size: 0.9rem; font-weight: 600; color: var(--verde); margin-bottom: 10px; }
-        .proposta-grid { display: flex; gap: 20px; margin-bottom: 8px; }
-        .proposta-item { display: flex; flex-direction: column; gap: 2px; }
-        .proposta-label { font-size: 0.75rem; color: var(--texto-suave); text-transform: uppercase; letter-spacing: 0.5px; }
-        .proposta-valor { font-size: 1rem; font-weight: 600; color: var(--verde); }
-        .proposta-mensagem { font-size: 0.88rem; color: var(--texto-suave); font-style: italic; margin-top: 6px; }
-
-        .btn-expandir {
-          background: none; border: none; color: var(--verde-medio);
-          font-size: 0.85rem; cursor: pointer; padding: 4px 0;
-          width: 100%; text-align: left; font-family: 'DM Sans', sans-serif; margin-bottom: 8px;
+        .arq-meta { flex: 1; }
+        .arq-nome-row {
+          display: flex; align-items: center; gap: 8px;
+          margin-bottom: 4px; flex-wrap: wrap;
         }
-        .btn-expandir:hover { color: var(--verde); }
+        .arq-nome-row h3 { font-size: 14px; font-weight: 600; }
+        .arq-sub { font-size: 12px; color: var(--text-secondary); margin-bottom: 2px; }
+        .star-on  { color: #F59E0B; }
+        .star-off { color: #D1D5DB; }
+        .estrelas { font-size: 13px; letter-spacing: 1px; margin-top: 4px; display: block; }
+
+        /* ── proposta ── */
+        .proposta-box {
+          background: var(--bg); border-radius: 8px;
+          padding: 14px; margin-bottom: 10px;
+          border: 1px solid var(--border);
+        }
+        .proposta-section-label {
+          font-size: 11px; font-weight: 600; text-transform: uppercase;
+          letter-spacing: 0.5px; color: var(--text-secondary); margin-bottom: 10px;
+        }
+        .proposta-row { display: flex; gap: 24px; margin-bottom: 6px; }
+        .proposta-item { display: flex; flex-direction: column; gap: 2px; }
+        .prop-label { font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.4px; }
+        .prop-val   { font-size: 14px; font-weight: 600; color: var(--text); }
+        .proposta-msg {
+          font-size: 12.5px; color: var(--text-secondary);
+          font-style: italic; margin-top: 6px; line-height: 1.5;
+        }
+
+        /* ── expandir ── */
+        .btn-expandir {
+          background: none; border: none;
+          color: var(--accent); font-size: 12px;
+          cursor: pointer; padding: 6px 0;
+          width: 100%; text-align: left;
+          font-family: 'Inter', sans-serif; font-weight: 500;
+          transition: color 0.15s;
+        }
+        .btn-expandir:hover { color: var(--accent-hover); }
 
         .arq-detalhes {
           display: flex; flex-direction: column; gap: 10px;
-          padding: 12px; background: var(--creme);
-          border-radius: 8px; margin-bottom: 12px; animation: fadeIn 0.2s ease;
+          padding: 12px; background: var(--bg);
+          border-radius: 8px; margin: 8px 0;
+          border: 1px solid var(--border);
+          animation: fadeIn 0.2s ease;
         }
-        .detalhe-item .detalhe-label {
-          font-size: 0.75rem; font-weight: 600; color: var(--texto-suave);
-          text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; display: block;
+        .det-item .det-label {
+          font-size: 11px; font-weight: 600; color: var(--text-secondary);
+          text-transform: uppercase; letter-spacing: 0.5px;
+          margin-bottom: 2px; display: block;
         }
-        .detalhe-item p { font-size: 0.9rem; }
+        .det-item p { font-size: 13px; line-height: 1.5; }
 
-        .acoes { display: flex; gap: 10px; margin-top: 12px; }
+        /* ── acoes ── */
+        .acoes { display: flex; gap: 8px; margin-top: 12px; }
         .btn-aceitar {
-          flex: 1; padding: 10px; border-radius: 8px;
-          border: none; background: var(--verde); color: white;
-          font-family: 'DM Sans', sans-serif; font-size: 0.9rem;
-          font-weight: 500; cursor: pointer; transition: background 0.2s;
+          flex: 1; padding: 9px; border-radius: 8px;
+          border: none; background: var(--accent); color: white;
+          font-family: 'Inter', sans-serif; font-size: 13px;
+          font-weight: 600; cursor: pointer; transition: background 0.15s;
         }
-        .btn-aceitar:hover { background: var(--verde-medio); }
-        .btn-aceitar:disabled { opacity: 0.6; cursor: not-allowed; }
+        .btn-aceitar:hover    { background: var(--accent-hover); }
+        .btn-aceitar:disabled { opacity: 0.55; cursor: not-allowed; }
         .btn-rejeitar {
-          padding: 10px 18px; border-radius: 8px;
-          border: 1.5px solid #DDD; background: transparent; color: var(--vermelho);
-          font-family: 'DM Sans', sans-serif; font-size: 0.9rem;
-          cursor: pointer; transition: all 0.2s;
+          padding: 9px 16px; border-radius: 8px;
+          border: 1px solid var(--border); background: var(--white);
+          color: var(--danger); font-family: 'Inter', sans-serif;
+          font-size: 13px; cursor: pointer; transition: all 0.15s;
         }
-        .btn-rejeitar:hover { background: #FDECEA; border-color: var(--vermelho); }
-        .btn-rejeitar:disabled { opacity: 0.6; cursor: not-allowed; }
+        .btn-rejeitar:hover    { background: var(--danger-bg); border-color: var(--danger); }
+        .btn-rejeitar:disabled { opacity: 0.55; cursor: not-allowed; }
 
+        /* ── badges ── */
         .badge {
-          font-size: 0.75rem; font-weight: 500; padding: 3px 9px;
-          border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px;
+          font-size: 11px; font-weight: 600; padding: 3px 9px;
+          border-radius: 20px; text-transform: uppercase; letter-spacing: 0.4px;
         }
-        .badge-aberto { background: #E8F5E1; color: #2D6A1A; }
-        .badge-andamento { background: #FFF4D6; color: #8B6914; }
-        .badge-finalizado { background: #F0F0F0; color: #555; }
-        .badge-pendente { background: #EEF4FF; color: #1A4DB8; }
-        .badge-aceite { background: #E8F5E1; color: #2D6A1A; }
-        .badge-rejeitado { background: #FDECEA; color: #C0392B; }
+        .badge-aberto     { background: var(--success-bg);  color: var(--success); }
+        .badge-andamento  { background: var(--warning-bg);  color: var(--warning); }
+        .badge-finalizado { background: #F3F4F6;             color: var(--text-secondary); }
+        .badge-pendente   { background: var(--accent-light); color: var(--accent); }
+        .badge-aceite     { background: var(--success-bg);  color: var(--success); }
+        .badge-rejeitado  { background: var(--danger-bg);   color: var(--danger); }
 
         @media (max-width: 768px) {
-          .page-topo { padding: 24px; }
-          .topo-conteudo { flex-direction: column; }
-          .main { padding: 24px; }
+          .top-bar        { padding: 0 16px; }
+          .evento-header  { padding: 20px 16px; }
+          .evento-header-inner { flex-direction: column; }
+          .main           { padding: 20px 16px; }
           .inscricoes-grid { grid-template-columns: 1fr; }
+          .evento-stats   { flex-wrap: wrap; }
         }
       `}</style>
 
-      <div className="page-topo">
+      {/* ── top bar ── */}
+      <div className="top-bar">
         <button className="btn-voltar" onClick={() => router.back()}>
-          ← Voltar aos eventos
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+            strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+          Voltar
         </button>
-        <div className="topo-conteudo">
-          <div className="topo-info">
-            <h1>{evento.descricao.length > 80 ? evento.descricao.substring(0, 80) + "..." : evento.descricao}</h1>
-            <div className="topo-meta">
+      </div>
+
+      {/* ── evento header ── */}
+      <div className="evento-header">
+        <div className="evento-header-inner">
+          <div className="evento-info">
+            <h1>
+              {evento.descricao.length > 100
+                ? evento.descricao.substring(0, 100) + "..."
+                : evento.descricao}
+            </h1>
+            <div className="evento-meta">
               <EstadoBadge estado={evento.estado} />
               {evento.data_inicio && (
-                <span>📅 Início: {new Date(evento.data_inicio).toLocaleDateString("pt-AO")}</span>
+                <span>Início: {new Date(evento.data_inicio).toLocaleDateString("pt-AO")}</span>
               )}
               {evento.data_fim && (
-                <span>🏁 Fim: {new Date(evento.data_fim).toLocaleDateString("pt-AO")}</span>
+                <span>Fim: {new Date(evento.data_fim).toLocaleDateString("pt-AO")}</span>
               )}
+              <span>Criado em {new Date(evento.criado_em).toLocaleDateString("pt-AO")}</span>
             </div>
           </div>
-          <div className="topo-stats">
+          <div className="evento-stats">
             <div className="stat-box">
               <div className="stat-num">{inscricoes.length}</div>
               <div className="stat-label">Inscrições</div>
@@ -466,6 +559,7 @@ export default function Page() {
         </div>
       </div>
 
+      {/* ── main ── */}
       <div className="main">
         {feedback && (
           <div className={`feedback ${feedback.tipo}`}>{feedback.msg}</div>
@@ -476,7 +570,7 @@ export default function Page() {
             {["todos", "pendente", "aceite", "rejeitado"].map((f) => (
               <button
                 key={f}
-                className={`filtro-btn ${filtro === f ? "ativo" : ""}`}
+                className={`filtro-btn${filtro === f ? " ativo" : ""}`}
                 onClick={() => setFiltro(f)}
               >
                 {f === "todos"
@@ -488,13 +582,12 @@ export default function Page() {
         )}
 
         <h2 className="section-title">
-          {inscricoes.length === 0 ? "Aguardando inscrições" : "Arquitectos interessados"}
+          {inscricoes.length === 0 ? "A aguardar inscrições" : "Arquitectos interessados"}
         </h2>
 
         <div className="inscricoes-grid">
           {inscricoesFiltradas.length === 0 ? (
-            <div className="empty-inscricoes">
-              <div className="icon">🔍</div>
+            <div className="empty-box">
               <p>Nenhuma inscrição encontrada com este filtro.</p>
             </div>
           ) : (

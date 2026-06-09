@@ -19,6 +19,7 @@ from models.payment_model import (
     listar_compras,
     listar_compras_arquiteto,
     verificar_sessao,
+    historico_compras_cliente
 )
 from middlewares.auth import get_current_user  # reutiliza o teu middleware existente
 
@@ -186,6 +187,27 @@ async def get_compras(status: str = None, user=Depends(get_current_user)):
 
 
 # ──────────────────────────────────────────────
+# GET /api/payments/historico
+# Qualquer utilizador autenticado vê as suas compras
+# ──────────────────────────────────────────────
+@router.get("/historico")
+async def get_historico_compras(
+    status: str = None,
+    user=Depends(get_current_user),
+):
+    try:
+        data = await historico_compras_cliente(
+            cliente_id=user["id"],
+            status=status,
+        )
+        return {
+            "total": len(data),
+            "compras": data,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ──────────────────────────────────────────────
 # GET /api/payments/minhas-compras
 # Arquiteto vê as compras associadas a ele
 # ──────────────────────────────────────────────
@@ -201,6 +223,8 @@ async def get_minhas_compras(user=Depends(get_current_user)):
 async def solicitar_saque_route(user: dict = Depends(get_current_user)):
     
         return await solicitar_saque(arquiteto_id=user["id"])
+
+
 
 
 

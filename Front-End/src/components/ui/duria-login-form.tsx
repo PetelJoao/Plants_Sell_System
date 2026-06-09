@@ -69,9 +69,9 @@ export function DuriaLoginForm() {
     setIsLoading(true)
 
     try {
-      // Simulação da chamada de API (o corno não vai reclamar agora!)
-       await login(email, password); // - atualiza o user no contexto
-      router.push("/dashboard") // - redireciona para o dashboard;
+      
+       await login(email, password); 
+      router.push("/Develop/dashboard") 
     } catch (err) {
       setApiError('Falha no login. Por favor, verifique as suas credenciais.')
     } finally {
@@ -126,9 +126,10 @@ export function DuriaLoginForm() {
                       Senha
                     </FormLabel>
                     <a
-                      href="/forgot-password"
+                      href="/Develop/Esqueceu-sua-Senha"
                       className="text-xs text-blue-600 hover:text-blue-700 font-medium transition-colors"
                     >
+                      
                       Esqueceu sua senha?
                     </a>
                   </div>
@@ -190,7 +191,7 @@ export function DuriaLoginForm() {
 
         {/* Sign Up Link */}
         <Link 
-          href="/Cadastro" 
+          href="/Develop/Cadastro" 
           className="w-full inline-flex items-center justify-center px-4 py-3 border border-slate-200 rounded-lg text-slate-700 font-medium hover:bg-slate-50 transition-colors"
         >
           Cadastro

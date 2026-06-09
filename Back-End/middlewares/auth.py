@@ -1,6 +1,6 @@
 import os
 import jwt
-from fastapi import Request, HTTPException, Depends
+from fastapi import Request, HTTPException
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -21,17 +21,14 @@ async def get_current_user(request: Request):
             audience='authenticated'
         )
 
-        from models.db import get_supabase_admin
-        sb = get_supabase_admin()
-        sb_user = sb.auth.admin.get_user_by_id(payload['sub'])
-        metadata = sb_user.user.user_metadata or {}
-    
+        # ✅ Lê directo do JWT — sem chamada extra ao Supabase
+        user_metadata = payload.get('user_metadata', {})
 
         return {
             'id':    payload['sub'],
             'email': payload.get('email'),
-            'role':  metadata.get('tipo', 'cliente'),
-            'nome':  metadata.get('nome', payload.get('email'))
+            'role':  user_metadata.get('tipo', 'cliente'),  # ← era metadata de sb_user
+            'nome':  user_metadata.get('nome', payload.get('email')),
         }
 
     except jwt.ExpiredSignatureError:

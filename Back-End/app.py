@@ -8,7 +8,8 @@ from routes.users import users_router
 from routes.dashboard import dashboard_router
 from routes.admin import admin_router
 from routes.payments_route import router
-from routes.events import events_router          # ← NOVO
+from routes.events import events_router         
+from routes.carrinho_route import router as carrinho_router
 
 load_dotenv()
 
@@ -20,6 +21,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization"],
+
 )
 
 app.include_router(router,           prefix="/api/payments")
@@ -27,7 +29,8 @@ app.include_router(auth_router,      prefix="/api/auth")
 app.include_router(users_router,     prefix="/api/users")
 app.include_router(dashboard_router, prefix="/api/dashboard")
 app.include_router(admin_router,     prefix="/api/admin")
-app.include_router(events_router,    prefix="/api/eventos")   # ← NOVO
+app.include_router(events_router,    prefix="/api/eventos")  
+app.include_router(carrinho_router,   prefix="/api/carrinho")
 
 @app.get("/api/health")
 async def health():

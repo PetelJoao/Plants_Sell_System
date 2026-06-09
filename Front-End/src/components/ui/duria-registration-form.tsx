@@ -112,10 +112,8 @@ export function DuriaRegistrationForm() {
     let fieldsToValidate: Array<keyof z.infer<typeof baseArchitectSchema>> = []
 
     if (currentStep === 1) {
-      // ✅ FIX 3: etapa 1 valida apenas os campos desta etapa
       fieldsToValidate = ['name', 'email', 'phoneNumber', 'password', 'gender', 'address']
     } else if (currentStep === 2) {
-      // ✅ FIX 4: nif adicionado à validação da etapa 2
       fieldsToValidate = ['nif', 'iban', 'profilePhoto', 'biography']
     }
 
@@ -142,7 +140,6 @@ export function DuriaRegistrationForm() {
   }
 
   const onSubmit = async (data: FormFields) => {
-    // ✅ FIX 5: log para confirmar que o onSubmit é chamado
     console.log('[onSubmit] chamado com dados:', data)
     setIsSubmitting(true)
 
@@ -168,7 +165,7 @@ export function DuriaRegistrationForm() {
         console.log('[onSubmit] registo concluído, a fazer login...')
         await login(data.email, data.password)
         console.log('[onSubmit] login concluído, a redirecionar...')
-        window.location.href = '/dashboard'
+        window.location.href = 'Develop/dashboard'
 
       } else {
         formData.append('name',        data.name)

@@ -3,9 +3,12 @@ from pydantic import BaseModel, EmailStr
 from typing import Optional
 import traceback
 import uuid
-
+import os
 from models.db import get_supabase_admin
 from middlewares.auth import get_current_user
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+import smtplib
 
 auth_router = APIRouter(tags=["auth"])
 
@@ -66,6 +69,70 @@ async def me(user: dict = Depends(get_current_user)):
         "nome":  user.get("nome", user["email"]),
     }
 
+@auth_router.post("/forgot-password", status_code=200)
+async def forgot_password(email: str = Form(...)):
+    sb = get_supabase_admin()
+    
+    try:
+        print(f"[1] A gerar link para: {email}")
+        
+        response = sb.auth.admin.generate_link({
+            "type": "recovery",
+            "email": email,
+            "options": {
+                "redirect_to": f"{os.getenv('SITE_URL')}/Develop/Atualizar-Senha"
+            }
+        })
+        
+        print(f"[2] Resposta do Supabase: {response}")
+        
+        action_link = response.properties.action_link
+        print(f"[3] Link gerado: {action_link}")
+
+        gmail_user     = os.getenv("GMAIL_USER")
+        gmail_password = os.getenv("GMAIL_APP_PASS")
+        
+        print(f"[4] Gmail user: {gmail_user}")
+        print(f"[5] App pass definida: {bool(gmail_password)}")
+
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = "Redefinir a sua senha — Duria"
+        msg["From"]    = f"Duria Plantas <{gmail_user}>"
+        msg["To"]      = email
+        msg.attach(MIMEText(f'<a href="{action_link}">Redefinir senha</a>', "html"))
+
+        print(f"[6] A conectar ao Gmail SMTP...")
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+            print(f"[7] A fazer login...")
+            server.login(gmail_user, gmail_password)
+            print(f"[8] A enviar e-mail...")
+            server.sendmail(gmail_user, email, msg.as_string())
+            print(f"[9] E-mail enviado com sucesso!")
+
+    except Exception as e:
+        print(f"[ERRO DETALHADO] {type(e).__name__}: {e}")
+
+    return {"message": "Se o e-mail existir, um link foi enviado."}
+
+
+
+@auth_router.post("/reset-password", status_code=200)
+async def reset_password(
+    new_password: str = Form(...),
+    user: dict = Depends(get_current_user)   # token de recovery já válido
+):
+    """
+    Atualiza a senha do utilizador autenticado pelo token de recovery.
+    """
+    sb = get_supabase_admin()
+    try:
+        sb.auth.admin.update_user_by_id(
+            user["id"],
+            {"password": new_password}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Erro ao redefinir senha: {str(e)}")
+    return {"message": "Senha atualizada com sucesso."}
 
 @auth_router.post("/register/cliente", status_code=201)
 async def register_cliente(

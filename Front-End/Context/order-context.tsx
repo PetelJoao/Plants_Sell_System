@@ -4,9 +4,10 @@ import type React from "react"
 import { createContext, useContext, useState, useEffect } from "react"
 
 export type Plan = {
-  id: number
+  id: string
   title: string
   description: string
+  dono: string
   price: number
   category: string
   squareFeet: number
@@ -18,7 +19,7 @@ export type Plan = {
 
 export type OrderItem = {
   id: string
-  planId: number
+  planId: string
   plan: Plan
   date: string
   status: "Processing" | "Ready for download" | "On hold"

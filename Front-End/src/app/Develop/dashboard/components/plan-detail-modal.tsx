@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Textarea } from "@/components/ui/textarea"
 import { Star, Lock, ShoppingCart, X } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-
+import { BotaoComprar } from "@/components/BotaoComprar"
 interface Review {
   id: number
   author: string
@@ -23,7 +23,7 @@ interface PlanDetailModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   plan: {
-    id: number
+    id: string
     title: string
     description: string
     price: number
@@ -35,6 +35,7 @@ interface PlanDetailModalProps {
     uploadedAt?: string
     architect?: string
     architectImage?: string
+    dono: string
   }
 }
 
@@ -223,10 +224,16 @@ export function PlanDetailModal({ open, onOpenChange, plan }: PlanDetailModalPro
                     Available
                   </Badge>
                 </div>
-                <Button className="w-full bg-blue-500 hover:bg-blue-600 text-white h-10">
-                  <ShoppingCart className="mr-2 h-4 w-4" />
-                  Purchase This Plan
-                </Button>
+                
+                  <BotaoComprar 
+                                  plantaId={plan.id}
+                                  arquitetoId={plan.dono}        // campo 'dono' da tabela planta = arquiteto_id
+                                  nomePlanta={plan.title}
+                                  preco={plan.price}
+                                  imagemUrl={plan.image} 
+                  
+                                />
+               
               </div>
             </div>
           </div>

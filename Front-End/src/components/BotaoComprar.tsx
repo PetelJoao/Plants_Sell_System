@@ -41,10 +41,11 @@ export function BotaoComprar({
 
   return (
     <div className="space-y-1">
-      <Button
+      <ShoppingCart className="mr-2 h-4 w-4" />
+      <Button className="w-full bg-blue-500 hover:bg-blue-600 text-white h-10"
         onClick={handleComprar}
         disabled={loading}
-        className="w-full gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+       
       >
         {loading ? (
           <Loader2 className="h-4 w-4 animate-spin" />

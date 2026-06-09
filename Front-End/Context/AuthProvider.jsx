@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { AuthContext } from './AuthContext';
+const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
 export function AuthProvider({ children }) {
   const [user, setUser]   = useState(null);
@@ -322,13 +323,321 @@ const res = await fetch(`http://localhost:5000/api/dashboard/DeletarPlanta/${pla
     setPlans(prev => prev.filter(p => p.id !== plantId));
     return res.json();
   };
+    // Adicionar junto às outras funções no AuthProvider
+ const CarregarEventos = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    // ✅ guarda: não faz fetch sem token válido
+    if (!token) {
+      console.warn('CarregarEventos: sem token, abortando.');
+      return null;
+    }
+    const res = await fetch(`${API}/api/eventos/meus`, {
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    });
+    if (!res.ok) throw new Error('Erro ao carregar eventos');
+    return await res.json();
+  } catch (err) {
+    console.error('Erro ao carregar eventos:', err);
+    return null;
+  }
+};
+
+const CriarEvento = async ({ descricao, data_inicio, data_fim }) => {
+  try {
+    const token = localStorage.getItem('token');
+    // ✅ guarda: não faz fetch sem token válido
+    if (!token) throw new Error('Utilizador não autenticado.');
+    const res = await fetch(`${API}/api/eventos/`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        descricao,
+        data_inicio: data_inicio || null,
+        data_fim:    data_fim    || null,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Erro ao criar evento.');
+    return data;
+  } catch (err) {
+    console.error('Erro ao criar evento:', err);
+    throw err;
+  }
+};
+const CarregarEventoDetalhe = async (eventoId) => {
+  try {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`http://localhost:5000/api/eventos/${eventoId}`, {
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    });
+    if (!res.ok) throw new Error('Erro ao carregar evento');
+    const data = await res.json();
+    return data;
+  } catch (err) {
+    console.error('Erro ao carregar evento:', err);
+    return null;
+  }
+};
+
+const CarregarInscricoes = async (eventoId) => {
+  try {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`http://localhost:5000/api/eventos/${eventoId}/inscricoes`, {
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    });
+    if (!res.ok) throw new Error('Erro ao carregar inscrições');
+    const data = await res.json();
+    return data;
+  } catch (err) {
+    console.error('Erro ao carregar inscrições:', err);
+    return null;
+  }
+};
+
+const DecidirInscricao = async (inscricaoId, decisao) => {
+  try {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`http://localhost:5000/api/eventos/inscricoes/${inscricaoId}/decisao`, {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ decisao }),
+    });
+    if (!res.ok) throw new Error('Erro ao decidir inscrição');
+    const data = await res.json();
+    return data;
+  } catch (err) {
+    console.error('Erro ao decidir inscrição:', err);
+    throw err;
+  }
+};
+const CarregarEventosDisponiveis = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    const res = await fetch('http://localhost:5000/api/eventos/disponiveis', {
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    });
+    if (!res.ok) throw new Error('Erro ao carregar eventos');
+    return await res.json();
+  } catch (err) {
+    console.error('Erro ao carregar eventos disponíveis:', err);
+    return null;
+  }
+};
+
+const CarregarMinhasInscricoes = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    const res = await fetch('http://localhost:5000/api/eventos/arquiteto/inscricoes', {
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    });
+    if (!res.ok) throw new Error('Erro ao carregar inscrições');
+    return await res.json();
+  } catch (err) {
+    console.error('Erro ao carregar inscrições:', err);
+    return null;
+  }
+};
+
+const InscreverEvento = async (idevento) => {
+  try {
+    const token = localStorage.getItem('token');
+    const res = await fetch('http://localhost:5000/api/eventos/inscricao', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ idevento }),
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      // ✅ Retorna o erro como objecto, não lança
+      return { erro: data.message || 'Erro ao inscrever' };
+    }
+    return data;
+  } catch (e) {
+    return { erro: 'Erro de ligação' };
+  }
+};
+
+const EnviarProposta = async ({ id_inscricao, valor, prazo_dias, mensagem }) => {
+  try {
+    const token = localStorage.getItem('token');
+    const res = await fetch('http://localhost:5000/api/eventos/proposta', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id_inscricao, valor, prazo_dias, mensagem }),
+    });
+    const data = await res.json();
+    if (!res.ok) return { erro: data.detail || 'Erro ao enviar proposta' };
+    return data;
+  } catch (err) {
+    return { erro: 'Erro de ligação' };
+  }
+};
+
+const forgotPassword = async (email) => {
+  const res = await fetch(`${API}/api/auth/forgot-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ email }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail || 'Erro ao enviar e-mail');
+  return data.message;
+};
+
+const resetPassword = async (newPassword) => {
+  const token = localStorage.getItem('token');
+  const res = await fetch(`${API}/api/auth/reset-password`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      Authorization: `Bearer ${token}`,
+    },
+    body: new URLSearchParams({ new_password: newPassword }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail || 'Erro ao redefinir senha');
+  return data.message;
+};
+
+
+
+const AdicionarAoCarrinho = async (planta_id) => {
+  try {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`${API}/api/carrinho/adicionar`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ planta_id }),
+    });
+    const data = await res.json();
+    if (!res.ok) return { erro: data.detail || 'Erro ao adicionar ao carrinho' };
+    return data;
+  } catch (err) {
+    return { erro: 'Erro de ligação' };
+  }
+};
+
+const RemoverDoCarrinho = async (planta_id) => {
+  try {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`${API}/api/carrinho/remover/${planta_id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) return { erro: data.detail || 'Erro ao remover do carrinho' };
+    return data;
+  } catch (err) {
+    return { erro: 'Erro de ligação' };
+  }
+};
+
+const ListarCarrinho = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`${API}/api/carrinho/`, {
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    });
+    if (!res.ok) throw new Error('Erro ao listar carrinho');
+    return await res.json();
+  } catch (err) {
+    console.error('Erro ao listar carrinho:', err);
+    return null;
+  }
+};
+
+const LimparCarrinho = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`${API}/api/carrinho/limpar`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) return { erro: data.detail || 'Erro ao limpar carrinho' };
+    return data;
+  } catch (err) {
+    return { erro: 'Erro de ligação' };
+  }
+};
+
+const ComprarItem = async (planta_id, success_url = '', cancel_url = '') => {
+  try {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`${API}/api/carrinho/comprar-item`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ planta_id, success_url, cancel_url }),
+    });
+    const data = await res.json();
+    if (!res.ok) return { erro: data.detail || 'Erro ao iniciar compra' };
+    return data;
+  } catch (err) {
+    return { erro: 'Erro de ligação' };
+  }
+};
+
+const ComprarTudo = async (success_url = '', cancel_url = '') => {
+  try {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`${API}/api/carrinho/comprar-tudo`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ success_url, cancel_url }),
+    });
+    const data = await res.json();
+    if (!res.ok) return { erro: data.detail || 'Erro ao iniciar compras' };
+    return data;
+  } catch (err) {
+    return { erro: 'Erro de ligação' };
+  }
+};
 
   const profile = user
     ? { id: user.id, nome: user.nome || user.email, email: user.email, role: user.role }
     : null;
 
   return (
-      <AuthContext.Provider value={{ user: profile, rawUser: user, loading, plans, login, logout, carregar, inserir, deletar, CarregarUsuarios, SuspenderUser, BanUser, GerenciarPlantas, MinhasPlantas, solicitarSaque, LoadAdmingeral, CarregarSaques, PagarSaque}}>
+      <AuthContext.Provider value={{ user: profile, 
+        rawUser: user, 
+        loading, plans ,
+        forgotPassword, 
+        resetPassword, 
+        CarregarEventosDisponiveis, 
+        CarregarMinhasInscricoes, 
+        InscreverEvento, 
+        EnviarProposta, 
+        register, 
+        login, 
+        logout, 
+        carregar, 
+        inserir, 
+        deletar, 
+        CarregarUsuarios, 
+        SuspenderUser, 
+        BanUser, 
+        GerenciarPlantas,
+         MinhasPlantas, 
+         solicitarSaque, 
+         LoadAdmingeral, 
+         CarregarSaques, 
+         PagarSaque, 
+         CarregarEventos, 
+         CriarEvento, 
+         CarregarEventoDetalhe, 
+         CarregarInscricoes,
+         DecidirInscricao, 
+         AdicionarAoCarrinho,
+        RemoverDoCarrinho,
+        ListarCarrinho,
+        LimparCarrinho,
+        ComprarItem,
+        ComprarTudo,}}>
       {children}
     </AuthContext.Provider>
   );

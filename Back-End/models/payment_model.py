@@ -177,6 +177,30 @@ async def listar_compras(status: str = None):
 
     return compras
 
+async def historico_compras_cliente(cliente_id: str, status: str = None):
+    """
+    Retorna todas as compras feitas pelo utilizador autenticado,
+    independentemente do seu role (cliente ou arquiteto).
+    """
+   
+
+    query = (
+        supabase
+        .table("compras")
+        .select(
+            "id, planta_id, arquiteto_id, nome_planta, preco, "
+            "status, payment_intent_id, created_at, imagem_url"
+        )
+        .eq("cliente_id", cliente_id)
+        .order("created_at", desc=True)
+    )
+
+    if status:
+        query = query.eq("status", status)
+
+    result = query.execute()
+    return result.data or []
+
 
 async def listar_compras_arquiteto(arquiteto_id: str):
     compras = (

@@ -15,6 +15,7 @@ import { useOrder, type Plan } from "@/Context/order-context"
 import { PlanUploadDialog } from "./plan-upload-dialog"
 import { usePlans } from "@/Context/plans-context"
 import { PlanDetailModal } from "./plan-detail-modal"
+import { BotaoComprar } from "@/components/BotaoComprar"
 
 import { useAuth }         from "@/Context/AuthContext"
 import { RealtimeChat } from '@/components/realtime-chat'
@@ -153,7 +154,7 @@ useEffect(() => {
                 </div>
               </div>
               <div onClick={(e) => e.stopPropagation()}>
-  <RealtimeChat roomName={`plan-${plan.id}`} username={user?.name ?? 'Anónimo'} />
+  
 </div>
               
             </CardContent>
@@ -161,6 +162,7 @@ useEffect(() => {
               <div className="font-bold text-lg">KZ {plan.price} AOA</div>
               <Button>Comprar planta</Button>
             </CardFooter>
+            
           </Card>
        
         ))}
