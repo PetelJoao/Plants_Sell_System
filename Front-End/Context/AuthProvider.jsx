@@ -252,6 +252,67 @@ const PagarSaque = async (withdrawal_id, file) => {
     return data;
   };
 
+  const carregarDenuncias = async () => {
+    try{
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/admin/denuncias',
+      {
+        headers: { 
+          Authorization: `Bearer ${token}`, 
+          'Content-Type': 'application/json' 
+        },
+      });
+      if (!response.ok) throw new Error('Erro ao carregar denuncias');
+      const data = await response.json();
+      return data;
+    }
+    catch (err) {
+      console.error('Erro ao carregar denuncias:', err);
+      return null;
+    }
+  }
+
+  const carregarhistorico = async () => {
+
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:5000/api/dashboard/historico', {
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      });
+      if (!res.ok) throw new Error('Erro ao carregar histórico de compras');
+      const data = await res.json();
+      return data;
+    } catch (err) {
+      console.error('Erro ao carregar histórico de compras:', err);
+      return null;
+    }
+  }
+
+  const BtnDonwloadPlant = async (plantId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`http://localhost:5000/api/dashboard/${plantId}/donwload`, {
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      });
+      if (!res.ok) throw new Error('Erro ao obter links de download');
+      const data = await res.json();
+      
+      data.download_urls.forEach((file) => {
+      const link = document.createElement('a');
+      link.href = file.url;
+      link.download = file.filename;
+      link.target = '_blank';
+      link.click();
+    });
+
+      return data;
+
+      
+    } catch (err) {
+      console.error('Erro ao obter links de download:', err);
+      return null;
+    }
+  }
   const carregar = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -328,7 +389,7 @@ const res = await fetch(`http://localhost:5000/api/dashboard/DeletarPlanta/${pla
     : null;
 
   return (
-      <AuthContext.Provider value={{ user: profile, rawUser: user, loading, plans, login, logout, carregar, inserir, deletar, CarregarUsuarios, SuspenderUser, BanUser, GerenciarPlantas, MinhasPlantas, solicitarSaque, LoadAdmingeral, CarregarSaques, PagarSaque}}>
+      <AuthContext.Provider value={{ user: profile, rawUser: user, loading, plans, login, logout, carregar, inserir, deletar, CarregarUsuarios, SuspenderUser, BanUser, GerenciarPlantas, MinhasPlantas, solicitarSaque, LoadAdmingeral, CarregarSaques, PagarSaque , carregarDenuncias , carregarhistorico , BtnDonwloadPlant}}>
       {children}
     </AuthContext.Provider>
   );

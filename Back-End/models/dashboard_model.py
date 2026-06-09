@@ -80,28 +80,10 @@ async def upload_plants(
         raise HTTPException(status_code=422, detail="Nenhuma imagem pública enviada.")
     if not projectFiles:
         raise HTTPException(status_code=422, detail="Nenhum arquivo de projeto enviado.")
-    
-    print("=" * 60)
-    print("DEBUG upload_plants chamado")
-    print(f"  user_id:      {user_id}")
-    print(f"  title:        {title}")
-    print(f"  description:  {description}")
-    print(f"  topology:     {topology}")
-    print(f"  category:     {category}")
-    print(f"  squareFeet:   {squareFeet}")
-    print(f"  bedrooms:     {bedrooms}")
-    print(f"  bathrooms:    {bathrooms}")
-    print(f"  price:        {price}")
-    print(f"  imageFiles:   {[f.filename for f in imageFiles]}")
-    print(f"  projectFiles: {[f.filename for f in projectFiles]}")
-    print("=" * 60)
 
-    
     try:
         supabase = get_supabase_admin()
         timestamp = datetime.datetime.now().strftime("%d%m%Y_%H%M%S")
-
-        # ── 1. Upload das imagens públicas (galeria) ──────────────────────────
         image_urls: List[str] = []
 
         for img in imageFiles:
@@ -116,9 +98,8 @@ async def upload_plants(
 
             url = supabase.storage.from_("PlansStoraga").get_public_url(file_path)
             image_urls.append(url)
-            print(f"DEBUG imagem carregada: {url}")
-
-        # ── 2. Upload dos arquivos técnicos do projeto ────────────────────────
+         
+       
         project_file_urls: List[str] = []
 
         for doc in projectFiles:
@@ -131,12 +112,9 @@ async def upload_plants(
                 file_options={"content-type": doc.content_type},
             )
 
-            # URLs dos documentos técnicos NÃO são públicas — guardamos o path
-            # para gerar URLs assinadas (temporárias) no momento da compra
             project_file_urls.append(file_path)
-            print(f"DEBUG documento técnico carregado: {file_path}")
-
-        # ── 3. Inserir na tabela ──────────────────────────────────────────────
+    
+ 
         planta_db = {
             "nome":             title,
             "descricao":        description,
@@ -152,9 +130,7 @@ async def upload_plants(
             "tipologia":        topology,
         }
 
-        print(f"DEBUG: a inserir na tabela: {planta_db}")
         response = supabase.table("planta").insert(planta_db).execute()
-        print(f"DEBUG: insert resultado = {response.data}")
 
         return JSONResponse(
             status_code=201,
@@ -176,23 +152,40 @@ async def upload_plants(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# ── Endpoint para download após compra ───────────────────────────────────────
+async def get_historico_compras(usuario_id: str):
+
+    supabase = get_supabase_admin()
+
+    query = (
+        supabase.table("vw_compras_usuario")
+        .select("*")
+        .eq("comprador_id", usuario_id)
+    )
+    status = "pendente"
+    if status:
+        query = query.eq("status", status)
+
+    result = query.order("comprado_em", desc=True).execute()
+
+    return {
+       "total": len(result.data),
+        "compras": result.data,
+    }
+
 async def get_download_urls(plant_id: str, buyer_user_id: str):
   
     supabase = get_supabase_admin()
 
-    # 1. Verificar se a compra existe e está confirmada
     purchase = supabase.table("compra") \
         .select("*") \
         .eq("planta_id", plant_id) \
-        .eq("comprador_id", buyer_user_id) \
-        .eq("status", "confirmado") \
+        .eq("cliente_id", buyer_user_id) \
+        .eq("status", "pendente") \
         .execute()
 
     if not purchase.data:
         raise HTTPException(status_code=403, detail="Compra não confirmada para este utilizador.")
 
-    # 2. Buscar os paths dos arquivos técnicos da planta
     planta = supabase.table("planta") \
         .select("plantas_arquivo") \
         .eq("id", plant_id) \
@@ -202,9 +195,15 @@ async def get_download_urls(plant_id: str, buyer_user_id: str):
     if not planta.data:
         raise HTTPException(status_code=404, detail="Planta não encontrada.")
 
+
+    if not paths:
+        raise HTTPException(
+            status_code=404,
+            detail="Nenhum ficheiro técnico disponível para esta planta.",
+        )
+    
     paths: List[str] = planta.data["plantas_arquivo"]
 
-    # 3. Gerar URLs assinadas com expiração de 1 hora (3600 segundos)
     signed_urls = []
     for path in paths:
         result = supabase.storage.from_("PlansStoraga").create_signed_url(
