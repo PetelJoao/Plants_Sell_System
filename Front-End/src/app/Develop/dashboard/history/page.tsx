@@ -1,3 +1,4 @@
+"use client"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -9,56 +10,62 @@ import Image from "next/image"
 import HousePic from "@/assets/images/Casa.jpeg"
 import Porshe from "@/assets/images/Porsche.jpeg"
 import { Calendar, Download, FileText, Search } from "lucide-react"
+import { useState , useEffect } from "react"
+import { useAuth } from "@/Context/AuthContext"
 
-const purchases = [
-  {
-    id: "ORD-2023-1001",
-    date: "Março 15, 2023",
-    plan: {
-      title: "Casa Familiar Suburbana",
-      image: HousePic,
-      category: "Residential",
-    },
-    total: 599,
-    downloadCount: 3,
-    lastDownloaded: "Abril 2, 2023",
-  },
-  {
-    id: "ORD-2023-0875",
-    date: "Fevereiro 28, 2023",
-    plan: {
-      title: "Escritório Comercial Moderno",
-      category: "Comercial",
-    },
-    total: 1999,
-    downloadCount: 5,
-    lastDownloaded: "Março 20, 2023",
-  },
-  {
-    id: "ORD-2022-2345",
-    date: "Dezembro 10, 2022",
-    plan: {
-      title: "Apartamento Urbano",
-      category: "Multi-family",
-    },
-    total: 1299,
-    downloadCount: 8,
-    lastDownloaded: "Março 5, 2023",
-  },
-  {
-    id: "ORD-2022-1987",
-    date: "Novembro 5, 2022",
-    plan: {
-      title: "Casa de Praia Moderna",
-      category: "Residential",
-    },
-    total: 499,
-    downloadCount: 2,
-    lastDownloaded: "Janeiro 15, 2023",
-  },
-]
 
 export default function PurchaseHistoryPage() {
+
+
+
+const {carregarhistorico , BtnDonwloadPlant } = useAuth() as any
+const [purchases, setPurchases] = useState<any[]>([])
+
+useEffect(() => {
+  const TodasAsCompras = async () => {
+    try {
+      const response = await carregarhistorico()
+
+      const mappedPurchases = response.compras.map((purchases: any) => ({
+        id: purchases.compra_id,
+        date: new Date(purchases.comprado_em).toLocaleDateString("pt-PT", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        }),
+        plan: {
+          title: purchases.planta_nome,
+          image: purchases.imagens?.[0] ?? null,
+          category: purchases.categoria,
+        },
+        total: purchases.valor,
+        downloadCount: purchases.download_count ?? 0,
+        lastDownloaded: purchases.updated_at
+          ? new Date(purchases.updated_at).toLocaleDateString("pt-PT", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })
+          : null,
+        plantaId: purchases.planta_id,
+      }))
+      setPurchases(mappedPurchases)
+
+      console.log(mappedPurchases)
+     
+
+    } catch (error) {
+      console.error("Erro ao carregar histórico:", error)
+    }
+  }
+
+  TodasAsCompras()
+}, [])
+
+
+
+
+
   return (
     <DashboardLayout>
       <div className="flex flex-col gap-6 p-6 md:p-8">
@@ -133,7 +140,7 @@ export default function PurchaseHistoryPage() {
                 <Button variant="outline" size="sm">
                   Perfil do arquiteto
                 </Button>
-                <Button size="sm">
+                <Button size="sm" onClick={() => BtnDonwloadPlant(purchase.plantaId)}>
                   <Download className="mr-2 h-4 w-4" />
                   Baixar Ficheiros
                 </Button>

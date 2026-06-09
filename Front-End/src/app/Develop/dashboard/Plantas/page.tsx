@@ -52,7 +52,7 @@ export default function PlansPage() {
   const [withdrawalOpen, setWithdrawalOpen] = useState(false)
   const  {GerenciarPlantas , MinhasPlantas , deletar , solicitarSaque , loading}  = useAuth() as any
   const [stats, setStats] = useState({
-    totalUploaded: 0,
+    totalUploaded: 1,
     sold: 0,
     revenue: 0,
     active: 0,
@@ -79,7 +79,7 @@ export default function PlansPage() {
         setStats({
       totalUploaded: data.total_plantas      ?? 1,
       sold:          data.plantas_vendidas   ?? 0,
-      revenue:       data.saldo_disponivel      ?? 0,
+      revenue:       data.saldo_disponivel     || 200,
       active:        data.plantas_ativas     ?? 0,
       inactive:      data.plantas_inativas   ?? 0,
     });
@@ -98,8 +98,8 @@ export default function PlansPage() {
     addPlan(newPlan)
     setPlanStatuses((prev) => ({ ...prev, [newPlan.id]: true }))
     toast({
-      title: "Plan Uploaded",
-      description: "Your floor plan has been successfully uploaded.",
+      title: "Plano carregado",
+      description: "Sua planta foi carregada com sucesso.",
     })
   }
 
@@ -112,8 +112,8 @@ export default function PlansPage() {
     updatePlan(updatedPlan.id, updatedPlan)
     setEditOpen(false)
     toast({
-      title: "Plan Updated",
-      description: "Your floor plan has been successfully updated.",
+      title: "Plano atualizado",
+      description: "Sua planta foi atualizada com sucesso.",
     })
   }
 
@@ -135,13 +135,12 @@ export default function PlansPage() {
   
       })
       toast({
-        title: "Plan Deleted",
-        description: "Your floor plan has been permanently deleted.",
+        title: "Plano excluído",
+        description: "Sua planta foi excluída permanentemente.",
       })
       }
-      catch (error) {        throw new Error("Falha ao deletar a planta: " + error)
+      catch (error) {throw new Error("Falha ao deletar a planta: " + error)
       }
-    
       setPlanToDelete(null)
     }
   }
@@ -168,8 +167,8 @@ export default function PlansPage() {
       throw new Error("Falha ao solicitar saque: " + error)
     }
     toast({
-      title: "Withdrawal Initiated",
-      description: `$${amount.toLocaleString()} will be transferred to ${iban.slice(-4)}... within 2-3 business days.`,
+      title: "Saque iniciada",
+      description: `$${amount.toLocaleString()} será transferido para ${iban.slice(-4)}... Em 2 a 3 dias úteis.`,
     })
 
   }

@@ -1,6 +1,6 @@
 from fastapi import APIRouter , Depends , UploadFile , File , Form
 from middlewares.auth import get_current_user
-from models.dashboard_model import all_plants , upload_plants , DeletePlants , ManagePlants , MyPlants
+from models.dashboard_model import all_plants , upload_plants , DeletePlants , ManagePlants , MyPlants ,  get_historico_compras , get_download_urls
 from typing import List
 dashboard_router =  APIRouter(tags=["dashboard"])
 
@@ -55,3 +55,12 @@ async def DeletarPlanta(Plant_id:str,user = Depends(get_current_user)):
 
     return await DeletePlants(Plant_id)
     
+@dashboard_router.get("/historico")
+async def LoadHistoricoCompras(user: dict = Depends(get_current_user)):
+    return await get_historico_compras(user["id"])
+
+
+@dashboard_router.get("/{Plant_id}/donwload")
+async def DownloadPlantFiles(Plant_id: str, user: dict = Depends(get_current_user)):
+    
+    return await get_download_urls(Plant_id, buyer_user_id=user["id"])

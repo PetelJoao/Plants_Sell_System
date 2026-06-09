@@ -17,8 +17,9 @@ import { usePlans } from "@/Context/plans-context"
 import { PlanDetailModal } from "./plan-detail-modal"
 import { BotaoComprar } from "@/components/BotaoComprar"
 
-import { useAuth }         from "@/Context/AuthContext"
-import { RealtimeChat } from '@/components/realtime-chat'
+import { useAuth } from "@/Context/AuthContext"
+
+
 export function ArchitecturalPlans() {
 const [plans, setPlans] = useState<Plan[]>([]);
 const [filter, setFilter] = useState<string>("All");
@@ -154,7 +155,7 @@ useEffect(() => {
                 </div>
               </div>
               <div onClick={(e) => e.stopPropagation()}>
-  
+
 </div>
               
             </CardContent>

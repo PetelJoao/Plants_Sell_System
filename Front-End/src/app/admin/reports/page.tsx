@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo , useEffect} from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -25,6 +25,7 @@ import {
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { AlertCircle } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { useAuth } from "@/Context/AuthContext";
 
 interface Report {
   id: number
@@ -65,14 +66,51 @@ export default function ReportsPage() {
   const [detailOpen, setDetailOpen] = useState(false)
   const [selectedReport, setSelectedReport] = useState<Report | null>(null)
   const [adminNotes, setAdminNotes] = useState("")
+  const { carregarDenuncias } = useAuth() as any
 
   const categories = ["Todos", "Conteúdo Inapropriado", "Fraude", "Spam", "Outro"]
+  
+  useEffect(() => {
+   const LoadReports = async () => 
+    {
+      try 
+      {
+        const response = await carregarDenuncias();
+        if (response.ok) 
+        {
+          const data = await response.json()
+          const Mapped = data.map((item:any) => ({
+            id: item.id,
+            Nome_denuncia: item.nome ??  '',
+            Denunciador_avatar: item.Denunciador_avatar ?? ' ',
+            Denunciado: item.id_planta,
+            Tipo_denuncia: item.Tipo_denuncia ?? '',
+            categoria: item.categoria,
+            descricao: item.descricao ?? '',
+            data: item.data_registro ?? '',
+            estado: item.estado ?? 'Aberto',
+            notas: item.notas ?? "",
+          }))
+          setReports(Mapped)
+        } else {
+          console.error("Failed to fetch reports:", response.statusText)
+        }
 
+      }
+      catch (error) 
+      {
+        console.error("Error fetching reports:", error)
+      }
+
+    }
+
+   }
+  , [])
   const filteredReports = useMemo(() => {
     return reports.filter((report) => {
       const matchesSearch =
-        report.Nome_denuncia.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        report.Denunciado.toLowerCase().includes(searchQuery.toLowerCase())
+        report.Nome_denuncia?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        report.Denunciado?.toLowerCase().includes(searchQuery.toLowerCase())
       const matchesStatus = statusFilter === "Todos" || report.estado === statusFilter
       const matchesCategory = categoryFilter === "Todos" || report.categoria === categoryFilter
       return matchesSearch && matchesStatus && matchesCategory
