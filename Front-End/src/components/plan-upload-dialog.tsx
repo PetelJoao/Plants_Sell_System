@@ -19,7 +19,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { useToast } from "@/components/ui/use-toast"
+import { useToast } from "@/hooks/use-toast"
 import { PlanFileUpload } from "./plan-file-upload"
 
 // Define the form schema with zod
@@ -47,7 +47,6 @@ const categories = [
   "Educational",
   "Healthcare",
 ]
-
 // Topology options
 const topologies = [
   "Modern",
@@ -116,20 +115,31 @@ export function PlanUploadDialog({ open, onOpenChange, onPlanAdded }: PlanUpload
   }
 
   // Handle plan file selection
-  const handlePlanChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0]
-    setPlanError(null)
+const handlePlanChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const selectedFile = e.target.files?.[0]
+  setPlanError(null)
 
-    if (!selectedFile) {
-      return
-    }
+  if (!selectedFile) return
 
-    // Check file type (you can adjust allowed types)
-    const allowedTypes = ["application/pdf", "image/jpeg", "image/png", "application/zip"]
-    if (!allowedTypes.includes(selectedFile.type)) {
-      setPlanError("Invalid file type. Please upload a PDF, JPEG, PNG, or ZIP file.")
-      return
-    }
+  const allowedExtensions = [
+    ".dwg", ".dxf", ".dgn", ".dwf", ".dwfx",
+    ".rvt", ".rfa", ".rte",
+    ".skp",
+    ".3dm",
+    ".ifc",
+    ".nwd", ".nwc",
+    ".max",
+    ".blend",
+    ".pdf",
+    ".jpg", ".jpeg", ".png", ".tiff", ".tif", ".bmp", ".webp",
+    ".zip", ".rar", ".7z",
+  ]
+  const ext = "." + selectedFile.name.split(".").pop()?.toLowerCase()
+
+  if (!allowedExtensions.includes(ext)) {
+    setPlanError("Formato não suportado. Formatos aceites: DWG, DXF, RVT, SKP, IFC, PDF, imagens e ZIP.")
+    return
+  }
 
     // Check file size (10MB limit)
     if (selectedFile.size > 10 * 1024 * 1024) {
