@@ -109,7 +109,7 @@ async def upload_plants(
             supabase.storage.from_("PlansStoraga").upload(
                 path=file_path,
                 file=contents,
-                file_options={"content-type": doc.content_type},
+                file_options={"content-type": doc.content_type ,"upsert": "true"},
             )
 
             project_file_urls.append(file_path)
