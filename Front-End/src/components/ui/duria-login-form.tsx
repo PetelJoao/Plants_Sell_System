@@ -42,10 +42,10 @@ export function DuriaLoginForm() {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [apiError, setApiError] = useState('')
-    const router = useRouter()
-    const [error, setError] = useState<string>("")
-    const [loading, setLoading] = useState(false)
-    const { login } = useAuth() as any;
+  const router = useRouter()
+  const [error, setError] = useState<string>("")
+  const [loading, setLoading] = useState(false)
+  const { login } = useAuth() as any;
 
   // 2. Inicialização do React Hook Form com o resolver do Zod
   const form = useForm<LoginFormData>({

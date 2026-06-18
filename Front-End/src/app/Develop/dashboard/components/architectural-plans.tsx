@@ -29,7 +29,7 @@ const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false)
 const { addToOrder } = useOrder() 
 const { toast } = useToast()
  // const { plans, addPlan } = usePlans()
-  const { user, loading,  carregar, deletar } = useAuth() as any
+  const { user, loading,  carregar, deletar, AdicionarAoCarrinho } = useAuth() as any
 
 useEffect(() => {
   async function load() {
@@ -50,13 +50,20 @@ useEffect(() => {
   const handlePlanAdded = (newPlan: Plan) => {
     setPlans((prevPlans) => [...prevPlans, newPlan])
   }
-   const handleAddToOrder = (plan: Plan) => {
-    addToOrder(plan)
+   const handleAddToOrder = async (plan: Plan) => {
+    try{
+      addToOrder(plan)
     toast({
       title: "Adicionado ao Carrinho",
       description: `${plan.title}Foi adicionado com sucesso ao carrinho.`,
       duration: 3000,
     })
+      await AdicionarAoCarrinho(plan.id)
+    } catch (error) {
+      console.error("Erro ao carregar histórico:", error)
+    }
+
+    
   }
 
   const filteredPlans = filter === "All" ? plans : plans.filter((plan) => plan.category === filter)

@@ -1,14 +1,17 @@
-import { useEffect, useRef } from 'react'
-import type { ChatMessage } from './use-realtime-chat'
+import { useCallback, useRef } from 'react'
 
-export function useChatScroll(messages: ChatMessage[]) {
-  const ref = useRef<HTMLDivElement>(null)
+export function useChatScroll() {
+  const containerRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    if (ref.current) {
-      ref.current.scrollTop = ref.current.scrollHeight
-    }
-  }, [messages])
+  const scrollToBottom = useCallback(() => {
+    if (!containerRef.current) return
 
-  return ref
+    const container = containerRef.current
+    container.scrollTo({
+      top: container.scrollHeight,
+      behavior: 'smooth',
+    })
+  }, [])
+
+  return { containerRef, scrollToBottom }
 }

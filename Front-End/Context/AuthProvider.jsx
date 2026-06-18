@@ -377,18 +377,18 @@ const PagarSaque = async (withdrawal_id, file) => {
 
   const deletar = async (plantId) => {
     const token = localStorage.getItem('token');
-const res = await fetch(`http://localhost:5000/api/dashboard/DeletarPlanta/${plantId}`, {
+const res = await fetch(`http://localhost:5000/api/dashboard/${plantId}`, {
   method: 'DELETE', headers: { Authorization: `Bearer ${token}` },
 });
     if (!res.ok) throw new Error('Erro ao deletar planta');
     setPlans(prev => prev.filter(p => p.id !== plantId));
     return res.json();
   };
-    // Adicionar junto às outras funções no AuthProvider
+  
  const CarregarEventos = async () => {
   try {
     const token = localStorage.getItem('token');
-    // ✅ guarda: não faz fetch sem token válido
+    
     if (!token) {
       console.warn('CarregarEventos: sem token, abortando.');
       return null;

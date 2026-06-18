@@ -94,36 +94,71 @@ export function PlanUploadDialog({ open, onOpenChange, onPlanAdded }: PlanUpload
   })
 
   // Handle file selection
- const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
   const selectedFiles = e.target.files ? Array.from(e.target.files) : []
   setFileError(null)
 
   if (selectedFiles.length === 0) return
 
-  const allowedTypes = ["application/pdf", "image/jpeg", "image/png", "application/zip"]
-  const maxSize = 10 * 1024 * 1024 // 10MB
+  const allowedExtensions = [
+    ".dwg", ".dxf", ".dgn", ".dwf", ".dwfx",
+    ".rvt", ".rfa", ".rte",
+    ".skp",
+    ".3dm",
+    ".ifc",
+    ".nwd", ".nwc",
+    ".max",
+    ".blend",
+    ".pdf",
+    ".jpg", ".jpeg", ".png", ".tiff", ".tif", ".bmp", ".webp",
+    ".zip", ".rar", ".7z",
+  ]
 
-  // 1. Validar tipos de arquivos dentro da pasta
-  const invalidFiles = selectedFiles.filter(file => !allowedTypes.includes(file.type))
-  
   // Opcional: Ignorar arquivos de sistema como .DS_Store ou Thumbs.db
-  const filteredFiles = selectedFiles.filter(file => file.name !== ".DS_Store")
+  const filteredFiles = selectedFiles.filter(file => file.name !== ".DS_Store" && file.name !== "Thumbs.db")
+
+  // 1. Validar extensões dos arquivos dentro da pasta
+  const invalidFiles = filteredFiles.filter(file => {
+    const ext = "." + file.name.split(".").pop()?.toLowerCase()
+    return !allowedExtensions.includes(ext)
+  })
 
   if (invalidFiles.length > 0) {
     setFileError(`A pasta contém ${invalidFiles.length} arquivo(s) com formato inválido.`)
     return
   }
 
-  // 2. Validar tamanho total ou individual (aqui validei o total de todos os arquivos)
+  // 2. Validar tamanho total (50MB)
   const totalSize = filteredFiles.reduce((acc, file) => acc + file.size, 0)
-  if (totalSize > 50 * 1024 * 1024) { // Exemplo: 50MB para a pasta toda
+  if (totalSize > 50 * 1024 * 1024) {
     setFileError("A pasta é muito grande. O limite total é 50MB.")
     return
   }
 
-  setFiles(filteredFiles)
-}
+  // 3. Sanitizar o nome dos arquivos antes de salvar no estado
+  const sanitizedFiles = filteredFiles.map(file => {
+    // Separa o nome da extensão (ex: ["2. Elétrico", "dwg"])
+    const parts = file.name.split(".")
+    const ext = parts.pop() || ""
+    const baseName = parts.join(".")
 
+    // Limpa o nome do arquivo:
+    const cleanName = baseName
+      .normalize("NFD")                    // Separa os acentos das letras (ex: é vira e + ´)
+      .replace(/[\u0300-\u036f]/g, "")     // Remove os acentos flutuantes
+      .replace(/\s+/g, "_")                // Substitui espaços por underscores (_)
+      .replace(/[^a-zA-Z0-9._-]/g, "")     // Remove qualquer caractere que não seja letra, número, ponto ou traço
+
+    // Monta o novo nome com a extensão original de volta
+    const newFileName = `${cleanName}.${ext}`
+
+    // Como o nome é readonly, criamos um novo arquivo clonando os dados do antigo
+    return new File([file], newFileName, { type: file.type })
+  })
+
+  // Salva a lista de arquivos já com os nomes limpos e seguros para o Storage!
+  setFiles(sanitizedFiles)
+}
 // Handler para a pasta de IMAGENS
 const handleImagesFolderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
   const selected = e.target.files ? Array.from(e.target.files) : []
@@ -131,14 +166,24 @@ const handleImagesFolderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
   
   if (selected.length === 0) return
 
-  const allowedImageTypes = ["image/jpeg", "image/png", "image/webp","image/dwg"]
-  const invalid = selected.filter(f => !allowedImageTypes.includes(f.type))
+  // 1. Definição das extensões permitidas (incluindo .dwg)
+  const allowedImageExtensions = [".jpg", ".jpeg", ".png", ".webp", ".dwg"]
+
+  // Opcional: Ignorar arquivos ocultos de sistema para não travar o upload
+  const filteredFiles = selected.filter(f => f.name !== ".DS_Store" && f.name !== "Thumbs.db")
+
+  // 2. Validar as extensões dos arquivos
+  const invalid = filteredFiles.filter(f => {
+    const ext = "." + f.name.split(".").pop()?.toLowerCase()
+    return !allowedImageExtensions.includes(ext)
+  })
 
   if (invalid.length > 0) {
-    setImageError(`A pasta de imagens contém ${invalid.length} arquivos com formato inválido. Use apenas JPG, PNG ou WebP.`)
+    setImageError(`A pasta de imagens contém ${invalid.length} arquivos com formato inválido. Use apenas JPG, PNG, WebP ou DWG.`)
     return
   }
-  setImageFiles(selected)
+
+  setImageFiles(filteredFiles)
 }
 
 

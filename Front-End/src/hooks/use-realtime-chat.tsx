@@ -1,45 +1,77 @@
-import { useEffect, useRef, useState } from 'react'
+'use client'
+
+import { useCallback, useEffect, useState } from 'react'
+
 import { createClient } from '@/lib/client'
+
+interface UseRealtimeChatProps {
+  roomName: string
+  username: string
+}
 
 export interface ChatMessage {
   id: string
   content: string
-  user: { name: string }
+  user: {
+    name: string
+  }
   createdAt: string
 }
 
-export function useRealtimeChat(roomName: string, username: string) {
-  const [messages, setMessages] = useState<ChatMessage[]>([])
-  const channelRef = useRef<ReturnType<ReturnType<typeof createClient>['channel']> | null>(null)
+const EVENT_MESSAGE_TYPE = 'message'
+
+export function useRealtimeChat({ roomName, username }: UseRealtimeChatProps) {
   const supabase = createClient()
+  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [channel, setChannel] = useState<ReturnType<typeof supabase.channel> | null>(null)
+  const [isConnected, setIsConnected] = useState(false)
 
   useEffect(() => {
-    const channel = supabase.channel(roomName)
-    channelRef.current = channel
+    const newChannel = supabase.channel(roomName)
 
-    channel
-      .on('broadcast', { event: 'message' }, ({ payload }) => {
-        setMessages(prev => [...prev, payload as ChatMessage])
+    newChannel
+      .on('broadcast', { event: EVENT_MESSAGE_TYPE }, (payload) => {
+        setMessages((current) => [...current, payload.payload as ChatMessage])
       })
-      .subscribe()
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          setIsConnected(true)
+        } else {
+          setIsConnected(false)
+        }
+      })
 
-    return () => { supabase.removeChannel(channel) }
-  }, [roomName])
+    setChannel(newChannel)
 
-  const sendMessage = async (content: string) => {
-    const msg: ChatMessage = {
-      id: crypto.randomUUID(),
-      content,
-      user: { name: username },
-      createdAt: new Date().toISOString(),
+    return () => {
+      supabase.removeChannel(newChannel)
     }
-    await channelRef.current?.send({
-      type: 'broadcast',
-      event: 'message',
-      payload: msg,
-    })
-    setMessages(prev => [...prev, msg])
-  }
+  }, [roomName, username, supabase])
 
-  return { messages, sendMessage }
+  const sendMessage = useCallback(
+    async (content: string) => {
+      if (!channel || !isConnected) return
+
+      const message: ChatMessage = {
+        id: crypto.randomUUID(),
+        content,
+        user: {
+          name: username,
+        },
+        createdAt: new Date().toISOString(),
+      }
+
+      // Update local state immediately for the sender
+      setMessages((current) => [...current, message])
+
+      await channel.send({
+        type: 'broadcast',
+        event: EVENT_MESSAGE_TYPE,
+        payload: message,
+      })
+    },
+    [channel, isConnected, username]
+  )
+
+  return { messages, sendMessage, isConnected }
 }

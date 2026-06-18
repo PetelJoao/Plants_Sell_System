@@ -109,7 +109,7 @@ async def upload_plants(
             supabase.storage.from_("PlansStoraga").upload(
                 path=file_path,
                 file=contents,
-                file_options={"content-type": doc.content_type},
+                file_options={"content-type": doc.content_type ,"upsert": "true"},
             )
 
             project_file_urls.append(file_path)
@@ -202,7 +202,7 @@ async def get_download_urls(plant_id: str, buyer_user_id: str):
             detail="Nenhum ficheiro técnico disponível para esta planta.",
         )
     
-    paths: List[str] = planta.data["plantas_arquivo"]
+    
 
     signed_urls = []
     for path in paths:
