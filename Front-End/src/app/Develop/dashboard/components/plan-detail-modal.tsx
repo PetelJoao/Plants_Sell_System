@@ -225,13 +225,12 @@ export function PlanDetailModal({ open, onOpenChange, plan }: PlanDetailModalPro
                   </Badge>
                 </div>
                 
-                  <BotaoComprar 
+                              <BotaoComprar 
                                   plantaId={plan.id}
                                   arquitetoId={plan.dono}        // campo 'dono' da tabela planta = arquiteto_id
                                   nomePlanta={plan.title}
                                   preco={plan.price}
                                   imagemUrl={plan.image} 
-                  
                                 />
                
               </div>
