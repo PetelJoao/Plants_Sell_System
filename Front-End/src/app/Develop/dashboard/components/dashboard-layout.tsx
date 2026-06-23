@@ -12,11 +12,15 @@ import Link from "next/link"
 import { usePathname , useRouter } from "next/navigation"
 import { useEffect } from "react"
 import { useAuth } from '@/Context/AuthContext'
+import { useState } from 'react'
+import { ChatModal } from '@/components/ChatModal'
+import { MessageCircle } from 'lucide-react'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const { user, loading, logout } = useAuth() as any;
   const router = useRouter();
+  const [chatOpen, setChatOpen] = useState(false)
 
   useEffect(() => {
     if (loading) return; 
@@ -55,6 +59,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   ].filter(item => item.show)
 
 
+
+// Dentro do componente:
+
+
+// Botão na navbar ou onde preferires:
+
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
@@ -64,6 +74,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </SidebarHeader>
           <SidebarContent>
             <SidebarMenu>
+              <Button variant="ghost" size="icon" onClick={() => setChatOpen(true)}>
+                <MessageCircle className="h-5 w-5" />
+              </Button>
+
+              <ChatModal
+                open={chatOpen}
+                onClose={() => setChatOpen(false)}
+                currentUser={{ id: user.id, nome: user.nome }}
+              />
               {navigationItems.map((item) => (
                 <SidebarMenuItem key={item.name}>
                   <SidebarMenuButton asChild isActive={pathname === item.href} tooltip={item.name}>

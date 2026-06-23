@@ -3,13 +3,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
-from routes.auth import auth_router
-from routes.users import users_router
-from routes.dashboard import dashboard_router
-from routes.admin import admin_router
-from routes.payments_route import router
-from routes.events import events_router         
-from routes.carrinho_route import router as carrinho_router
+
+
 
 load_dotenv()
 
@@ -17,13 +12,21 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allow_headers=["Content-Type", "Authorization"],
-
+    allow_origins=["*"],  # temporariamente usa * para testar
+    allow_credentials=False,  # com allow_origins=["*"], credentials deve ser False
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
+from routes.auth import auth_router
+from routes.users import users_router
+from routes.dashboard import dashboard_router
+from routes.admin import admin_router
+from routes.payments_route import router
+from routes.events import events_router         
+from routes.carrinho_route import router as carrinho_router
+from routes.chat import chat_router
 
+app.include_router(chat_router, prefix="/api/chat")
 app.include_router(router,           prefix="/api/payments")
 app.include_router(auth_router,      prefix="/api/auth")
 app.include_router(users_router,     prefix="/api/users")

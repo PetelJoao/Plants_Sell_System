@@ -102,19 +102,34 @@ export default function ComprasPage() {
   }
 
   // ── Comprar item individual ──────────────────────────────────────────────────
-  const handleComprarItem = async (plantaId: string, nomePlanta: string) => {
+ const handleComprarItem = async (plantaId: string, nomePlanta: string) => {
     setComprando(plantaId)
     toast({ title: "A processar...", description: `A iniciar compra de "${nomePlanta}".`, duration: 2000 })
+ 
     const resultado = await ComprarItem(plantaId)
+ 
     if (resultado?.erro) {
       toast({ title: "Erro no checkout", description: resultado.erro, variant: "destructive", duration: 4000 })
       setComprando(null)
+      return
     }
-    // Se bem-sucedido, ComprarItem redireciona → não precisamos de limpar estado
+ 
+    // ✅ REDIRECT para o Stripe
+    const checkoutUrl = resultado?.checkout_url
+    if (checkoutUrl) {
+      window.location.href = checkoutUrl
+    } else {
+      toast({
+        title: "Erro",
+        description: "Não foi possível obter o link de pagamento.",
+        variant: "destructive",
+        duration: 4000,
+      })
+      setComprando(null)
+    }
   }
-
   // ── Comprar tudo ─────────────────────────────────────────────────────────────
-  const handleComprarTudo = async () => {
+ const handleComprarTudo = async () => {
     if (!carrinho?.itens.length) return
     setComprandoTudo(true)
     toast({
@@ -122,12 +137,37 @@ export default function ComprasPage() {
       description: `A iniciar checkout de ${carrinho.total_itens} item(ns).`,
       duration: 2000,
     })
+ 
     const resultado = await ComprarTudo()
+ 
     if (resultado?.erro) {
       toast({ title: "Erro no checkout", description: resultado.erro, variant: "destructive", duration: 4000 })
       setComprandoTudo(false)
+      return
     }
-    // Se bem-sucedido, ComprarTudo redireciona → não precisamos de limpar estado
+ 
+    // ✅ REDIRECT para o Stripe — abre a primeira sessão
+    // As restantes ficam guardadas no backend para processamento sequencial
+    const sessoes: { checkout_url: string; session_id: string }[] = resultado?.sessoes ?? []
+ 
+    if (sessoes.length === 0) {
+      toast({ title: "Erro", description: "Nenhuma sessão de pagamento criada.", variant: "destructive", duration: 4000 })
+      setComprandoTudo(false)
+      return
+    }
+ 
+    if (sessoes.length === 1) {
+      // Só 1 item — redirect directo
+      window.location.href = sessoes[0].checkout_url
+    } else {
+      // Múltiplos itens — guardar restantes no sessionStorage e redirecionar para o primeiro
+      // O utilizador será redirecionado para cada sessão após completar a anterior
+      const [primeira, ...restantes] = sessoes
+      if (restantes.length > 0) {
+        sessionStorage.setItem("checkout_queue", JSON.stringify(restantes.map(s => s.checkout_url)))
+      }
+      window.location.href = primeira.checkout_url
+    }
   }
 
   // ── Estados de UI ─────────────────────────────────────────────────────────────

@@ -4,7 +4,10 @@ Endpoints do carrinho de compras.
 
 Prefixo sugerido em app.py:  /api/carrinho
 """
-
+import traceback
+from fastapi import APIRouter, Depends, HTTPException
+from middlewares.auth import get_current_user
+from models.db import get_supabase_admin
 import os
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
@@ -183,3 +186,48 @@ async def post_comprar_tudo(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+@router.get("/debug")
+async def debug_carrinho(user=Depends(get_current_user)):
+     """
+#     Testa cada passo isoladamente e diz exactamente onde falha.
+     Acede: GET /api/carrinho/debug
+     """
+     supabase = get_supabase_admin()
+     resultado = {}
+
+     # Passo 1: consegue listar carrinho?
+     try:
+         r = supabase.table("carrinho").select("*").eq("usuario_id", user["id"]).limit(1).execute()
+         resultado["passo1_select_carrinho"] = "OK"
+         resultado["carrinho_encontrado"] = bool(r.data)
+     except Exception as e:
+         resultado["passo1_select_carrinho"] = f"ERRO: {str(e)}"
+         resultado["traceback"] = traceback.format_exc()
+         return resultado
+
+     # Passo 2: consegue inserir carrinho?
+     if not r.data:
+         try:
+             ins = supabase.table("carrinho").insert({"usuario_id": user["id"]}).execute()
+             resultado["passo2_insert_carrinho"] = "OK"
+             resultado["carrinho_criado"] = ins.data
+         except Exception as e:
+             resultado["passo2_insert_carrinho"] = f"ERRO: {str(e)}"
+             resultado["traceback"] = traceback.format_exc()
+             return resultado
+     else:
+         resultado["passo2_insert_carrinho"] = "PULADO (já existe)"
+
+     # Passo 3: tabela carrinho_item existe?
+     try:
+         carrinho_id = (r.data or resultado.get("carrinho_criado", [{}]))[0].get("id")
+         r2 = supabase.table("carrinho_item").select("id").eq("carrinho_id", carrinho_id).limit(1).execute()
+         resultado["passo3_select_itens"] = "OK"
+         resultado["itens_count"] = len(r2.data or [])
+     except Exception as e:
+        import traceback
+        traceback.print_exc()   # ← imprime stack completo no terminal
+        raise HTTPException(status_code=500, detail=str(e))
+
+        return resultado
