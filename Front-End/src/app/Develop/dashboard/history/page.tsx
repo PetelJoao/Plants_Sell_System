@@ -127,9 +127,6 @@ useEffect(() => {
                       <FileText className="h-4 w-4 text-muted-foreground" />
                       <span>Completa completa com todos os documentos</span>
                     </div>
-                    <div className="text-sm">
-                      <span className="font-medium"> Contagem Downloads:</span> {purchase.downloadCount} 
-                    </div>
                   </div>
                   <div className="text-right">
                     <div className="font-bold text-lg">${purchase.total}</div>

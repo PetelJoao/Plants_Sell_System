@@ -195,7 +195,8 @@ async def get_download_urls(plant_id: str, buyer_user_id: str):
     if not planta.data:
         raise HTTPException(status_code=404, detail="Planta não encontrada.")
 
-
+    paths = planta.data.get("plantas_arquivo")
+    
     if not paths:
         raise HTTPException(
             status_code=404,
