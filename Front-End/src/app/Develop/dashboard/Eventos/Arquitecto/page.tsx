@@ -1,321 +1,453 @@
-'use client';
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/Context/AuthContext';
+"use client";
 
-type Evento = {
-  id: number;
-  titulo: string;
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/Context/AuthContext";
+import DashboardLayout from "@/app/Develop/dashboard/components/dashboard-layout"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { ArrowLeft, Calendar, MessageCircle, FileText, Loader2 } from "lucide-react"
+
+// ─── Tipos ────────────────────────────────────────────────────────────────
+
+interface EventoDisponivel {
+  id: string;
   descricao: string;
-  status: string;
-  data_evento: string;
-};
-
-type Inscricao = {
-  id: number;
-  idevento: number;
-  status: string;
-  evento_titulo: string;
-  proposta_enviada: boolean;
-};
-
-export default function EventosArquitecto() {
-  const { CarregarEventosDisponiveis, CarregarMinhasInscricoes, InscreverEvento, EnviarProposta } = useAuth() as any;
-  const router = useRouter();
-
-  const [eventos, setEventos] = useState<Evento[]>([]);
-  const [inscricoes, setInscricoes] = useState<Inscricao[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<'disponiveis' | 'inscricoes'>('disponiveis');
-
-  // Modal de proposta
-  const [modalAberto, setModalAberto] = useState(false);
-  const [inscricaoSelecionada, setInscricaoSelecionada] = useState<number | null>(null);
-  const [proposta, setProposta] = useState({ valor: '', prazo_dias: '', mensagem: '' });const [inscrevendo, setInscrevendo] = useState<number | null>(null);
-
-
-
-  useEffect(() => {
-    carregarDados();
-  }, []);
-
-  async function carregarDados() {
-    setLoading(true);
-    const [evs, insc] = await Promise.all([
-      CarregarEventosDisponiveis(),
-      CarregarMinhasInscricoes(),
-    ]);
-    setEventos(evs || []);
-    setInscricoes(insc || []);
-    setLoading(false);
-  }
-
-
-
-  async function handleEnviarProposta() {
-    if (!inscricaoSelecionada) return;
-    await EnviarProposta({
-      id_inscricao: inscricaoSelecionada,
-      valor: Number(proposta.valor),
-      prazo_dias: Number(proposta.prazo_dias),
-      mensagem: proposta.mensagem,
-    });
-    setModalAberto(false);
-    setProposta({ valor: '', prazo_dias: '', mensagem: '' });
-    await carregarDados();
-  }
-
-
-async function handleInscrever(idevento: number) {
-  setInscrevendo(idevento);
-  const res = await InscreverEvento(idevento);
-
-  if (res?.erro) {
-    // 409 = já inscrito — recarrega para mostrar estado actualizado
-    await carregarDados();
-    setInscrevendo(null);
-    return;
-  }
-
-  await carregarDados();
-  setInscrevendo(null);
+  estado: string;
+  data_inicio: string | null;
+  data_fim: string | null;
+  criado_em: string;
+  nome_dono: string;
+  ja_inscrito: boolean;
 }
 
-  const jaInscrito = (idevento: number) =>
-    inscricoes.some((i) => i.idevento === idevento);
+interface EventoDaInscricao {
+  id: string;
+  descricao: string;
+  estado: string;
+  data_inicio: string | null;
+  data_fim: string | null;
+  id_dono: string;
+  nome_dono: string;
+}
+
+interface Inscricao {
+  id: string;
+  idevento: string;
+  estado: string;
+  evento: EventoDaInscricao;
+  proposta: { id: string } | null;
+}
+
+// ─── Sub-componentes ──────────────────────────────────────────────────────
+
+function EstadoBadge({ estado }: { estado: string }) {
+  const map: Record<string, { label: string; className: string }> = {
+    aberto:       { label: "Aberto",       className: "border-green-500 text-green-600 bg-green-50" },
+    em_andamento: { label: "Em andamento", className: "border-yellow-500 text-yellow-700 bg-yellow-50" },
+    finalizado:   { label: "Finalizado",   className: "border-muted-foreground/30 text-muted-foreground bg-muted" },
+    pendente:     { label: "Pendente",     className: "border-yellow-500 text-yellow-700 bg-yellow-50" },
+    aceite:       { label: "Aceite",       className: "border-green-500 text-green-600 bg-green-50" },
+    rejeitado:    { label: "Rejeitado",    className: "border-red-500 text-red-600 bg-red-50" },
+  };
+  const { label, className } = map[estado] || { label: estado, className: "" };
+  return (
+    <Badge variant="outline" className={className}>
+      {label}
+    </Badge>
+  );
+}
+
+function EventoDisponivelCard({
+  evento,
+  onInscrever,
+  inscrevendo,
+}: {
+  evento: EventoDisponivel;
+  onInscrever: (id: string) => void;
+  inscrevendo: boolean;
+}) {
+  return (
+    <Card className="transition-shadow hover:shadow-md">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <EstadoBadge estado={evento.estado} />
+          <span className="text-xs text-muted-foreground">{evento.nome_dono}</span>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3 pb-4">
+        <p className="text-sm leading-relaxed line-clamp-3">{evento.descricao}</p>
+        {(evento.data_inicio || evento.data_fim) && (
+          <div className="flex items-center gap-1.5 text-xs font-medium text-primary">
+            <Calendar className="h-3.5 w-3.5" />
+            {evento.data_inicio && new Date(evento.data_inicio).toLocaleDateString("pt-AO")}
+            {evento.data_fim && <> — {new Date(evento.data_fim).toLocaleDateString("pt-AO")}</>}
+          </div>
+        )}
+      </CardContent>
+      <CardFooter className="border-t pt-3">
+        {evento.ja_inscrito ? (
+          <Badge variant="outline" className="border-green-500 text-green-600 bg-green-50">
+            Já inscrito
+          </Badge>
+        ) : (
+          <Button
+            size="sm"
+            className="w-full"
+            onClick={() => onInscrever(evento.id)}
+            disabled={inscrevendo}
+          >
+            {inscrevendo ? (
+              <>
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                A candidatar...
+              </>
+            ) : (
+              "Candidatar-se"
+            )}
+          </Button>
+        )}
+      </CardFooter>
+    </Card>
+  );
+}
+
+function InscricaoCard({
+  inscricao,
+  onAbrirChat,
+  onEnviarProposta,
+}: {
+  inscricao: Inscricao;
+  onAbrirChat: (insc: Inscricao) => void;
+  onEnviarProposta: (id: string) => void;
+}) {
+  const { evento, estado, proposta } = inscricao;
+  const podeConversar = estado === "pendente" || estado === "aceite";
 
   return (
-    <>
-      <style>{`
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: var(--bg); font-family: 'Inter', sans-serif; }
-        :root {
-          --bg: #F7F8FA; --white: #FFFFFF; --border: #E5E7EB;
-          --text: #111827; --text-secondary: #6B7280;
-          --accent: #2563EB; --accent-hover: #1D4ED8; --accent-light: #EFF6FF;
-          --success: #16A34A; --success-bg: #DCFCE7;
-          --danger: #DC2626; --danger-bg: #FEF2F2;
-          --radius: 10px;
-        }
-        .topbar {
-          position: sticky; top: 0; height: 56px; background: var(--white);
-          border-bottom: 1px solid var(--border); display: flex;
-          align-items: center; padding: 0 24px; gap: 16px; z-index: 10;
-        }
-        .btn-voltar {
-          display: flex; align-items: center; gap: 6px; background: none;
-          border: none; cursor: pointer; color: var(--text-secondary);
-          font-size: 14px;
-        }
-        .btn-voltar:hover { color: var(--accent); }
-        .page-title { font-size: 18px; font-weight: 600; color: var(--text); }
-        .content { padding: 24px; max-width: 1100px; margin: 0 auto; }
-        .tabs { display: flex; gap: 8px; margin-bottom: 24px; }
-        .tab-btn {
-          padding: 8px 20px; border-radius: var(--radius); border: 1px solid var(--border);
-          background: var(--white); cursor: pointer; font-size: 14px;
-          color: var(--text-secondary); transition: all .2s;
-        }
-        .tab-btn.active {
-          background: var(--accent); color: #fff; border-color: var(--accent);
-        }
-        .grid {
-          display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-          gap: 16px;
-        }
-        .card {
-          background: var(--white); border: 1px solid var(--border);
-          border-radius: var(--radius); padding: 20px;
-        }
-        .card-title { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
-        .card-desc { font-size: 14px; color: var(--text-secondary); margin-bottom: 12px; }
-        .card-footer { display: flex; justify-content: space-between; align-items: center; }
-        .badge {
-          display: inline-block; padding: 2px 10px; border-radius: 99px;
-          font-size: 12px; font-weight: 500;
-        }
-        .badge-aberto    { background: var(--accent-light); color: var(--accent); }
-        .badge-andamento { background: #FEF9C3; color: #854D0E; }
-        .badge-finalizado{ background: #F3F4F6; color: var(--text-secondary); }
-        .badge-pendente  { background: #FEF9C3; color: #854D0E; }
-        .badge-aceite    { background: var(--success-bg); color: var(--success); }
-        .badge-rejeitado { background: var(--danger-bg); color: var(--danger); }
-        .btn-primary {
-          background: var(--accent); color: #fff; border: none;
-          padding: 8px 16px; border-radius: var(--radius);
-          cursor: pointer; font-size: 13px; transition: background .2s;
-        }
-        .btn-primary:hover { background: var(--accent-hover); }
-        .btn-primary:disabled { opacity: .5; cursor: not-allowed; }
-        .btn-outline {
-          background: transparent; color: var(--accent);
-          border: 1px solid var(--accent); padding: 8px 16px;
-          border-radius: var(--radius); cursor: pointer;
-          font-size: 13px; transition: all .2s;
-        }
-        .btn-outline:hover { background: var(--accent-light); }
-        /* Modal */
-        .overlay {
-          position: fixed; inset: 0; background: rgba(0,0,0,.4);
-          backdrop-filter: blur(4px); display: flex;
-          align-items: center; justify-content: center; z-index: 100;
-        }
-        .modal {
-          background: var(--white); border-radius: var(--radius);
-          padding: 28px; width: 100%; max-width: 460px;
-          animation: slideUp .25s ease;
-        }
-        @keyframes slideUp {
-          from { transform: translateY(30px); opacity: 0; }
-          to   { transform: translateY(0);    opacity: 1; }
-        }
-        .modal-title { font-size: 18px; font-weight: 600; margin-bottom: 20px; }
-        .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
-        .field label { font-size: 13px; color: var(--text-secondary); }
-        .field input, .field textarea {
-          padding: 9px 12px; border: 1px solid var(--border);
-          border-radius: var(--radius); font-size: 14px; outline: none;
-        }
-        .field input:focus, .field textarea:focus { border-color: var(--accent); }
-        .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
-        .empty { text-align: center; color: var(--text-secondary); padding: 48px 0; }
-      `}</style>
-
-      {/* Top Bar */}
-      <div className="topbar">
-        <button className="btn-voltar" onClick={() => router.push('/Develop/dashboard')}>
-          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-          </svg>
-          Voltar
-        </button>
-        <span className="page-title">Eventos</span>
-      </div>
-
-      <div className="content">
-        {/* Tabs */}
-        <div className="tabs">
-          <button
-            className={`tab-btn ${tab === 'disponiveis' ? 'active' : ''}`}
-            onClick={() => setTab('disponiveis')}
-          >
-            Disponíveis
-          </button>
-          <button
-            className={`tab-btn ${tab === 'inscricoes' ? 'active' : ''}`}
-            onClick={() => setTab('inscricoes')}
-          >
-            Minhas Inscrições
-          </button>
+    <Card className="transition-shadow hover:shadow-md">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <EstadoBadge estado={estado} />
+          {podeConversar && (
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8 rounded-full"
+              onClick={() => onAbrirChat(inscricao)}
+              title="Conversar com o cliente"
+            >
+              <MessageCircle className="h-4 w-4" />
+            </Button>
+          )}
         </div>
-
-        {loading ? (
-          <p className="empty">A carregar...</p>
-        ) : tab === 'disponiveis' ? (
-          /* ── EVENTOS DISPONÍVEIS ── */
-          eventos.length === 0 ? (
-            <p className="empty">Nenhum evento disponível de momento.</p>
-          ) : (
-            <div className="grid">
-              {eventos.map((ev) => (
-                <div className="card" key={ev.id}>
-                  <div className="card-title">{ev.titulo}</div>
-                  <div className="card-desc">{ev.descricao}</div>
-                  <div className="card-footer">
-                    <span className={`badge badge-${ev.status}`}>{ev.status}</span>
-                    {jaInscrito(ev.id) ? (
-                      <span className="badge badge-aceite">Inscrito</span>
-                    ) : (
-                      <button
-                        className="btn-primary"
-                        onClick={() => handleInscrever(ev.id)}
-                        disabled={inscrevendo === ev.id}
-                        >
-                        {inscrevendo === ev.id ? 'A candidatar...' : 'Candidatar'}
-                    </button>
-
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )
-        ) : (
-          /* ── MINHAS INSCRIÇÕES ── */
-          inscricoes.length === 0 ? (
-            <p className="empty">Ainda não tens inscrições.</p>
-          ) : (
-            <div className="grid">
-              {inscricoes.map((insc) => (
-                <div className="card" key={insc.id}>
-                  <div className="card-title">{insc.evento_titulo}</div>
-                  <div className="card-footer">
-                    <span className={`badge badge-${insc.status}`}>{insc.status}</span>
-                    {insc.status === 'aceite' && !insc.proposta_enviada && (
-                      <button
-                        className="btn-outline"
-                        onClick={() => {
-                          setInscricaoSelecionada(insc.id);
-                          setModalAberto(true);
-                        }}
-                      >
-                        Enviar Proposta
-                      </button>
-                    )}
-                    {insc.proposta_enviada && (
-                      <span className="badge badge-andamento">Proposta enviada</span>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )
+      </CardHeader>
+      <CardContent className="space-y-3 pb-4">
+        <p className="text-sm leading-relaxed line-clamp-3">{evento.descricao}</p>
+        <p className="text-xs text-muted-foreground">Cliente: {evento.nome_dono}</p>
+        {(evento.data_inicio || evento.data_fim) && (
+          <div className="flex items-center gap-1.5 text-xs font-medium text-primary">
+            <Calendar className="h-3.5 w-3.5" />
+            {evento.data_inicio && new Date(evento.data_inicio).toLocaleDateString("pt-AO")}
+            {evento.data_fim && <> — {new Date(evento.data_fim).toLocaleDateString("pt-AO")}</>}
+          </div>
         )}
-      </div>
+      </CardContent>
+      <CardFooter className="border-t pt-3">
+        {estado === "aceite" && !proposta && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full"
+            onClick={() => onEnviarProposta(inscricao.id)}
+          >
+            <FileText className="mr-1.5 h-3.5 w-3.5" />
+            Enviar Proposta
+          </Button>
+        )}
+        {proposta && (
+          <Badge variant="outline" className="border-yellow-500 text-yellow-700 bg-yellow-50">
+            Proposta enviada
+          </Badge>
+        )}
+        {estado === "rejeitado" && (
+          <span className="text-xs text-muted-foreground">Candidatura não seleccionada</span>
+        )}
+        {estado === "pendente" && !proposta && (
+          <span className="text-xs text-muted-foreground">A aguardar decisão do cliente</span>
+        )}
+      </CardFooter>
+    </Card>
+  );
+}
 
-      {/* Modal Proposta */}
-      {modalAberto && (
-        <div className="overlay" onClick={() => setModalAberto(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-title">Enviar Proposta</div>
+function ModalProposta({
+  open,
+  onClose,
+  proposta,
+  setProposta,
+  onSubmit,
+  loading,
+}: {
+  open: boolean;
+  onClose: () => void;
+  proposta: { valor: string; prazo_dias: string; mensagem: string };
+  setProposta: (p: { valor: string; prazo_dias: string; mensagem: string }) => void;
+  onSubmit: () => void;
+  loading: boolean;
+}) {
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="sm:max-w-[480px]">
+        <DialogHeader>
+          <DialogTitle>Enviar Proposta</DialogTitle>
+          <DialogDescription>
+            Apresente a sua proposta de valor e prazo para este projecto.
+          </DialogDescription>
+        </DialogHeader>
 
-            <div className="field">
-              <label>Valor (€)</label>
-              <input
+        <div className="flex flex-col gap-4 py-2">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="valor">Valor (Kz)</Label>
+              <Input
+                id="valor"
                 type="number"
-                placeholder="Ex: 1500"
+                placeholder="Ex: 150000"
                 value={proposta.valor}
                 onChange={(e) => setProposta({ ...proposta, valor: e.target.value })}
               />
             </div>
-
-            <div className="field">
-              <label>Prazo (dias)</label>
-              <input
+            <div className="space-y-2">
+              <Label htmlFor="prazo">Prazo (dias)</Label>
+              <Input
+                id="prazo"
                 type="number"
                 placeholder="Ex: 30"
                 value={proposta.prazo_dias}
                 onChange={(e) => setProposta({ ...proposta, prazo_dias: e.target.value })}
               />
             </div>
+          </div>
 
-            <div className="field">
-              <label>Mensagem</label>
-              <textarea
-                rows={3}
-                placeholder="Descreve a tua abordagem..."
-                value={proposta.mensagem}
-                onChange={(e) => setProposta({ ...proposta, mensagem: e.target.value })}
-              />
-            </div>
-
-            <div className="modal-actions">
-              <button className="btn-outline" onClick={() => setModalAberto(false)}>Cancelar</button>
-              <button className="btn-primary" onClick={handleEnviarProposta}>Enviar</button>
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="mensagem">Mensagem</Label>
+            <Textarea
+              id="mensagem"
+              rows={4}
+              placeholder="Descreva a sua abordagem para este projecto..."
+              value={proposta.mensagem}
+              onChange={(e) => setProposta({ ...proposta, mensagem: e.target.value })}
+            />
           </div>
         </div>
-      )}
-    </>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button onClick={onSubmit} disabled={loading}>
+            {loading ? "A enviar..." : "Enviar Proposta"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ─── Página principal ──────────────────────────────────────────────────────
+
+export default function EventosArquitecto() {
+  const { CarregarEventosDisponiveis, CarregarMinhasInscricoes, InscreverEvento, EnviarProposta } = useAuth() as any;
+  const router = useRouter();
+
+  const [eventos, setEventos] = useState<EventoDisponivel[]>([]);
+  const [inscricoes, setInscricoes] = useState<Inscricao[]>([]);
+  const [pageLoading, setPageLoading] = useState(true);
+  const [tab, setTab] = useState<"disponiveis" | "inscricoes">("disponiveis");
+
+  const [modalAberto, setModalAberto] = useState(false);
+  const [inscricaoSelecionada, setInscricaoSelecionada] = useState<string | null>(null);
+  const [proposta, setProposta] = useState({ valor: "", prazo_dias: "", mensagem: "" });
+  const [enviandoProposta, setEnviandoProposta] = useState(false);
+  const [inscrevendo, setInscrevendo] = useState<string | null>(null);
+
+  useEffect(() => {
+    carregarDados();
+  }, []);
+
+  async function carregarDados() {
+    setPageLoading(true);
+    const [evs, insc] = await Promise.all([
+      CarregarEventosDisponiveis(),
+      CarregarMinhasInscricoes(),
+    ]);
+    setEventos(evs || []);
+    setInscricoes(insc || []);
+    setPageLoading(false);
+  }
+
+  async function handleInscrever(idevento: string) {
+    setInscrevendo(idevento);
+    const res = await InscreverEvento(idevento);
+    if (res?.erro) {
+      await carregarDados();
+      setInscrevendo(null);
+      return;
+    }
+    await carregarDados();
+    setInscrevendo(null);
+  }
+
+  async function handleEnviarProposta() {
+    if (!inscricaoSelecionada) return;
+    setEnviandoProposta(true);
+    try {
+      await EnviarProposta({
+        id_inscricao: inscricaoSelecionada,
+        valor: Number(proposta.valor),
+        prazo_dias: Number(proposta.prazo_dias),
+        mensagem: proposta.mensagem,
+      });
+      setModalAberto(false);
+      setProposta({ valor: "", prazo_dias: "", mensagem: "" });
+      await carregarDados();
+    } finally {
+      setEnviandoProposta(false);
+    }
+  }
+
+  function abrirChat(insc: Inscricao) {
+    router.push(
+      `/Develop/dashboard/chat/${insc.evento.id_dono}?nome=${encodeURIComponent(
+        insc.evento.nome_dono
+      )}&evento=${insc.evento.id}`
+    );
+  }
+
+  return (
+    <DashboardLayout>
+      <div className="flex flex-col gap-6 p-6 md:p-8">
+        <div className="flex items-center justify-between">
+          <Button variant="outline" size="sm" onClick={() => router.push("/Develop/dashboard")}>
+            <ArrowLeft className="mr-1.5 h-4 w-4" />
+            Voltar
+          </Button>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <h1 className="text-3xl font-bold tracking-tight">Eventos</h1>
+          <p className="text-muted-foreground">
+            Encontre projectos disponíveis e acompanhe as suas candidaturas.
+          </p>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex gap-2 border-b">
+          <button
+            onClick={() => setTab("disponiveis")}
+            className={`px-1 pb-3 text-sm font-medium transition-colors border-b-2 -mb-px ${
+              tab === "disponiveis"
+                ? "border-primary text-foreground"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Disponíveis
+          </button>
+          <button
+            onClick={() => setTab("inscricoes")}
+            className={`px-1 pb-3 text-sm font-medium transition-colors border-b-2 -mb-px ml-4 ${
+              tab === "inscricoes"
+                ? "border-primary text-foreground"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Minhas Inscrições
+          </button>
+        </div>
+
+        {pageLoading ? (
+          <div className="flex items-center justify-center py-20 text-sm text-muted-foreground">
+            A carregar...
+          </div>
+        ) : tab === "disponiveis" ? (
+          eventos.length === 0 ? (
+            <Card>
+              <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
+                  <Calendar className="h-6 w-6 text-primary" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="font-semibold">Nenhum evento disponível</h3>
+                  <p className="max-w-sm text-sm text-muted-foreground">
+                    De momento não há projectos abertos para candidatura. Volte mais tarde.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {eventos.map((ev) => (
+                <EventoDisponivelCard
+                  key={ev.id}
+                  evento={ev}
+                  onInscrever={handleInscrever}
+                  inscrevendo={inscrevendo === ev.id}
+                />
+              ))}
+            </div>
+          )
+        ) : inscricoes.length === 0 ? (
+          <Card>
+            <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
+                <FileText className="h-6 w-6 text-primary" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="font-semibold">Ainda não tem inscrições</h3>
+                <p className="max-w-sm text-sm text-muted-foreground">
+                  Candidate-se a um projecto disponível para começar.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {inscricoes.map((insc) => (
+              <InscricaoCard
+                key={insc.id}
+                inscricao={insc}
+                onAbrirChat={abrirChat}
+                onEnviarProposta={(id) => {
+                  setInscricaoSelecionada(id);
+                  setModalAberto(true);
+                }}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      <ModalProposta
+        open={modalAberto}
+        onClose={() => setModalAberto(false)}
+        proposta={proposta}
+        setProposta={setProposta}
+        onSubmit={handleEnviarProposta}
+        loading={enviandoProposta}
+      />
+    </DashboardLayout>
   );
 }

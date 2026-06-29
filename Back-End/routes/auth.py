@@ -19,6 +19,13 @@ class LoginSchema(BaseModel):
     email: EmailStr
     password: str
 
+class ArquitetoUpdateSchema(BaseModel):
+    endereco:            Optional[str] = None
+    bio:                 Optional[str] = None
+    nif:                 Optional[str] = None
+    cedula_profissional: Optional[str] = None
+    IBAN:                Optional[str] = None
+
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -59,15 +66,237 @@ def _upload_photo(sb, file: UploadFile, content: bytes) -> str | None:
 
 
 # ── Rotas ──────────────────────────────────────────────────────────────────────
-
+class PerfilGeralUpdateSchema(BaseModel):
+    nome:     Optional[str] = None
+    telefone: Optional[str] = None
+ 
+ 
+class ArquitetoUpdateSchema(BaseModel):
+    endereco:            Optional[str] = None
+    bio:                 Optional[str] = None
+    nif:                 Optional[str] = None
+    cedula_profissional: Optional[str] = None
+    IBAN:                Optional[str] = None
+    compania:            Optional[str] = None   # ← campo novo
+ 
+ 
+# ── GET /me  (substitui o existente — agora devolve telefone também) ───────────
 @auth_router.get("/me")
 async def me(user: dict = Depends(get_current_user)):
+    """
+    Devolve dados básicos do utilizador autenticado.
+    Busca foto_pessoal na tabela certa (arquiteto ou cliente).
+    """
+    sb = get_supabase_admin()
+    role = user.get("role", "cliente")
+ 
+    # telefone vem sempre da tabela usuario
+    try:
+        u_row = (
+            sb.table("usuario")
+            .select("nome, email, telefone")
+            .eq("id", user["id"])
+            .single()
+            .execute()
+        )
+        telefone = u_row.data.get("telefone") if u_row.data else None
+    except Exception:
+        telefone = None
+ 
+    # foto_pessoal vem da tabela específica do role
+    foto_pessoal = None
+    try:
+        tabela = "arquiteto" if role == "arquiteto" else "cliente"
+        f_row = (
+            sb.table(tabela)
+            .select("foto_pessoal")
+            .eq("id", user["id"])
+            .single()
+            .execute()
+        )
+        foto_pessoal = f_row.data.get("foto_pessoal") if f_row.data else None
+    except Exception:
+        pass
+ 
     return {
-        "id":    user["id"],
-        "email": user["email"],
-        "role":  user["role"],
-        "nome":  user.get("nome", user["email"]),
+        "id":          user["id"],
+        "email":       user["email"],
+        "role":        role,
+        "nome":        user.get("nome", user["email"]),
+        "telefone":    telefone,
+        "foto_pessoal": foto_pessoal,
     }
+ 
+ 
+# ── POST /me/foto  — faz upload e grava URL na tabela certa ───────────────────
+ 
+@auth_router.post("/me/foto", status_code=200)
+async def upload_foto(
+    foto: UploadFile = File(...),
+    user: dict = Depends(get_current_user),
+):
+    """
+    Recebe um ficheiro de imagem, faz upload para o bucket 'profiles'
+    e guarda a URL pública em arquiteto.foto_pessoal ou cliente.foto_pessoal
+    conforme o role do utilizador autenticado.
+    """
+    sb   = get_supabase_admin()
+    role = user.get("role", "cliente")
+ 
+    # Valida tipo de ficheiro
+    allowed = {"image/jpeg", "image/png", "image/webp"}
+    if foto.content_type not in allowed:
+        raise HTTPException(
+            status_code=422,
+            detail="Tipo de ficheiro inválido. Use JPG, PNG ou WEBP."
+        )
+ 
+    content = await foto.read()
+ 
+    # Limita a 5 MB
+    if len(content) > 5 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="Ficheiro demasiado grande. Máximo 5 MB.")
+ 
+    # Garante que o bucket existe
+    try:
+        sb.storage.create_bucket("profiles", options={"public": True})
+    except Exception:
+        pass  # já existe
+ 
+    # Caminho único: role/user_id/foto.<ext>
+    ext  = (foto.filename or "foto").rsplit(".", 1)[-1].lower()
+    path = f"{role}/{user['id']}/foto.{ext}"
+ 
+    # Remove versão anterior (ignora erros caso não exista)
+    try:
+        sb.storage.from_("profiles").remove([path])
+    except Exception:
+        pass
+ 
+    # Upload
+    try:
+        sb.storage.from_("profiles").upload(
+            path, content, {"content-type": foto.content_type, "upsert": "true"}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro no upload: {e}")
+ 
+    foto_url = sb.storage.from_("profiles").get_public_url(path)
+ 
+    # Persiste URL na tabela correcta
+    tabela = "arquiteto" if role == "arquiteto" else "cliente"
+    try:
+        sb.table(tabela).update({"foto_pessoal": foto_url}).eq("id", user["id"]).execute()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Upload feito mas erro ao guardar URL: {e}")
+ 
+    return {"foto_url": foto_url}
+ 
+ 
+# ── DELETE /me/foto  — remove a foto de perfil ────────────────────────────────
+ 
+@auth_router.delete("/me/foto", status_code=200)
+async def delete_foto(user: dict = Depends(get_current_user)):
+    """
+    Remove a foto de perfil do utilizador: apaga do storage e limpa a coluna.
+    """
+    sb   = get_supabase_admin()
+    role = user.get("role", "cliente")
+ 
+    # Tenta remover as variantes possíveis do ficheiro
+    for ext in ("jpg", "jpeg", "png", "webp"):
+        try:
+            sb.storage.from_("profiles").remove([f"{role}/{user['id']}/foto.{ext}"])
+        except Exception:
+            pass
+ 
+    tabela = "arquiteto" if role == "arquiteto" else "cliente"
+    try:
+        sb.table(tabela).update({"foto_pessoal": None}).eq("id", user["id"]).execute()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao remover foto: {e}")
+ 
+    return {"message": "Foto removida com sucesso."}
+ 
+ 
+# ── PUT /me  (novo — salva nome e telefone na tabela usuario) ──────────────────
+ 
+@auth_router.put("/me")
+async def update_me(
+    data: PerfilGeralUpdateSchema,
+    user: dict = Depends(get_current_user),
+):
+    sb = get_supabase_admin()
+    payload = {k: v for k, v in data.model_dump().items() if v is not None}
+ 
+    if not payload:
+        raise HTTPException(status_code=400, detail="Nenhum campo para atualizar.")
+ 
+    try:
+        sb.table("usuario").update(payload).eq("id", user["id"]).execute()
+ 
+        # Sincroniza o nome nos metadados do Supabase Auth (opcional mas útil)
+        if "nome" in payload:
+            sb.auth.admin.update_user_by_id(
+                user["id"],
+                {"user_metadata": {"nome": payload["nome"]}}
+            )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao atualizar perfil: {e}")
+ 
+    return {"message": "Perfil atualizado com sucesso."}
+ 
+ 
+# ── GET /me/arquiteto ──────────────────────────────────────────────────────────
+ 
+@auth_router.get("/me/arquiteto")
+async def me_arquiteto(user: dict = Depends(get_current_user)):
+    if user.get("role") != "arquiteto":
+        raise HTTPException(status_code=403, detail="Acesso restrito a arquitectos.")
+ 
+    sb = get_supabase_admin()
+    try:
+        res = (
+            sb.table("arquiteto")
+            .select(
+                "endereco, foto_pessoal, cedula_profissional, bio, nif, "
+                "avaliacao, saldo_disponivel, IBAN, compania"
+            )
+            .eq("id", user["id"])
+            .single()
+            .execute()
+        )
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=f"Perfil profissional não encontrado: {e}")
+ 
+    return res.data
+ 
+ 
+# ── PUT /me/arquiteto ──────────────────────────────────────────────────────────
+ 
+@auth_router.put("/me/arquiteto")
+async def update_me_arquiteto(
+    data: ArquitetoUpdateSchema,
+    user: dict = Depends(get_current_user),
+):
+    if user.get("role") != "arquiteto":
+        raise HTTPException(status_code=403, detail="Acesso restrito a arquitectos.")
+ 
+    sb = get_supabase_admin()
+    payload = {k: v for k, v in data.model_dump().items() if v is not None}
+ 
+    if not payload:
+        raise HTTPException(status_code=400, detail="Nenhum campo para atualizar.")
+ 
+    if "IBAN" in payload:
+        payload["IBAN"] = payload["IBAN"].replace(" ", "").upper()
+ 
+    try:
+        sb.table("arquiteto").update(payload).eq("id", user["id"]).execute()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao atualizar perfil: {e}")
+ 
+    return {"message": "Perfil profissional atualizado com sucesso."}
 
 @auth_router.post("/forgot-password", status_code=200)
 async def forgot_password(email: str = Form(...)):
@@ -119,7 +348,7 @@ async def forgot_password(email: str = Form(...)):
 @auth_router.post("/reset-password", status_code=200)
 async def reset_password(
     new_password: str = Form(...),
-    user: dict = Depends(get_current_user)   # token de recovery já válido
+    user: dict = Depends(get_current_user)   
 ):
     """
     Atualiza a senha do utilizador autenticado pelo token de recovery.

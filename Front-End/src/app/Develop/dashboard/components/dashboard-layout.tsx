@@ -7,7 +7,7 @@ import {
   SidebarProvider, useSidebar,
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
-import { Calendar, Clock, Building2, ChevronLeft, ChevronRight, Home, LayoutDashboard, LogOut, ShoppingCart, User,} from "lucide-react"
+import { Calendar, Clock, Building2, ChevronLeft, ChevronRight, Home, LayoutDashboard, LogOut, ShoppingCart, User, ActivitySquareIcon} from "lucide-react"
 import Link from "next/link"
 import { usePathname , useRouter } from "next/navigation"
 import { useEffect } from "react"
@@ -52,10 +52,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const navigationItems = [
     { name: "Dashboard",            href: "/Develop/dashboard",                  icon: LayoutDashboard, show: true },
     { name: "Minhas Plantas",       href: "/Develop/dashboard/Plantas",          icon: Building2,       show: isArquitecto },
-    { name: "Meus Eventos",         href: "/Develop/dashboard/Eventos/Arquitecto", icon: Calendar,       show: isArquitecto },
+    { name: "Meus eventos",               href: "/Develop/dashboard/Eventos",           icon: ActivitySquareIcon,            show: true },
+    { name: "Eventos",         href: "/Develop/dashboard/Eventos/Arquitecto", icon: Calendar,       show: isArquitecto },
     { name: "Carrinho de Compras",  href: "/Develop/dashboard/Compras",          icon: ShoppingCart,    show: true },
     { name: "Histórico de Compras", href: "/Develop/dashboard/history",          icon: Clock,           show: true },
     { name: "Perfil",               href: "/Develop/dashboard/perfil",           icon: User,            show: true },
+    
   ].filter(item => item.show)
 
 
@@ -81,7 +83,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <ChatModal
                 open={chatOpen}
                 onClose={() => setChatOpen(false)}
-                currentUser={{ id: user.id, nome: user.nome }}
+                currentUser={{ id: user.id, nome: user.nome, email: user.email }}
               />
               {navigationItems.map((item) => (
                 <SidebarMenuItem key={item.name}>

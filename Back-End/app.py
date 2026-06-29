@@ -25,7 +25,9 @@ from routes.payments_route import router
 from routes.events import events_router         
 from routes.carrinho_route import router as carrinho_router
 from routes.chat import chat_router
+from routes.comments_route import comments_router
 
+app.include_router(comments_router, prefix="/api/comments")
 app.include_router(chat_router, prefix="/api/chat")
 app.include_router(router,           prefix="/api/payments")
 app.include_router(auth_router,      prefix="/api/auth")

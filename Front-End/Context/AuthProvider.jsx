@@ -407,7 +407,6 @@ const res = await fetch(`http://localhost:5000/api/dashboard/${plantId}`, {
 const CriarEvento = async ({ descricao, data_inicio, data_fim }) => {
   try {
     const token = localStorage.getItem('token');
-    // ✅ guarda: não faz fetch sem token válido
     if (!token) throw new Error('Utilizador não autenticado.');
     const res = await fetch(`${API}/api/eventos/`, {
       method: 'POST',
@@ -459,10 +458,10 @@ const CarregarInscricoes = async (eventoId) => {
 const DecidirInscricao = async (inscricaoId, decisao) => {
   try {
     const token = localStorage.getItem('token');
-    const res = await fetch(`http://localhost:5000/api/eventos/inscricoes/${inscricaoId}/decisao`, {
+    const res = await fetch(`http://localhost:5000/api/eventos/inscricao/${inscricaoId}/decisao`, {
       method: 'PUT',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ decisao }),
+      body: JSON.stringify({ estado: decisao }),  // também corrigido abaixo
     });
     if (!res.ok) throw new Error('Erro ao decidir inscrição');
     const data = await res.json();
