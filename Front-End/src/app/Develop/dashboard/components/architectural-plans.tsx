@@ -198,7 +198,7 @@ useEffect(() => {
           open={reportDialogOpen}
           onOpenChange={setReportDialogOpen}
           planTitle={planToReport.title}
-          planOwner={planToReport.dono || "Arquiteto Desconhecido"}
+          planOwner={planToReport.id || "Arquiteto Desconhecido"}
           reporterName="Utilizador Atual"
         />
       )}

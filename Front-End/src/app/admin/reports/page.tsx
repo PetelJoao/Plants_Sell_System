@@ -61,7 +61,7 @@ export default function ReportsPage() {
   const [statusFilter, setStatusFilter] = useState<"Todos" | "Aberto" | "Sob Revisão" | "Resolvido">(
     "Todos"
   )
-  const [categoryFilter, setCategoryFilter] = useState<"All" | string>("All")
+  const [categoryFilter, setCategoryFilter] = useState<string>("Todos")
   const [searchQuery, setSearchQuery] = useState("")
   const [detailOpen, setDetailOpen] = useState(false)
   const [selectedReport, setSelectedReport] = useState<Report | null>(null)
@@ -76,10 +76,10 @@ export default function ReportsPage() {
       try 
       {
         const response = await carregarDenuncias();
-        if (response.ok) 
+        if (response && Array.isArray(response)) 
         {
-          const data = await response.json()
-          const Mapped = data.map((item:any) => ({
+        
+          const Mapped = response.map((item:any) => ({
             id: item.id,
             Nome_denuncia: item.nome ??  '',
             Denunciador_avatar: item.Denunciador_avatar ?? ' ',
@@ -92,6 +92,7 @@ export default function ReportsPage() {
             notas: item.notas ?? "",
           }))
           setReports(Mapped)
+          console.log("Reports loaded:", Mapped)
         } else {
           console.error("Failed to fetch reports:", response.statusText)
         }
@@ -103,19 +104,33 @@ export default function ReportsPage() {
       }
 
     }
+    LoadReports()
 
    }
   , [])
-  const filteredReports = useMemo(() => {
-    return reports.filter((report) => {
-      const matchesSearch =
-        report.Nome_denuncia?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        report.Denunciado?.toLowerCase().includes(searchQuery.toLowerCase())
-      const matchesStatus = statusFilter === "Todos" || report.estado === statusFilter
-      const matchesCategory = categoryFilter === "Todos" || report.categoria === categoryFilter
-      return matchesSearch && matchesStatus && matchesCategory
-    })
-  }, [reports, searchQuery, statusFilter, categoryFilter])
+ const filteredReports = useMemo(() => {
+  return reports.filter((report) => {
+  
+    const nomeDenuncia = String(report.Nome_denuncia || "").toLowerCase();
+    const denunciadoCod = String(report.Denunciado || "").toLowerCase();
+    const termoBusca = searchQuery.toLowerCase();
+
+    const matchesSearch = nomeDenuncia.includes(termoBusca) || denunciadoCod.includes(termoBusca);
+
+   
+    const estadoReport = String(report.estado || "").toLowerCase();
+    const estadoFiltro = statusFilter.toLowerCase();
+    
+    const matchesStatus = 
+      statusFilter === "Todos" || 
+      estadoReport === estadoFiltro ||
+      (estadoFiltro.startsWith("aber") && estadoReport.startsWith("aber"));
+
+    const matchesCategory = categoryFilter === "Todos" || report.categoria === categoryFilter;
+
+    return matchesSearch && matchesStatus && matchesCategory;
+  });
+}, [reports, searchQuery, statusFilter, categoryFilter]);
 
   const handleViewDetails = (report: Report) => {
     setSelectedReport(report)

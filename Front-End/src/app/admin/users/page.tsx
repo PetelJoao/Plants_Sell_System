@@ -68,16 +68,36 @@ export default function UsersPage() {
     loadUsers();
   },[]);
 
-  const filteredUsers = useMemo(() => {
-    return users.filter((user) => {
-      const matchesSearch =
-        user.nome?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        user.email?.toLowerCase().includes(searchQuery.toLowerCase())
-      const matchesRole = roleFilter === "Todos" || user.tipo === roleFilter
-      const matchesStatus = statusFilter === "Todos" || user.estado === statusFilter
-      return matchesSearch && matchesRole && matchesStatus
-    })
-  }, [users, searchQuery, roleFilter, statusFilter])
+const filteredUsers = useMemo(() => {
+  return users.filter((user) => {
+    // 1. Filtro de Busca por Nome ou Email
+    const matchesSearch =
+      user.nome?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.email?.toLowerCase().includes(searchQuery.toLowerCase())
+
+    // 2. Filtro por Tipo/Cargo (arquiteto, cliente, etc.)
+    const matchesRole = roleFilter === "Todos" || user.tipo === roleFilter
+
+    // 3. Filtro por Estado (Normaliza Inglês/Português e Maiúsculas/Minúsculas)
+    const estadoUser = String(user.estado || "").toLowerCase()
+    
+    let matchesStatus = false
+    if (statusFilter === "Todos") {
+      matchesStatus = true
+    } else if (statusFilter === "Activo") {
+      // Considera ativo se o estado contiver 'act', 'an' (de active) ou se estiver vazio/nulo na tabela
+      matchesStatus = estadoUser.startsWith("act") || estadoUser === "" || estadoUser === "active"
+    } else if (statusFilter === "Suspenso") {
+      // Captura tanto "Suspenso" quanto "suspended" do backend
+      matchesStatus = estadoUser.startsWith("susp")
+    } else if (statusFilter === "Banido") {
+      // Captura tanto "Banido" quanto "banned" ou "banned" do backend
+      matchesStatus = estadoUser.startsWith("ban")
+    }
+
+    return matchesSearch && matchesRole && matchesStatus
+  })
+}, [users, searchQuery, roleFilter, statusFilter])
 
   const handleSuspend = (user: User) => {
     setSelectedUser(user)

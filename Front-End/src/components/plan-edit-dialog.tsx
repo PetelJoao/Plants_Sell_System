@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { useAuth } from "@/Context/AuthContext"
 import {
   Select,
   SelectContent,
@@ -25,10 +26,10 @@ interface ArchitectPlan {
   squareFeet: number
   bedrooms: number
   bathrooms: number
-image?: string
-fileUrl?: string
-fileName?: string
-uploadedAt?: string
+  image?: string
+  fileUrl?: string
+  fileName?: string
+  uploadedAt?: string
 }
 
 interface PlanEditDialogProps {
@@ -45,13 +46,15 @@ export function PlanEditDialog({ open, onOpenChange, plan, onSave }: PlanEditDia
   const [planFile, setPlanFile] = useState<File | null>(null)
   const [imageError, setImageError] = useState<string | null>(null)
   const [planError, setPlanError] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const { EditPlant } = useAuth() as any
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({
       ...prev,
-      [name]: name === "price" || name === "squareFeet" || name === "bedrooms" || name === "bathrooms" 
-        ? parseInt(value) || 0 
+      [name]: name === "price" || name === "squareFeet" || name === "bedrooms" || name === "bathrooms"
+        ? parseInt(value) || 0
         : value,
     }))
   }
@@ -107,9 +110,9 @@ export function PlanEditDialog({ open, onOpenChange, plan, onSave }: PlanEditDia
     setPlanFile(selectedFile)
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!formData.title || !formData.description || !formData.category) {
       toast({
         title: "Error",
@@ -119,26 +122,40 @@ export function PlanEditDialog({ open, onOpenChange, plan, onSave }: PlanEditDia
       return
     }
 
-    const updatedPlan = { 
-   ...formData,
-  image: formData.image ?? "",
-  fileUrl: formData.fileUrl ?? "",
-  fileName: formData.fileName ?? "",
-}
-    // Update image if a new one was selected
-    if (imageFile) {
-      updatedPlan.image = URL.createObjectURL(imageFile)
-    }
+    setIsSubmitting(true)
 
-    // Update plan file if a new one was selected
-    if (planFile) {
-      updatedPlan.fileUrl = URL.createObjectURL(planFile)
-      updatedPlan.fileName = planFile.name
-    }
+    try {
+      
+      await EditPlant(plan.id, {
+        title: formData.title,
+        description: formData.description,
+        category: formData.category,
+        squareFeet: formData.squareFeet,
+        bedrooms: formData.bedrooms,
+        bathrooms: formData.bathrooms,
+        price: formData.price,
+        files: planFile ? [planFile] : [],
+        imageFiles: imageFile ? [imageFile] : [],
+      })
 
-    onSave(updatedPlan)
-    setImageFile(null)
-    setPlanFile(null)
+      toast({
+        title: "Sucesso",
+        description: "Planta atualizada com sucesso.",
+      })
+
+      onSave(formData)
+      setImageFile(null)
+      setPlanFile(null)
+      onOpenChange(false)
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: error instanceof Error ? error.message : "Erro ao atualizar a planta.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -259,10 +276,12 @@ export function PlanEditDialog({ open, onOpenChange, plan, onSave }: PlanEditDia
           />
 
           <DialogFooter className="flex gap-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button type="submit">Save Changes</Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Saving..." : "Save Changes"}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
