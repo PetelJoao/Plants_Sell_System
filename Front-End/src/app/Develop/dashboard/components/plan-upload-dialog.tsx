@@ -74,7 +74,7 @@ export function PlanUploadDialog({ open, onOpenChange, onPlanAdded }: PlanUpload
    const [imageFiles, setImageFiles] = useState<File[]>([])
    const [imageError, setImageError] = useState<string | null>(null)
 
-   // Estado para a pasta do projeto (Documentação técnica)
+
    const [files, setFiles] = useState<File[]>([]) // Alterado para array
    const [fileError, setFileError] = useState<string | null>(null)
   const { inserir } = useAuth() as any

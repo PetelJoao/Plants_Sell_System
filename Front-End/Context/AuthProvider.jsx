@@ -46,6 +46,24 @@ export function AuthProvider({ children }) {
     setUser(null);
     setPlans([]);
   };
+  
+  const SendReport = async (report) => {
+  try {
+    const token = localStorage.getItem('token');
+
+  const res = await fetch('http://localhost:5000/api/dashboard/sendreport', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(report),
+  });
+    const data = await res.json();
+    if (!res.ok) return { erro: data.message || 'Erro ao enviar denúncia' };
+    return data;
+  } catch (err) {
+    return { erro: 'Erro de ligação' };
+  }
+};
+
   const SuspenderUser = async(user_id) => {
     try{
       const token = localStorage.getItem('token');
@@ -386,6 +404,61 @@ const PagarSaque = async (withdrawal_id, file) => {
     return data;
   };
 
+ const EditPlant = async (id, { title, description, topology, category, squareFeet, bedrooms, bathrooms, price, files = [], imageFiles = [] }) => {
+  const token = localStorage.getItem('token');
+  if (!user?.id) throw new Error('Utilizador não autenticado');
+
+  const formData = new FormData();
+  formData.append('title',       title);
+  formData.append('description', description ?? '');
+  formData.append('topology',    topology    ?? '');
+  formData.append('category',    category    ?? '');
+  formData.append('squareFeet',  squareFeet  ?? '');
+  formData.append('bedrooms',    bedrooms    ?? 0);
+  formData.append('bathrooms',   bathrooms   ?? 0);
+  formData.append('price',       price       ?? 0);
+  files.forEach(f      => formData.append('projectFiles', f));
+  imageFiles.forEach(f => formData.append('imageFiles',   f));
+
+  const res = await fetch(`http://localhost:5000/api/dashboard/EditPlant/${id}`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.detail || 'Erro ao Alterar planta');
+  }
+
+  const data = await res.json();
+  const nova = data.data?.[0];
+
+  if (nova) {
+  setPlans(prev => prev.map(p =>
+    p.id === id
+      ? {
+          ...p,
+          id: Number(nova.id), 
+          title: nova.nome,
+          description: nova.descricao ?? '',
+          squareFeet: nova.dimensao ?? 0,
+          price: nova.orcamento ?? 0,
+          image: nova.imagens?.[0] ?? nova.plantas_arquivo ?? null,
+          category: nova.categoria ?? '',
+          bedrooms: nova.quartos ?? 0,
+          bathrooms: nova.banheiros ?? 0,
+        }
+      : p
+  ));
+}
+else {
+  console.warn('[EditPlant] API respondeu 200 mas data.data está vazio:', data);
+}
+
+  return data;
+}
+
   const deletar = async (plantId) => {
     const token = localStorage.getItem('token');
 const res = await fetch(`http://localhost:5000/api/dashboard/${plantId}`, {
@@ -532,6 +605,7 @@ const InscreverEvento = async (idevento) => {
     return { erro: 'Erro de ligação' };
   }
 };
+
 
 const EnviarProposta = async ({ id_inscricao, valor, prazo_dias, mensagem }) => {
   try {
@@ -714,6 +788,8 @@ const ComprarTudo = async (success_url = '', cancel_url = '') => {
     forgotPassword,
     resetPassword,
     register,
+    SendReport,
+    EditPlant
   }}>
     {children}
   </AuthContext.Provider>

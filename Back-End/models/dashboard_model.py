@@ -13,27 +13,37 @@ async def all_plants():
 
 
 async def DeletePlants(plant_id: str):
-    supabase = get_supabase_admin()
 
+    """
+    Esta Func realizar 3 ações principais:
+    1. Recuperar os dados da planta do BD usando o plant_id fornecida.
+    2. Extrair os caminhos dos arquivos das plantas como também das imagens associadas a planta.
+    3. Deletar os arquivos das plantas do armazenamentoe
+    """
+    supabase = get_supabase_admin()
+    
     planta = supabase.table("planta").select("imagens, plantas_arquivo").eq("id", plant_id).single().execute()
+
+    if not planta.data:
+        raise HTTPException(status_code=404, detail="Planta não encontrada.")
     
     imagens = planta.data.get("imagens", []) or []
     arquivos = planta.data.get("plantas_arquivo", []) or []
 
   
     def url_to_path(url: str) -> str:
-        # A URL pública tem formato: .../storage/v1/object/public/PlansStoraga/PATH
+      
         return url.split("/PlansStoraga/")[-1]
 
     image_paths   = [url_to_path(u) for u in imagens]
-    archive_paths = arquivos  # já são paths directos
+    archive_paths = arquivos 
 
-    all_paths = f'{image_paths} + {archive_paths}'
+    all_paths = image_paths + archive_paths
     if all_paths:
         supabase.storage.from_("PlansStoraga").remove(all_paths)
 
-
     response = supabase.table("planta").delete().eq("id", plant_id).execute()
+
     return JSONResponse(status_code=200, content={"message": "Planta e ficheiros deletados", "data": response.data})
 
 async def ManagePlants(user: dict):
@@ -81,6 +91,7 @@ async def upload_plants(
         raise HTTPException(status_code=422, detail="Nenhum arquivo de projeto enviado.")
 
     try:
+
         supabase = get_supabase_admin()
         timestamp = datetime.datetime.now().strftime("%d%m%Y_%H%M%S")
         image_urls: List[str] = []
@@ -151,6 +162,133 @@ async def upload_plants(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+async def EditPlants(
+    plant_id:     str,
+    title:        str,
+    description:  Optional[str]    = None,
+    topology:     Optional[str]    = None,
+    category:     Optional[str]    = None,
+    squareFeet:   Optional[str]    = None,
+    bedrooms:     Optional[int]    = 0,
+    bathrooms:    Optional[int]    = 0,
+    price:        float            = 0,
+    imageFiles:   List[UploadFile] = [],
+    projectFiles: List[UploadFile] = [],
+):
+    try:
+        supabase = get_supabase_admin()
+
+        # 1. Buscar a planta actual para obter owner e ficheiros existentes
+        planta_atual = (
+            supabase.table("planta")
+            .select("dono, imagens, plantas_arquivo")
+            .eq("id", plant_id)
+            .single()
+            .execute()
+        )
+
+        if not planta_atual.data:
+            raise HTTPException(status_code=404, detail="Planta não encontrada.")
+
+        dono            = planta_atual.data.get("dono")
+        imagens_atuais  = planta_atual.data.get("imagens", [])        or []
+        arquivos_atuais = planta_atual.data.get("plantas_arquivo", []) or []
+
+        timestamp = datetime.datetime.now().strftime("%d%m%Y_%H%M%S")
+
+        # ── IMAGENS ──────────────────────────────────────────────────────────
+        if imageFiles:
+            # Apagar imagens antigas do Storage
+            def url_to_path(url: str) -> str:
+                return url.split("/PlansStoraga/")[-1]
+
+            old_image_paths = [url_to_path(u) for u in imagens_atuais if u]
+            if old_image_paths:
+                supabase.storage.from_("PlansStoraga").remove(old_image_paths)
+
+            # Upload das novas imagens
+            image_urls: List[str] = []
+            for img in imageFiles:
+                contents  = await img.read()
+                file_path = f"plantas/{dono}/{timestamp}/imagens/{img.filename}"
+
+                supabase.storage.from_("PlansStoraga").upload(
+                    path=file_path,
+                    file=contents,
+                    file_options={"content-type": img.content_type},
+                )
+
+                url = supabase.storage.from_("PlansStoraga").get_public_url(file_path)
+                image_urls.append(url)
+        else:
+            # Sem novas imagens → manter as existentes
+            image_urls = imagens_atuais
+
+        # ── FICHEIROS DE PROJECTO ─────────────────────────────────────────────
+        if projectFiles:
+            # Apagar ficheiros de projecto antigos do Storage
+            if arquivos_atuais:
+                supabase.storage.from_("PlansStoraga").remove(arquivos_atuais)
+
+            # Upload dos novos ficheiros
+            project_file_urls: List[str] = []
+            for doc in projectFiles:
+                contents  = await doc.read()
+                file_path = f"plantas/{dono}/{timestamp}/projeto/{doc.filename}"
+
+                supabase.storage.from_("PlansStoraga").upload(
+                    path=file_path,
+                    file=contents,
+                    file_options={"content-type": doc.content_type, "upsert": "true"},
+                )
+
+                project_file_urls.append(file_path)
+        else:
+            # Sem novos ficheiros → manter os existentes
+            project_file_urls = arquivos_atuais
+
+        # ── UPDATE NA TABELA ─────────────────────────────────────────────────
+        # model EditPlants — só atualizar tipologia se vier preenchida
+        planta_update = {
+            "nome":            title,
+            "descricao":       description,
+            "dimensao":        squareFeet,
+            "orcamento":       price,
+            "categoria":       category,
+            "quartos":         bedrooms,
+            "banheiros":       bathrooms,
+            "imagens":         image_urls,
+            "plantas_arquivo": project_file_urls,
+        }
+
+     
+        if topology:
+            planta_update["tipologia"] = topology
+
+        response = (
+            supabase.table("planta")
+            .update(planta_update)
+            .eq("id", plant_id)
+            .execute()
+        )
+
+        return JSONResponse(
+            status_code=200,
+            content={
+                "message": "Planta atualizada com sucesso!",
+                "data":    response.data,
+            },
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print("=" * 60)
+        print("ERRO em EditPlants:")
+        traceback.print_exc()
+        print("=" * 60)
+        raise HTTPException(status_code=500, detail=str(e))
+
 async def get_historico_compras(usuario_id: str):
 
     supabase = get_supabase_admin()
@@ -216,3 +354,23 @@ async def get_download_urls(plant_id: str, buyer_user_id: str):
         })
 
     return {"download_urls": signed_urls}
+
+async def SendRP(report, user_id: str):
+    supabase = get_supabase_admin()
+    Denunciador = supabase.table("usuario").select("nome").eq("id", user_id).single().execute()
+    report_data = {
+        "nome": Denunciador.data["nome"] if Denunciador.data else "Desconhecido",
+        "id_planta": report.get("Denunciado", ""),
+        "categoria": report.get("categoria_denuncia", ""),
+        "descricao": report.get("descricao", ""),
+        "data_registro": report.get("data", ""),
+        "estado": report.get("estado", ""),
+        
+    }
+
+    response = supabase.table("denuncia").insert(report_data).execute()
+
+    return JSONResponse(
+        status_code=201,
+        content={"message": "Relatório enviado com sucesso!", "data": response.data},
+    )

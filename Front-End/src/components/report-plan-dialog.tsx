@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { useToast } from "@/hooks/use-toast"
+import { useAuth } from "@/Context/AuthContext"
 
 export interface Report {
   id: number
@@ -32,6 +33,7 @@ interface ReportPlanDialogProps {
   planTitle: string
   planOwner: string
   reporterName?: string
+  
 }
 
 export function ReportPlanDialog({
@@ -46,7 +48,7 @@ export function ReportPlanDialog({
   const [customType, setCustomType] = useState<string>("")
   const [description, setDescription] = useState<string>("")
   const [isSubmitting, setIsSubmitting] = useState(false)
-
+  const  { SendReport }  = useAuth() as any
   const reportTypes = [
     "Conteúdo inapropriado",
     "Fraude",
@@ -73,6 +75,8 @@ export function ReportPlanDialog({
       return
     }
 
+
+
     setIsSubmitting(true)
 
     const report: Report = {
@@ -86,7 +90,10 @@ export function ReportPlanDialog({
       estado: "Aberta",
     }
 
+
     try {
+      const response = await SendReport(report)
+
       console.log("Report submitted:", report)
       
       toast({
@@ -107,6 +114,7 @@ export function ReportPlanDialog({
     } finally {
       setIsSubmitting(false)
     }
+
   }
 
   const handleCancel = () => {
