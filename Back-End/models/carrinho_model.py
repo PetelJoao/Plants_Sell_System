@@ -15,9 +15,7 @@ from models.payment_model import criar_sessao_checkout
 supabase = get_supabase_admin()
 
 
-# ──────────────────────────────────────────────
-#  HELPER: garante que o carrinho existe
-# ──────────────────────────────────────────────
+
 def _obter_ou_criar_carrinho(usuario_id: str) -> dict:
     """
     Devolve o carrinho do utilizador.
@@ -39,11 +37,11 @@ def _obter_ou_criar_carrinho(usuario_id: str) -> dict:
             detail=f"Erro ao consultar carrinho: {str(e)}"
         )
 
-    # Carrinho já existe
+  
     if res.data and len(res.data) > 0:
         return res.data[0]
 
-    # Criar novo carrinho
+
     try:
         novo = (
             supabase.table("carrinho")
@@ -65,9 +63,7 @@ def _obter_ou_criar_carrinho(usuario_id: str) -> dict:
     return novo.data[0]
 
 
-# ──────────────────────────────────────────────
-#  1. ADICIONAR ITEM
-# ──────────────────────────────────────────────
+
 async def adicionar_item(usuario_id: str, planta_id: str) -> dict:
     """Adiciona uma planta ao carrinho. Idempotente (ignora duplicados)."""
 
@@ -88,7 +84,7 @@ async def adicionar_item(usuario_id: str, planta_id: str) -> dict:
 
     planta = planta_res.data[0]
 
-    # Bloquear o dono de comprar a sua própria planta
+   
     if planta["dono"] == usuario_id:
         raise HTTPException(
             status_code=400,
@@ -97,7 +93,7 @@ async def adicionar_item(usuario_id: str, planta_id: str) -> dict:
 
     carrinho = _obter_ou_criar_carrinho(usuario_id)
 
-    # Verificar se já existe antes de inserir (evita depender de upsert)
+
     try:
         existente = (
             supabase.table("carrinho_item")
@@ -123,10 +119,6 @@ async def adicionar_item(usuario_id: str, planta_id: str) -> dict:
 
     return {"mensagem": "Planta adicionada ao carrinho.", "planta": planta}
 
-
-# ──────────────────────────────────────────────
-#  2. REMOVER ITEM
-# ──────────────────────────────────────────────
 async def remover_item(usuario_id: str, planta_id: str) -> dict:
     """Remove uma planta específica do carrinho."""
     carrinho = _obter_ou_criar_carrinho(usuario_id)
@@ -148,9 +140,7 @@ async def remover_item(usuario_id: str, planta_id: str) -> dict:
     return {"mensagem": "Item removido do carrinho."}
 
 
-# ──────────────────────────────────────────────
-#  3. LISTAR CARRINHO
-# ──────────────────────────────────────────────
+
 async def listar_carrinho(usuario_id: str) -> dict:
     """
     Devolve todos os itens com detalhes da planta e nome do arquiteto.
@@ -181,7 +171,7 @@ async def listar_carrinho(usuario_id: str) -> dict:
             "itens": [],
         }
 
-    # Query 2: nomes dos arquitetos (campo "dono" na planta)
+
     arquiteto_ids = list({
         item["planta"]["dono"]
         for item in itens
@@ -199,10 +189,9 @@ async def listar_carrinho(usuario_id: str) -> dict:
             )
             arquitetos = {u["id"]: u for u in (arq_res.data or [])}
         except Exception as e:
-            # Não fatal — carrinho ainda funciona sem o nome
             arquitetos = {}
 
-    # Enriquecer com o nome do arquiteto
+  
     for item in itens:
         if item.get("planta"):
             dono_id = item["planta"].get("dono")
@@ -222,9 +211,6 @@ async def listar_carrinho(usuario_id: str) -> dict:
     }
 
 
-# ──────────────────────────────────────────────
-#  4. LIMPAR CARRINHO
-# ──────────────────────────────────────────────
 async def limpar_carrinho(usuario_id: str) -> dict:
     """Remove todos os itens sem apagar o carrinho."""
     carrinho = _obter_ou_criar_carrinho(usuario_id)
@@ -238,10 +224,6 @@ async def limpar_carrinho(usuario_id: str) -> dict:
 
     return {"mensagem": "Carrinho limpo com sucesso."}
 
-
-# ──────────────────────────────────────────────
-#  HELPER: itens para checkout
-# ──────────────────────────────────────────────
 def _itens_para_checkout(carrinho_id: str) -> list[dict]:
     try:
         res = (
@@ -255,9 +237,7 @@ def _itens_para_checkout(carrinho_id: str) -> list[dict]:
         raise HTTPException(status_code=500, detail=f"Erro ao buscar itens: {str(e)}")
 
 
-# ──────────────────────────────────────────────
-#  5. COMPRAR ITEM INDIVIDUAL
-# ──────────────────────────────────────────────
+
 async def comprar_item(
     usuario_id: str,
     planta_id: str,
@@ -303,9 +283,7 @@ async def comprar_item(
     return resultado
 
 
-# ──────────────────────────────────────────────
-#  6. COMPRAR TUDO
-# ──────────────────────────────────────────────
+
 async def comprar_tudo(
     usuario_id: str,
     success_url: str,

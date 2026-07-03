@@ -13,7 +13,6 @@ import smtplib
 auth_router = APIRouter(tags=["auth"])
 
 
-# ── Schemas ────────────────────────────────────────────────────────────────────
 
 class LoginSchema(BaseModel):
     email: EmailStr
@@ -27,7 +26,6 @@ class ArquitetoUpdateSchema(BaseModel):
     IBAN:                Optional[str] = None
 
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
 
 def _create_auth_user(sb, email: str, password: str, metadata: dict) -> str:
     """Cria utilizador no Supabase Auth e devolve o user_id."""
@@ -51,11 +49,10 @@ def _upload_photo(sb, file: UploadFile, content: bytes) -> str | None:
     if not file or not file.filename:
         return None
     
-    # ✅ Cria o bucket se não existir
     try:
         sb.storage.create_bucket("profiles", options={"public": True})
     except Exception:
-        pass  # já existe, ignorar
+        pass  
 
     ext = file.filename.rsplit(".", 1)[-1]
     path = f"arquitetos/{uuid.uuid4()}.{ext}"
@@ -90,7 +87,6 @@ async def me(user: dict = Depends(get_current_user)):
     sb = get_supabase_admin()
     role = user.get("role", "cliente")
  
-    # telefone vem sempre da tabela usuario
     try:
         u_row = (
             sb.table("usuario")
@@ -103,7 +99,6 @@ async def me(user: dict = Depends(get_current_user)):
     except Exception:
         telefone = None
  
-    # foto_pessoal vem da tabela específica do role
     foto_pessoal = None
     try:
         tabela = "arquiteto" if role == "arquiteto" else "cliente"
@@ -143,7 +138,6 @@ async def upload_foto(
     sb   = get_supabase_admin()
     role = user.get("role", "cliente")
  
-    # Valida tipo de ficheiro
     allowed = {"image/jpeg", "image/png", "image/webp"}
     if foto.content_type not in allowed:
         raise HTTPException(
@@ -157,17 +151,14 @@ async def upload_foto(
     if len(content) > 5 * 1024 * 1024:
         raise HTTPException(status_code=413, detail="Ficheiro demasiado grande. Máximo 5 MB.")
  
-    # Garante que o bucket existe
     try:
         sb.storage.create_bucket("profiles", options={"public": True})
     except Exception:
         pass  # já existe
  
-    # Caminho único: role/user_id/foto.<ext>
     ext  = (foto.filename or "foto").rsplit(".", 1)[-1].lower()
     path = f"{role}/{user['id']}/foto.{ext}"
  
-    # Remove versão anterior (ignora erros caso não exista)
     try:
         sb.storage.from_("profiles").remove([path])
     except Exception:
@@ -409,11 +400,9 @@ async def register_arquiteto(
         "sexo":     gender,
     })
 
-    # ✅ FIX 1: Guardar IBAN como string, não como int
     iban_str = iban.replace(" ", "").upper() if iban else None
 
     try:
-        # ✅ FIX 2: upsert em vez de update — garante que a linha existe
         sb.table("arquiteto").upsert({
             "id":                 user_id,   # ← chave primária
             "endereco":           address,

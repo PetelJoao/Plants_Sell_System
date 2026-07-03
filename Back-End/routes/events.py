@@ -260,11 +260,11 @@ async def decidir_inscricao(
     evento_id    = ins.data["evento"]["id"]
     idarquiteto  = ins.data["idarquiteto"]
 
-    # Actualizar estado da inscrição
+
     supabase.table("inscricao").update({"estado": decisao.estado}).eq("id", str(inscricao_id)).execute()
 
     if decisao.estado == "aceite":
-        # Evento passa a em_andamento com arquiteto atribuído
+   
         supabase.table("evento").update({
             "estado":       "em_andamento",
             "id_arquiteto": str(idarquiteto),
@@ -287,7 +287,7 @@ async def decidir_inscricao(
 async def criar_proposta(proposta: PropostaCreate, current_user=Depends(get_current_user)):
     supabase = get_supabase_admin()
 
-    # Verificar que a inscrição pertence ao arquiteto
+
     ins = supabase.table("inscricao") \
         .select("id") \
         .eq("id",          str(proposta.id_inscricao)) \

@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
-import { ChevronDown, Download, Heart, MoreHorizontal, Share2, ShoppingCart  } from "lucide-react"
+import { ChevronDown, Download, Heart, MoreHorizontal, Share2, ShoppingCart,AlertCircle } from "lucide-react"
 import Image from "next/image"
 import HousePic from "@/assets/images/Casa.jpeg"
 import Porshe from "@/assets/images/Porsche.jpeg"
@@ -16,9 +16,8 @@ import { PlanUploadDialog } from "./plan-upload-dialog"
 import { usePlans } from "@/Context/plans-context"
 import { PlanDetailModal } from "./plan-detail-modal"
 import { BotaoComprar } from "@/components/BotaoComprar"
-
+import { ReportPlanDialog } from "@/components/report-plan-dialog"
 import { useAuth } from "@/Context/AuthContext"
-
 
 export function ArchitecturalPlans() {
 const [plans, setPlans] = useState<Plan[]>([]);
@@ -26,6 +25,8 @@ const [filter, setFilter] = useState<string>("All");
 const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null)
 const [detailModalOpen, setDetailModalOpen] = useState(false)
 const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false)
+const [reportDialogOpen, setReportDialogOpen] = useState(false)
+ const [planToReport, setPlanToReport] = useState<Plan | null>(null)
 const { addToOrder } = useOrder() 
 const { toast } = useToast()
  // const { plans, addPlan } = usePlans()
@@ -35,17 +36,17 @@ useEffect(() => {
   async function load() {
     const data = await carregar()
     if (!data) {
-      toast({
-        title: "Erro",
-        description: "Não foi possível carregar as plantas.",
-        variant: "destructive",
-      })
-      return
-    }
-    setPlans(data)
-  }
-  load()
-}, [])
+      toast({ 
+        title: "Erro", 
+        description: "Não foi possível carregar as plantas.", 
+        variant: "destructive",  
+      })  
+      return  
+    } 
+    setPlans(data) 
+  } 
+  load()  
+}, [])  
   
   const handlePlanAdded = (newPlan: Plan) => {
     setPlans((prevPlans) => [...prevPlans, newPlan])
@@ -64,6 +65,10 @@ useEffect(() => {
     }
 
     
+  }
+  const handleReportClick = (plan: Plan) => {
+    setPlanToReport(plan)
+    setReportDialogOpen(true)
   }
 
   const filteredPlans = filter === "All" ? plans : plans.filter((plan) => plan.category === filter)
@@ -135,11 +140,14 @@ useEffect(() => {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem>
-                      <Share2 className="mr-2 h-4 w-4" /> Compartilhar
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Download className="mr-2 h-4 w-4" /> Denunciar
+                    <DropdownMenuItem
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleReportClick(plan)
+                      }}
+                      className="text-red-600"
+                    >
+                      <AlertCircle className="mr-2 h-4 w-4" /> Denunciar
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -162,17 +170,19 @@ useEffect(() => {
                 </div>
               </div>
               <div onClick={(e) => e.stopPropagation()}>
-
-</div>
+           </div>
               
             </CardContent>
             <CardFooter className="flex justify-between">
-              <div className="font-bold text-lg">KZ {plan.price} AOA</div>
-              <Button>Comprar planta</Button>
+                <BotaoComprar
+                plantaId={plan.id}
+                arquitetoId={plan.dono}        // campo 'dono' da tabela planta = arquiteto_id
+                nomePlanta={plan.title}
+                preco={plan.price}
+                imagemUrl={plan.image}
+              /> 
             </CardFooter>
-            
           </Card>
-       
         ))}
       </div>
        <PlanUploadDialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen} onPlanAdded={handlePlanAdded} />
@@ -183,6 +193,16 @@ useEffect(() => {
           plan={selectedPlan}
         />
       )}
+            {planToReport && (
+        <ReportPlanDialog
+          open={reportDialogOpen}
+          onOpenChange={setReportDialogOpen}
+          planTitle={planToReport.title}
+          planOwner={planToReport.dono || "Arquiteto Desconhecido"}
+          reporterName="Utilizador Atual"
+        />
+      )}
+
     </div>
   )
 }

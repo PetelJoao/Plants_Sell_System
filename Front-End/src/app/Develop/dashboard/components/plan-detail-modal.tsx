@@ -315,13 +315,15 @@ export function PlanDetailModal({ open, onOpenChange, plan }: PlanDetailModalPro
                   <span className="text-4xl font-bold">${plan.price}</span>
                   <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Available</Badge>
                 </div>
-                <BotaoComprar
-                  plantaId={plan.id}
-                  arquitetoId={plan.dono}
-                  nomePlanta={plan.title}
-                  preco={plan.price}
-                  imagemUrl={plan.image}
-                />
+                
+                              <BotaoComprar 
+                                  plantaId={plan.id}
+                                  arquitetoId={plan.dono}        // campo 'dono' da tabela planta = arquiteto_id
+                                  nomePlanta={plan.title}
+                                  preco={plan.price}
+                                  imagemUrl={plan.image} 
+                                />
+               
               </div>
             </div>
           </div>

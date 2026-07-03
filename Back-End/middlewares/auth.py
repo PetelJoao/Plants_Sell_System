@@ -27,7 +27,7 @@ async def get_current_user(request: Request):
         return {
             'id':    payload['sub'],
             'email': payload.get('email'),
-            'role':  user_metadata.get('tipo', 'cliente'),  # ← era metadata de sb_user
+            'role':  user_metadata.get('tipo', 'cliente'),  
             'nome':  user_metadata.get('nome', payload.get('email')),
         }
 

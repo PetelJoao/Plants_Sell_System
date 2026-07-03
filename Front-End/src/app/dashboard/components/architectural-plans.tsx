@@ -16,7 +16,7 @@ import Image from "next/image"
 import { useAuth }          from "@/Context/AuthContext"
 import { useToast }         from "@/hooks/use-toast"
 import { PlanUploadDialog } from "./plan-upload-dialog"
-import Porshe               from "@/Assets/images/Porsche.jpeg"
+import Porshe               from "@/assets/images/Porsche.jpeg"
 
 
 type Plan = {
@@ -164,16 +164,13 @@ export function ArchitecturalPlans() {
                 <div><span className="text-muted-foreground">Casas de banho:</span> {plan.bathrooms}</div>
               </div>
             </CardContent>
-
             <CardFooter className="flex justify-between">
-              <div className="font-bold text-lg">KZ {plan.price} AOA</div>
               <BotaoComprar
                 plantaId={plan.id}
                 arquitetoId={plan.dono}        // campo 'dono' da tabela planta = arquiteto_id
                 nomePlanta={plan.title}
                 preco={plan.price}
                 imagemUrl={plan.image}
-
               /> 
             </CardFooter>
           </Card>

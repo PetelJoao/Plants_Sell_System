@@ -283,7 +283,7 @@ export default function PlansPage() {
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <FileText className="h-12 w-12 text-muted-foreground/30 mb-2" />
               <p className="text-muted-foreground mb-4">
-                {searchQuery ? "Nenhuma planta corresponde a sua pesquisa." : "Nnehuma planta adicionada ainda."}
+                {searchQuery ? "Nenhuma planta corresponde a sua pesquisa." : "Nenhuma planta adicionada ainda."}
               </p>
               <Button onClick={() => setUploadOpen(true)} className="bg-blue-500 hover:bg-blue-600">
                 <Plus className="mr-2 h-4 w-4" />

@@ -15,13 +15,12 @@ async def all_plants():
 async def DeletePlants(plant_id: str):
     supabase = get_supabase_admin()
 
-    # Busca os paths dos ficheiros antes de deletar
     planta = supabase.table("planta").select("imagens, plantas_arquivo").eq("id", plant_id).single().execute()
     
     imagens = planta.data.get("imagens", []) or []
     arquivos = planta.data.get("plantas_arquivo", []) or []
 
-    # Extrai os paths das URLs públicas das imagens
+  
     def url_to_path(url: str) -> str:
         # A URL pública tem formato: .../storage/v1/object/public/PlansStoraga/PATH
         return url.split("/PlansStoraga/")[-1]
@@ -33,7 +32,7 @@ async def DeletePlants(plant_id: str):
     if all_paths:
         supabase.storage.from_("PlansStoraga").remove(all_paths)
 
-    # Deleta o registo
+
     response = supabase.table("planta").delete().eq("id", plant_id).execute()
     return JSONResponse(status_code=200, content={"message": "Planta e ficheiros deletados", "data": response.data})
 
@@ -195,7 +194,8 @@ async def get_download_urls(plant_id: str, buyer_user_id: str):
     if not planta.data:
         raise HTTPException(status_code=404, detail="Planta não encontrada.")
 
-
+    paths = planta.data.get("plantas_arquivo")
+    
     if not paths:
         raise HTTPException(
             status_code=404,

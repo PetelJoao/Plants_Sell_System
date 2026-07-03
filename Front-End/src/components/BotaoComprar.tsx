@@ -40,23 +40,18 @@ export function BotaoComprar({
   };
 
   return (
-    <div className="space-y-1">
-      <ShoppingCart className="mr-2 h-4 w-4" />
-      <Button className="w-full bg-blue-500 hover:bg-blue-600 text-white h-10"
-        onClick={handleComprar}
-        disabled={loading}
-       
-      >
-        {loading ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : (
-          <ShoppingCart className="h-4 w-4" />
-        )}
-        {loading ? "A redirecionar..." : `Comprar — $${preco.toFixed(2)}`}
-      </Button>
-      {error && (
-        <p className="text-xs text-red-500 text-center">{error}</p>
-      )}
-    </div>
+<div className="space-y-1">
+  <Button
+    className="w-Full bg-blue-500 hover:bg-blue-600 text-white h-10"
+    onClick={handleComprar}
+    disabled={loading}
+  >
+    {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+    {loading ? "A redirecionar..." : `$${preco.toFixed(2)}`}
+  </Button>
+  {error && (
+    <p className="text-xs text-red-500 text-center">{error}</p>
+  )}
+</div>
   );
 }

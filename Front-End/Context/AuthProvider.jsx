@@ -290,29 +290,40 @@ const PagarSaque = async (withdrawal_id, file) => {
   }
 
   const BtnDonwloadPlant = async (plantId) => {
-    try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5000/api/dashboard/${plantId}/donwload`, {
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      });
-      if (!res.ok) throw new Error('Erro ao obter links de download');
-      const data = await res.json();
-      
-      data.download_urls.forEach((file) => {
-      const link = document.createElement('a');
-      link.href = file.url;
-      link.download = file.filename;
-      link.target = '_blank';
-      link.click();
-    });
 
-      return data;
+  try {
+  const token = localStorage.getItem('token');
+  const res = await fetch(`http://localhost:5000/api/dashboard/${plantId}/donwload`, {
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+  });
+  if (!res.ok) throw new Error('Erro ao obter links de download');
+  const data = await res.json();
 
-      
-    } catch (err) {
-      console.error('Erro ao obter links de download:', err);
-      return null;
-    }
+  for (const file of data.download_urls) {
+    const fileRes = await fetch(file.url);
+    const blob = await fileRes.blob();
+    const blobUrl = window.URL.createObjectURL(blob);
+
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.download = file.filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    window.URL.revokeObjectURL(blobUrl);
+
+  
+    await new Promise((resolve) => setTimeout(resolve, 300));
+  }
+
+  return data;
+
+} catch (err) {
+  console.error('Erro ao obter links de download:', err);
+  return null;
+}
+
   }
   const carregar = async () => {
     try {
