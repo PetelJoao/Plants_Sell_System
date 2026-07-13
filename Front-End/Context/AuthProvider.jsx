@@ -272,32 +272,27 @@ export function AuthProvider({ children }) {
   }, []);
 
   const BtnDonwloadPlant = useCallback(async (plantId) => {
-    try {
-      const res = await authFetch(`/api/dashboard/${plantId}/donwload`);
-      if (!res.ok) throw new Error("Erro ao obter links de download");
-      const data = await res.json();
+  try {
+    const res = await authFetch(`/api/dashboard/${plantId}/donwload`);
+    if (!res.ok) throw new Error("Erro ao obter o zip da planta");
 
-      for (const file of data.download_urls) {
-        const fileRes = await fetch(file.url);
-        const blob = await fileRes.blob();
-        const blobUrl = window.URL.createObjectURL(blob);
+    const blob = await res.blob();
+    const blobUrl = window.URL.createObjectURL(blob);
 
-        const link = document.createElement("a");
-        link.href = blobUrl;
-        link.download = file.filename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+    const link = document.createElement("a");
+    link.href = blobUrl;
+    link.download = `planta_${plantId}.zip`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 
-        window.URL.revokeObjectURL(blobUrl);
-        await new Promise((resolve) => setTimeout(resolve, 300));
-      }
-      return data;
-    } catch (err) {
-      console.error("Erro ao obter links de download:", err);
-      return null;
-    }
-  }, []);
+    window.URL.revokeObjectURL(blobUrl);
+  } catch (err) {
+    console.error("Erro ao baixar planta:", err);
+    return null;
+  }
+}, []);
+
 
   const carregarhistorico = useCallback(async () => {
     try {

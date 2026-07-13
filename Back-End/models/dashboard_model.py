@@ -104,11 +104,8 @@ async def upload_plants(
     user_id:      str,
     title:        str,
     description:  Optional[str]       = None,
-    topology:     Optional[str]       = None,
     category:     Optional[str]       = None,
     squareFeet:   Optional[str]       = None,
-    bedrooms:     Optional[int]       = 0,
-    bathrooms:    Optional[int]       = 0,
     price:        float               = 0,
     especificacoes: Optional[str]       = Form(default=None), 
     imageFiles:   List[UploadFile]    = File(default=[]),   # ← alinhado
@@ -178,9 +175,6 @@ async def upload_plants(
             "plantas_arquivo":  project_file_urls,
             "estado":           "ativo",        
             "categoria":        category,
-            "quartos":          bedrooms,
-            "banheiros":        bathrooms,     
-            "tipologia":        topology,
             "especificacoes":   especificacoes_dict,
         }
 
@@ -212,11 +206,8 @@ async def EditPlants(
     plant_id:     str,
     title:        str,
     description:  Optional[str]    = None,
-    topology:     Optional[str]    = None,
     category:     Optional[str]    = None,
     squareFeet:   Optional[str]    = None,
-    bedrooms:     Optional[int]    = 0,
-    bathrooms:    Optional[int]    = 0,
     price:        float            = 0,
     imageFiles:   List[UploadFile] = [],
     projectFiles: List[UploadFile] = [],
@@ -224,7 +215,7 @@ async def EditPlants(
     try:
         supabase = get_supabase_admin()
 
-        # 1. Buscar a planta atual para obter owner e ficheiros existentes
+       
         planta_atual = await run_query(lambda: (
             supabase.table("planta")
             .select("dono, imagens, plantas_arquivo")
@@ -387,7 +378,7 @@ async def get_download_urlsNotziped(plant_id: str, buyer_user_id: str):
 
     planta = await run_query(lambda: (
         supabase.table("planta")
-        .select("plantas_arquivo")
+        .select("planta_arquivos")
         .eq("id", plant_id)
         .single()
         .execute()
@@ -396,7 +387,7 @@ async def get_download_urlsNotziped(plant_id: str, buyer_user_id: str):
     if not planta.data:
         raise HTTPException(status_code=404, detail="Planta não encontrada.")
 
-    paths = planta.data.get("plantas_arquivo")
+    paths = planta.data.get("planta_arquivos")
     
     if not paths:
         raise HTTPException(
@@ -435,7 +426,7 @@ async def get_download_urls(plant_id: str, buyer_user_id: str):
 
     planta = await run_query(lambda: (
         supabase.table("planta")
-        .select("plantas_arquivo, nome")
+        .select("planta_arquivos, nome")
         .eq("id", plant_id)
         .single()
         .execute()
@@ -444,7 +435,7 @@ async def get_download_urls(plant_id: str, buyer_user_id: str):
     if not planta.data:
         raise HTTPException(status_code=404, detail="Planta não encontrada.")
 
-    paths = planta.data.get("plantas_arquivo")
+    paths = planta.data.get("planta_arquivos")
     if not paths:
         raise HTTPException(status_code=404, detail="Nenhum ficheiro técnico disponível para esta planta.")
 
