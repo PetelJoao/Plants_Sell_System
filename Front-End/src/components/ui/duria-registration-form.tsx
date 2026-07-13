@@ -176,7 +176,7 @@ export function DuriaRegistrationForm() {
         console.log('[onSubmit] a enviar para /api/auth/register/cliente')
         await registerUser(formData, 'cliente')
         console.log('[onSubmit] registo cliente concluído, a redirecionar...')
-        window.location.href = '/dashboard'
+        window.location.href = 'Develop/dashboard'
       }
     } catch (err: any) {
       console.error('[onSubmit] erro:', err)

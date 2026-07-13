@@ -125,7 +125,6 @@ async def upload_plants(
             raise HTTPException(status_code=422, detail="Campo 'especificacoes' não é um JSON válido.")
         
     try:
-
         supabase = get_supabase_admin()
         timestamp = datetime.datetime.now().strftime("%d%m%Y_%H%M%S")
         image_urls: List[str] = []
@@ -172,7 +171,7 @@ async def upload_plants(
             "dono":             user_id,
             "orcamento":        price,
             "imagens":          image_urls,
-            "plantas_arquivo":  project_file_urls,
+            "planta_arquivos":  project_file_urls,
             "estado":           "ativo",        
             "categoria":        category,
             "especificacoes":   especificacoes_dict,
@@ -306,14 +305,10 @@ async def EditPlants(
             "dimensao":        squareFeet,
             "orcamento":       price,
             "categoria":       category,
-            "quartos":         bedrooms,
-            "banheiros":       bathrooms,
+            "especificacoes":  None,  #
             "imagens":         image_urls,
             "plantas_arquivo": project_file_urls,
         }
-
-        if topology:
-            planta_update["tipologia"] = topology
 
         response = await run_query(lambda: (
             supabase.table("planta")
