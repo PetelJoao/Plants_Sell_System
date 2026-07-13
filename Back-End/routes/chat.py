@@ -2,11 +2,10 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from middlewares.auth import get_current_user
 from models.chat_model import (
-    get_all_users,
     get_or_create_conversation,
     get_messages,
     save_message,
-    get_my_conversations,
+    get_user_basic,
 )
 
 chat_router = APIRouter(tags=["chat"])
@@ -17,30 +16,24 @@ class MessagePayload(BaseModel):
 
 class StartConversationPayload(BaseModel):
     target_user_id: str
+    evento_id: str | None = None
 
-@chat_router.get("/users")
-async def list_users(user: dict = Depends(get_current_user)):
-    try:
-        result = await get_all_users(user["id"])
-        return result
-    except Exception as e:
-        import traceback
-        print("ERRO /api/chat/users:", traceback.format_exc())
-        raise
+@chat_router.get("/user/{user_id}")
+async def get_target_user(user_id: str, user: dict = Depends(get_current_user)):
+    """Busca dados do outro participante (para mostrar nome no cabeçalho)"""
+    return await get_user_basic(user_id)
 
 @chat_router.post("/conversations")
 async def start_conversation(
     payload: StartConversationPayload,
     user: dict = Depends(get_current_user)
 ):
-    """Inicia ou retoma conversa com outro utilizador"""
-    conv = await get_or_create_conversation(user["id"], payload.target_user_id)
-    return conv
-
-@chat_router.get("/conversations")
-async def my_conversations(user: dict = Depends(get_current_user)):
-    """Lista conversas do utilizador actual"""
-    return await get_my_conversations(user["id"])
+    if not payload.evento_id:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail="evento_id é obrigatório")
+    return await get_or_create_conversation(
+        user["id"], payload.target_user_id, payload.evento_id
+    )
 
 @chat_router.get("/conversations/{conversation_id}/messages")
 async def load_messages(conversation_id: str):
@@ -51,10 +44,9 @@ async def post_message(
     payload: MessagePayload,
     user: dict = Depends(get_current_user)
 ):
-    msg = await save_message(
+    return await save_message(
         payload.conversation_id,
         user["id"],
-        user["nome"],  
+        user["nome"],
         payload.content,
     )
-    return msg

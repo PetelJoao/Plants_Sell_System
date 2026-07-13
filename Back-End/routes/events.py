@@ -109,11 +109,8 @@ async def listar_eventos_disponiveis(current_user=Depends(get_current_user)):
 
 
 # ─── Arquiteto: Ver as suas inscrições ──────────────────────────────────────
-
 @events_router.get("/arquiteto/inscricoes", summary="Inscrições do arquitecto autenticado")
 async def minhas_inscricoes_arquiteto(current_user=Depends(get_current_user)):
-    print("USER RECEBIDO:", current_user)   # ← variável, não função
-
     supabase = get_supabase_admin()
 
     arq = supabase.table("arquiteto").select("id").eq("id", str(current_user["id"])).execute()
@@ -121,12 +118,25 @@ async def minhas_inscricoes_arquiteto(current_user=Depends(get_current_user)):
         raise HTTPException(status_code=403, detail="Apenas arquitectos podem aceder a este recurso.")
 
     res = supabase.table("inscricao") \
-        .select("*, evento(*), proposta(*)") \
+        .select("*, evento(*, cliente(usuario(nome))), proposta(*)") \
         .eq("idarquiteto", str(current_user["id"])) \
         .order("dataingresso", desc=True) \
         .execute()
 
-    return res.data or []
+    inscricoes = res.data or []
+
+    for insc in inscricoes:
+        insc["id"] = insc.get("id")  # já existe, mas garante consistência
+        ev = insc.get("evento") or {}
+        cliente_data = ev.pop("cliente", {}) or {}
+        ev["nome_dono"] = cliente_data.get("usuario", {}).get("nome")
+        insc["evento"] = ev
+
+        propostas = insc.get("proposta")
+        if isinstance(propostas, list):
+            insc["proposta"] = propostas[0] if propostas else None
+
+    return inscricoes
 
 # ─── Detalhe de um evento ────────────────────────────────────────────────────
 
@@ -188,12 +198,10 @@ async def inscrever_em_evento(dados: InscricaoCreate, current_user=Depends(get_c
 
 
 # ─── Cliente: Ver inscrições de um evento ───────────────────────────────────
-
 @events_router.get("/{evento_id}/inscricoes")
 async def listar_inscricoes_evento(evento_id: UUID, current_user=Depends(get_current_user)):
     supabase = get_supabase_admin()
 
-    # Confirmar que é dono
     ev = supabase.table("evento").select("id_dono").eq("id", str(evento_id)).single().execute()
     if not ev.data:
         raise HTTPException(status_code=404, detail="Evento não encontrado.")
@@ -206,7 +214,22 @@ async def listar_inscricoes_evento(evento_id: UUID, current_user=Depends(get_cur
         .order("dataingresso", desc=True) \
         .execute()
 
-    return res.data or []
+    inscricoes = res.data or []
+
+    for insc in inscricoes:
+        insc["inscricao_id"] = insc.get("id")  # ← alias necessário para o frontend
+
+        arq = insc.get("arquiteto") or {}
+        usuario_data = arq.pop("usuario", {}) or {}
+        arq["nome"]  = usuario_data.get("nome")
+        arq["email"] = usuario_data.get("email")
+        insc["arquiteto"] = arq
+
+        propostas = insc.get("proposta")
+        if isinstance(propostas, list):
+            insc["proposta"] = propostas[0] if propostas else None
+
+    return inscricoes
 
 
 # ─── Cliente: Aceitar/Rejeitar arquitecto ───────────────────────────────────
@@ -237,11 +260,11 @@ async def decidir_inscricao(
     evento_id    = ins.data["evento"]["id"]
     idarquiteto  = ins.data["idarquiteto"]
 
-    # Actualizar estado da inscrição
+
     supabase.table("inscricao").update({"estado": decisao.estado}).eq("id", str(inscricao_id)).execute()
 
     if decisao.estado == "aceite":
-        # Evento passa a em_andamento com arquiteto atribuído
+   
         supabase.table("evento").update({
             "estado":       "em_andamento",
             "id_arquiteto": str(idarquiteto),
@@ -264,7 +287,7 @@ async def decidir_inscricao(
 async def criar_proposta(proposta: PropostaCreate, current_user=Depends(get_current_user)):
     supabase = get_supabase_admin()
 
-    # Verificar que a inscrição pertence ao arquiteto
+
     ins = supabase.table("inscricao") \
         .select("id") \
         .eq("id",          str(proposta.id_inscricao)) \

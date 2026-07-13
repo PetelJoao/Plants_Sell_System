@@ -52,6 +52,7 @@ async def DeletePlants(plant_id: str):
     imagens = planta.data.get("imagens", []) or []
     arquivos = planta.data.get("plantas_arquivo", []) or []
 
+  
     def url_to_path(url: str) -> str:
       
         return url.split("/PlansStoraga/")[-1]

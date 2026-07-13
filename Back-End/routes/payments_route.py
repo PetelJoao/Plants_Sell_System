@@ -233,3 +233,5 @@ async def aprovar_saque_route(request_id: str, user: dict = Depends(get_current_
         if user.get("role") != "admin":
             raise HTTPException(status_code=403, detail="Apenas o admin pode aprovar saques.")
         return await aprovar_transferencia(request_id=request_id)
+
+

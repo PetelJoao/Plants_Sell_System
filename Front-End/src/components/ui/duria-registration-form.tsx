@@ -14,10 +14,10 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Upload, ChevronRight, ChevronLeft } from 'lucide-react'
 
-const PROFESSIONS = ['Architect', 'Cliente'] as const
+const PROFESSIONS = ['Arquiteto', 'Cliente'] as const
 const GENDERS = ['M', 'F'] as const
 
-// ✅ FIX 1: Removidos neighborhood, municipality, professionalLicense do schema
+// Architect ✅ FIX 1: Removidos neighborhood, municipality, professionalLicense do schema
 const baseArchitectSchema = z.object({
   name: z.string()
     .trim()
@@ -54,7 +54,7 @@ const baseArchitectSchema = z.object({
 
 const formSchema = z.discriminatedUnion('profession', [
   z.object({
-    profession: z.literal('Architect'),
+    profession: z.literal('Arquiteto'),
     ...baseArchitectSchema.shape,
   }),
   z.object({
@@ -106,7 +106,7 @@ export function DuriaRegistrationForm() {
 
   const architectErrors = errors as FieldErrors<z.infer<typeof baseArchitectSchema>>
   const selectedProfession = watch('profession')
-  const isArchitect = selectedProfession === 'Architect'
+  const isArchitect = selectedProfession === 'Arquiteto'
 
   const handleNext = async () => {
     let fieldsToValidate: Array<keyof z.infer<typeof baseArchitectSchema>> = []
@@ -146,7 +146,7 @@ export function DuriaRegistrationForm() {
     try {
       const formData = new FormData()
 
-      if (data.profession === 'Architect') {
+      if (data.profession === 'Arquiteto') {
         formData.append('name',        data.name)
         formData.append('email',       data.email)
         formData.append('password',    data.password)

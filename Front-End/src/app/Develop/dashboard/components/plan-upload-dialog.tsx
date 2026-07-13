@@ -19,8 +19,17 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { useToast } from "@/hooks/use-toast"
-import { Upload, X, Folder } from "lucide-react"
-
+import { 
+  Upload, 
+  X, 
+  Folder, 
+  Info, 
+  SlidersHorizontal, 
+  Image as ImageIcon, 
+  FileArchive, 
+  CloudUpload,
+  CheckCircle2
+} from "lucide-react"
 
 // Define the form schema with zod
 const formSchema = z.object({
@@ -73,7 +82,6 @@ export function PlanUploadDialog({ open, onOpenChange, onPlanAdded }: PlanUpload
   // Estado para a pasta de imagens (Galeria/Capa)
    const [imageFiles, setImageFiles] = useState<File[]>([])
    const [imageError, setImageError] = useState<string | null>(null)
-
 
    const [files, setFiles] = useState<File[]>([]) // Alterado para array
    const [fileError, setFileError] = useState<string | null>(null)
@@ -159,6 +167,7 @@ const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
   // Salva a lista de arquivos já com os nomes limpos e seguros para o Storage!
   setFiles(sanitizedFiles)
 }
+
 // Handler para a pasta de IMAGENS
 const handleImagesFolderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
   const selected = e.target.files ? Array.from(e.target.files) : []
@@ -186,7 +195,6 @@ const handleImagesFolderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
   setImageFiles(filteredFiles)
 }
 
-
 //new
 const onSubmit = async (data: FormValues) => {
   console.log("1. onSubmit chamado", data)
@@ -198,7 +206,6 @@ const onSubmit = async (data: FormValues) => {
   try {
     await inserir({ ...data, imageFiles, files })
 
-    
     const newPlan = {
       id: Date.now(),
       ...data,
@@ -229,334 +236,342 @@ const onSubmit = async (data: FormValues) => {
     })
   }
 }
+
 const clearFile = () => {
   setFiles([]) // Reseta o array de arquivos
   setFileError(null) // Limpa qualquer mensagem de erro
-  }
-  const clearImageFile = () => {
-    setImageFiles([])
-    setImageError(null)
-  }
-  /* // Handle form submission
-const onSubmit = (data: FormValues) => {
-  if (files.length === 0) {
-    setFileError("Por favor, selecione uma pasta para upload")
-    return
-  }
-
-  const newPlan = {
-    id: Date.now(),
-    ...data,
-    featured: false,
-    image: `/placeholder.svg?height=300&width=500&text=${encodeURIComponent(data.title)}`,
-    // Guardamos a lista de arquivos e o nome da pasta (que vem no webkitRelativePath)
-    folderName: files[0].webkitRelativePath.split('/')[0], 
-    filesCount: files.length,
-    files: files // Array com todos os objetos de arquivo
-  }
-
-  if (onPlanAdded) {
-    onPlanAdded(newPlan)
-  }
-
-  toast({
-    title: "Pasta Carregada",
-    description: `${files.length} arquivos da pasta foram preparados com sucesso.`,
-    duration: 3000,
-  })
-
-  form.reset()
-  setFiles([])
-  onOpenChange(false)
 }
 
- // Clear file selection
-const clearFile = () => {
-  setFiles([]) // Reseta o array de arquivos
-  setFileError(null) // Limpa qualquer mensagem de erro
-  }
-*/
+const clearImageFile = () => {
+  setImageFiles([])
+  setImageError(null)
+}
+
+  // Estilos base reutilizáveis para inputs
+  const inputStyles = "h-12 rounded-xl bg-slate-50 border-slate-200 text-slate-900 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:border-blue-500 focus-visible:bg-white transition-all shadow-sm"
+  const labelStyles = "text-sm font-bold text-slate-700 mb-1.5"
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Faça o upload do seu projeto arquitetônico.</DialogTitle>
-          <DialogDescription>
-           Preencha os detalhes abaixo para enviar sua planta arquitetônica. Todos os campos são obrigatórios.
+      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto p-0 border-slate-200 rounded-2xl [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full shadow-2xl">
+        
+        {/* Header Redesenhado */}
+        <DialogHeader className="px-8 pt-8 pb-6 border-b border-slate-100 bg-white sticky top-0 z-10">
+          <DialogTitle className="text-2xl font-extrabold text-slate-900">
+            Upload de Projeto Arquitetônico
+          </DialogTitle>
+          <DialogDescription className="text-slate-500 text-base mt-1.5">
+            Preencha os detalhes técnicos e envie os arquivos da sua planta.
           </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="title"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nome da Planta</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Casa de família moderna" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="category"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Categoria</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="px-8 py-6 space-y-10 bg-slate-50/30">
+            
+            {/* SEÇÃO 1: Informações Básicas */}
+            <div className="space-y-6">
+              <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+                <Info className="h-5 w-5 text-blue-600" />
+                <h3 className="text-lg font-bold text-slate-800">Informações Básicas</h3>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="title"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className={labelStyles}>Nome da Planta</FormLabel>
                       <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione uma categoria" />
-                        </SelectTrigger>
+                        <Input placeholder="Ex: Casa de família moderna" className={inputStyles} {...field} />
                       </FormControl>
-                      <SelectContent>
-                        {categories.map((category) => (
-                          <SelectItem key={category} value={category}>
-                            {category}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
+                      <FormMessage className="text-red-500 font-medium text-xs" />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="category"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className={labelStyles}>Categoria</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger className={inputStyles}>
+                            <SelectValue placeholder="Selecione uma categoria" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent className="rounded-xl border-slate-200 shadow-lg">
+                          {categories.map((category) => (
+                            <SelectItem key={category} value={category} className="font-medium focus:bg-slate-100 cursor-pointer">
+                              {category}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage className="text-red-500 font-medium text-xs" />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={labelStyles}>Descrição</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Forneça uma descrição detalhada do conceito e diferenciais do projeto..."
+                        className="min-h-[120px] rounded-xl bg-slate-50 border-slate-200 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:border-blue-500 focus-visible:bg-white resize-y transition-all shadow-sm p-4 text-slate-900"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage className="text-red-500 font-medium text-xs" />
                   </FormItem>
                 )}
               />
             </div>
 
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Descrição</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Uma breve descrição do seu projeto arquitetônico..."
-                      className="min-h-[100px]"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {/* SEÇÃO 2: Especificações Técnicas */}
+            <div className="space-y-6">
+              <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+                <SlidersHorizontal className="h-5 w-5 text-blue-600" />
+                <h3 className="text-lg font-bold text-slate-800">Especificações Técnicas</h3>
+              </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="topology"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tipologia</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="topology"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className={labelStyles}>Tipologia / Estilo</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger className={inputStyles}>
+                            <SelectValue placeholder="Selecione o estilo arquitetônico" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent className="rounded-xl border-slate-200 shadow-lg">
+                          {topologies.map((topology) => (
+                            <SelectItem key={topology} value={topology} className="font-medium focus:bg-slate-100 cursor-pointer">
+                              {topology}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage className="text-red-500 font-medium text-xs" />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="squareFeet"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className={labelStyles}>Tamanho (m²)</FormLabel>
                       <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione um estilo" />
-                        </SelectTrigger>
+                        <Input type="number" min="0" step="1" className={inputStyles} placeholder="Ex: 250" {...field} />
                       </FormControl>
-                      <SelectContent>
-                        {topologies.map((topology) => (
-                          <SelectItem key={topology} value={topology}>
-                            {topology}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                      <FormMessage className="text-red-500 font-medium text-xs" />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
-              <FormField
-                control={form.control}
-                name="squareFeet"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tamanho (m²)</FormLabel>
-                    <FormControl>
-                      <Input type="number" min="0" step="1" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <FormField
+                  control={form.control}
+                  name="bedrooms"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className={labelStyles}>Quartos</FormLabel>
+                      <FormControl>
+                        <Input type="number" min="0" step="1" className={inputStyles} placeholder="Ex: 4" {...field} />
+                      </FormControl>
+                      <FormMessage className="text-red-500 font-medium text-xs" />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="bathrooms"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className={labelStyles}>Casas de Banho</FormLabel>
+                      <FormControl>
+                        <Input type="number" min="0" step="1" className={inputStyles} placeholder="Ex: 3" {...field} />
+                      </FormControl>
+                      <FormMessage className="text-red-500 font-medium text-xs" />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="price"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className={labelStyles}>Preço ($)</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-slate-400">$</span>
+                          <Input type="number" min="0" step="1" className={`${inputStyles} pl-8`} placeholder="0.00" {...field} />
+                        </div>
+                      </FormControl>
+                      <FormMessage className="text-red-500 font-medium text-xs" />
+                    </FormItem>
+                  )}
+                />
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <FormField
-                control={form.control}
-                name="bedrooms"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Quartos</FormLabel>
-                    <FormControl>
-                      <Input type="number" min="0" step="1" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            {/* SEÇÃO 3: Arquivos e Mídia */}
+            <div className="space-y-6">
+              <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+                <Folder className="h-5 w-5 text-blue-600" />
+                <h3 className="text-lg font-bold text-slate-800">Arquivos e Mídia</h3>
+              </div>
 
-              <FormField
-                control={form.control}
-                name="bathrooms"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Casas de banho</FormLabel>
-                    <FormControl>
-                      <Input type="number" min="0" step="1" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* Upload: Arquivos da Planta */}
+              <div className="space-y-3">
+                <FormLabel className={labelStyles}>Pasta de Documentos Técnicos</FormLabel>
+                <div className={`relative border-2 border-dashed rounded-2xl transition-all duration-200 ease-in-out group flex flex-col items-center justify-center
+                  ${files.length === 0 
+                    ? "border-slate-300 bg-slate-50 hover:bg-blue-50/50 hover:border-blue-400 p-10 cursor-pointer" 
+                    : "border-blue-200 bg-blue-50/30 p-6"}`}>
+                  
+                  {files.length === 0 ? (
+                    <label htmlFor="file-upload" className="flex flex-col items-center justify-center cursor-pointer w-full h-full">
+                      <div className="h-16 w-16 bg-white shadow-sm border border-slate-100 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-blue-50 transition-transform">
+                        <FileArchive className="h-8 w-8 text-blue-500" />
+                      </div>
+                      <span className="font-bold text-slate-700 text-lg mb-1 group-hover:text-blue-700 transition-colors">
+                        Selecione a Pasta do Projeto
+                      </span>
+                      <p className="text-sm font-medium text-slate-400 text-center max-w-xs">
+                        Clique aqui para enviar a pasta contendo DWG, PDF, ZIP (Max 50MB)
+                      </p>
+                      <input
+                        id="file-upload"
+                        name="file-upload"
+                        type="file"
+                        className="sr-only"
+                        onChange={handleFileChange}
+                        {...({
+                          webkitdirectory: "",
+                          directory: "",
+                          multiple: true
+                        } as any)} 
+                      />
+                    </label>
+                  ) : (
+                    <div className="flex items-center justify-between w-full bg-white border border-blue-100 shadow-sm rounded-xl p-4">
+                      <div className="flex items-center space-x-4">
+                        <div className="h-12 w-12 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                          <CheckCircle2 className="h-6 w-6" />
+                        </div>
+                        <div>
+                          <p className="font-bold text-slate-800 text-base truncate max-w-[250px] md:max-w-[400px]">
+                            {files[0].webkitRelativePath.split('/')[0]}
+                          </p>
+                          <p className="text-sm font-medium text-slate-500">
+                            {files.length} arquivos • {(files.reduce((acc, f) => acc + f.size, 0) / 1024 / 1024).toFixed(2)} MB
+                          </p>
+                        </div>
+                      </div>
+                      <Button type="button" variant="ghost" className="h-10 w-10 p-0 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors" onClick={clearFile}>
+                        <X className="h-5 w-5" />
+                        <span className="sr-only">Remover pasta</span>
+                      </Button>
+                    </div>
+                  )}
+                </div>
+                {fileError && <p className="text-sm font-bold text-red-500 flex items-center mt-2"><X className="w-4 h-4 mr-1"/> {fileError}</p>}
+              </div>
 
-              <FormField
-                control={form.control}
-                name="price"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Preço ($)</FormLabel>
-                    <FormControl>
-                      <Input type="number" min="0" step="1" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* Upload: Imagens da Planta */}
+              <div className="space-y-3">
+                <FormLabel className={labelStyles}>Pasta de Imagens Públicas (Galeria)</FormLabel>
+                <div className={`relative border-2 border-dashed rounded-2xl transition-all duration-200 ease-in-out group flex flex-col items-center justify-center
+                  ${imageFiles.length === 0 
+                    ? "border-slate-300 bg-slate-50 hover:bg-blue-50/50 hover:border-blue-400 p-10 cursor-pointer" 
+                    : "border-blue-200 bg-blue-50/30 p-6"}`}>
+                  
+                  {imageFiles.length === 0 ? (
+                    <label htmlFor="image-upload" className="flex flex-col items-center justify-center cursor-pointer w-full h-full">
+                      <div className="h-16 w-16 bg-white shadow-sm border border-slate-100 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-blue-50 transition-transform">
+                        <ImageIcon className="h-8 w-8 text-blue-500" />
+                      </div>
+                      <span className="font-bold text-slate-700 text-lg mb-1 group-hover:text-blue-700 transition-colors">
+                        Selecione a Pasta de Imagens
+                      </span>
+                      <p className="text-sm font-medium text-slate-400 text-center max-w-xs">
+                        JPG, PNG, WebP para vitrine pública
+                      </p>
+                      <input
+                        id="image-upload"
+                        name="image-upload"
+                        type="file"
+                        className="sr-only"
+                        onChange={handleImagesFolderChange}
+                        {...({
+                          webkitdirectory: "",
+                          directory: "",
+                          multiple: true
+                        } as any)} 
+                      />
+                    </label>
+                  ) : (
+                    <div className="flex items-center justify-between w-full bg-white border border-blue-100 shadow-sm rounded-xl p-4">
+                      <div className="flex items-center space-x-4">
+                        <div className="h-12 w-12 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                          <CheckCircle2 className="h-6 w-6" />
+                        </div>
+                        <div>
+                          <p className="font-bold text-slate-800 text-base truncate max-w-[250px] md:max-w-[400px]">
+                            {imageFiles[0].webkitRelativePath.split('/')[0]}
+                          </p>
+                          <p className="text-sm font-medium text-slate-500">
+                            {imageFiles.length} arquivos • {(imageFiles.reduce((acc, f) => acc + f.size, 0) / 1024 / 1024).toFixed(2)} MB
+                          </p>
+                        </div>
+                      </div>
+                      <Button type="button" variant="ghost" className="h-10 w-10 p-0 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors" onClick={clearImageFile}>
+                        <X className="h-5 w-5" />
+                        <span className="sr-only">Remover pasta</span>
+                      </Button>
+                    </div>
+                  )}
+                </div>
+                {imageError && <p className="text-sm font-bold text-red-500 flex items-center mt-2"><X className="w-4 h-4 mr-1"/> {imageError}</p>}
+              </div>
             </div>
 
-           <div className="space-y-2">
-  <FormLabel>Arquivos da Planta (Pasta)</FormLabel>
-  <div className="border-2 border-dashed border-gray-300 rounded-md p-6 flex flex-col items-center justify-center">
-    {/* 1. Mudamos a verificação para o tamanho do array de arquivos */}
-    {files.length === 0 ? (
-      <>
-        <div className="flex flex-col items-center justify-center space-y-2">
-          <Upload className="h-8 w-8 text-muted-foreground" />
-          <div className="text-sm text-center">
-            <label
-              htmlFor="file-upload"
-              className="relative cursor-pointer rounded-md font-medium text-primary hover:text-primary/80 focus-within:outline-none"
-            >
-              <span>Selecionar Pasta do Projeto</span>
-              <input
-                id="file-upload"
-                 name="file-upload"
-                type="file"
-                className="sr-only"
-                onChange={handleFileChange}
-                {...({
-                  webkitdirectory: "",
-                  directory: "",
-                  multiple: true
-                } as any)} 
-              />
-            </label>
-            <p className="text-xs text-muted-foreground">Selecione a pasta contendo PDF, JPEG, PNG ou ZIP</p>
-          </div>
-        </div>
-      </>
-    ) : (
-      <div className="flex items-center justify-between w-full">
-        <div className="flex items-center space-x-2">
-          <div className="flex-shrink-0">
-            {/* Ícone de pasta para dar um feedback visual melhor */}
-            <Folder className="h-5 w-5 text-primary" /> 
-          </div>
-          <div className="text-sm">
-            {/* 2. Exibimos o nome da pasta (pegando o caminho do primeiro arquivo) */}
-            <p className="font-medium truncate max-w-[200px]">
-              {files[0].webkitRelativePath.split('/')[0]}
-            </p>
-            {/* 3. Exibimos a quantidade de arquivos e o tamanho total */}
-            <p className="text-xs text-muted-foreground">
-              {files.length} arquivos ({ (files.reduce((acc, f) => acc + f.size, 0) / 1024 / 1024).toFixed(2) } MB)
-            </p>
-          </div>
-        </div>
-        <Button type="button" variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={clearFile}>
-          <X className="h-4 w-4" />
-          <span className="sr-only">Remover pasta</span>
-        </Button>
-      </div>
-    )}
-  </div>
-  {fileError && <p className="text-sm font-medium text-destructive">{fileError}</p>}
-  <FormDescription>Selecione a pasta raiz que contém todos os documentos da planta.</FormDescription>
-           </div>
- 
- <div className="space-y-2">
-  <FormLabel>Imagens Públicas da Planta (Pasta)</FormLabel>
-  <div className="border-2 border-dashed border-gray-300 rounded-md p-6 flex flex-col items-center justify-center">
-    {/* 1. Mudamos a verificação para o tamanho do array de arquivos */}
-    {imageFiles.length === 0 ? (
-      <>
-        <div className="flex flex-col items-center justify-center space-y-2">
-          <Upload className="h-8 w-8 text-muted-foreground" />
-          <div className="text-sm text-center">
-            <label
-              htmlFor="image-upload"
-              className="relative cursor-pointer rounded-md font-medium text-primary hover:text-primary/80 focus-within:outline-none"
-            >
-              <span>Selecionar Pasta das Imagens públicas do Projeto</span>
-              <input
-                id="image-upload"
-                 name="image-upload"
-                type="file"
-                className="sr-only"
-                onChange={handleImagesFolderChange}
-                {...({
-                  webkitdirectory: "",
-                  directory: "",
-                  multiple: true
-                } as any)} 
-              />
-            </label>
-            <p className="text-xs text-muted-foreground">Selecione a pasta contendo PDF, JPEG, PNG ou ZIP</p>
-          </div>
-        </div>
-      </>
-    ) : (
-      <div className="flex items-center justify-between w-full">
-        <div className="flex items-center space-x-2">
-          <div className="flex-shrink-0">
-            {/* Ícone de pasta para dar um feedback visual melhor */}
-            <Folder className="h-5 w-5 text-primary" /> 
-          </div>
-          <div className="text-sm">
-            {/* 2. Exibimos o nome da pasta (pegando o caminho do primeiro arquivo) */}
-            <p className="font-medium truncate max-w-[200px]">
-              {imageFiles[0].webkitRelativePath.split('/')[0]}
-            </p>
-            {/* 3. Exibimos a quantidade de arquivos e o tamanho total */}
-            <p className="text-xs text-muted-foreground">
-              {imageFiles.length} arquivos ({ (imageFiles.reduce((acc, f) => acc + f.size, 0) / 1024 / 1024).toFixed(2) } MB)
-            </p>
-          </div>
-        </div>
-        <Button type="button" variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={clearImageFile}>
-          <X className="h-4 w-4" />
-          <span className="sr-only">Remover pasta</span>
-        </Button>
-      </div>
-    )}
-  </div>
-  {imageError && <p className="text-sm font-medium text-destructive">{imageError}</p>}
-  <FormDescription>Selecione a pasta raiz que contém todas as imagens da planta.</FormDescription>
-</div>
-
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Cancel
-              </Button>
-              <Button type="submit">Carregar Planta</Button>
+            {/* Footer / CTA Actions */}
+            <DialogFooter className="pt-6 border-t border-slate-200 mt-10">
+              <div className="flex w-full gap-3 justify-end">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => onOpenChange(false)}
+                  className="rounded-xl h-12 px-6 font-bold text-slate-600 border-slate-300 hover:bg-slate-100"
+                >
+                  Cancelar
+                </Button>
+                <Button 
+                  type="submit" 
+                  className="rounded-xl h-12 px-8 font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md transition-all hover:shadow-lg flex items-center gap-2"
+                >
+                  <CloudUpload className="w-5 h-5" />
+                  Carregar Planta
+                </Button>
+              </div>
             </DialogFooter>
           </form>
         </Form>

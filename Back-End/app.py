@@ -2,18 +2,14 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
-
-
-
-
 load_dotenv()
 
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # temporariamente usa * para testar
-    allow_credentials=False,  # com allow_origins=["*"], credentials deve ser False
+    allow_origins=["*"], 
+    allow_credentials=False, 
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -25,7 +21,9 @@ from routes.payments_route import router
 from routes.events import events_router         
 from routes.carrinho_route import router as carrinho_router
 from routes.chat import chat_router
+from routes.comments_route import comments_router
 
+app.include_router(comments_router, prefix="/api/comments")
 app.include_router(chat_router, prefix="/api/chat")
 app.include_router(router,           prefix="/api/payments")
 app.include_router(auth_router,      prefix="/api/auth")

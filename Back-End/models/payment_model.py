@@ -22,6 +22,8 @@ import stripe
 import os
 from models.db import get_supabase_admin
 
+from datetime import datetime
+from services.email_service import enviar_fatura_compra
 supabase = get_supabase_admin()
 
 
@@ -118,8 +120,63 @@ async def confirmar_pagamento(session_id: str, payment_intent_id: str):
         .eq("stripe_session_id", session_id)
         .execute()
     )
+
+    compra = result.data[0] if result.data else None
+
+    if compra:
+        # Não deixar que uma falha no envio de e-mail derrube a confirmação do pagamento
+        try:
+            await _enviar_fatura_async(compra)
+        except Exception as e:
+            print(f"[confirmar_pagamento][ERRO] Falha ao preparar fatura: {e}")
+
     return result.data
 
+async def _enviar_fatura_async(compra: dict):
+    planta_res = (
+        supabase.table("planta")
+        .select("nome, imagens")
+        .eq("id", compra["planta_id"])
+        .single()
+        .execute()
+    )
+    cliente_res = (
+        supabase.table("usuario")
+        .select("nome, email")
+        .eq("id", compra["cliente_id"])
+        .single()
+        .execute()
+    )
+    arquiteto_res = (
+        supabase.table("usuario")
+        .select("nome")
+        .eq("id", compra["arquiteto_id"])
+        .single()
+        .execute()
+    )
+
+    planta      = planta_res.data or {}
+    cliente     = cliente_res.data or {}
+    arquiteto   = arquiteto_res.data or {}
+
+    nome_planta = planta.get("nome", "Planta")
+    imagens     = planta.get("imagens") or []
+    imagem_url  = imagens[0] if imagens else None
+
+    if not cliente.get("email"):
+        print(f"[_enviar_fatura_async] Cliente {compra['cliente_id']} sem e-mail, fatura não enviada.")
+        return
+
+    await asyncio.to_thread(
+        enviar_fatura_compra,
+        destinatario=cliente["email"],
+        nome_cliente=cliente.get("nome", "Cliente"),
+        nome_planta=nome_planta,
+        valor=compra["valor"],
+        compra_id=compra["id"],
+        imagem_url=imagem_url,
+        nome_arquiteto=arquiteto.get("nome", "Duria"),
+    )
 
 # ──────────────────────────────────────────────
 #  ARQUITETO SOLICITA TRANSFERÊNCIA
@@ -155,9 +212,7 @@ async def solicitar_transferencia(compra_id: str, arquiteto_id: str):
     return result.data
 
 
-# ──────────────────────────────────────────────
-#  ADMIN APROVA TRANSFERÊNCIA
-# ──────────────────────────────────────────────
+
 async def aprovar_transferencia(compra_id: str):
     compra = (
         supabase.table("compra")
@@ -188,9 +243,7 @@ async def aprovar_transferencia(compra_id: str):
     return result.data
 
 
-# ──────────────────────────────────────────────
-#  LISTAR COMPRAS (admin)
-# ──────────────────────────────────────────────
+
 async def listar_compras(status: str = None):
     query = (
         supabase.table("compra")
@@ -228,9 +281,7 @@ async def listar_compras(status: str = None):
     return compras
 
 
-# ──────────────────────────────────────────────
-#  HISTÓRICO DE COMPRAS DO CLIENTE
-# ──────────────────────────────────────────────
+
 async def historico_compras_cliente(cliente_id: str, status: str = None):
     query = (
         supabase.table("compra")
@@ -245,9 +296,6 @@ async def historico_compras_cliente(cliente_id: str, status: str = None):
     return result.data or []
 
 
-# ──────────────────────────────────────────────
-#  LISTAR COMPRAS DO ARQUITETO
-# ──────────────────────────────────────────────
 async def listar_compras_arquiteto(arquiteto_id: str):
     compras = (
         supabase.table("compra")
@@ -277,9 +325,6 @@ async def listar_compras_arquiteto(arquiteto_id: str):
     return compras
 
 
-# ──────────────────────────────────────────────
-#  VERIFICAR SESSÃO STRIPE
-# ──────────────────────────────────────────────
 async def verificar_sessao(session_id: str):
     session = await _run_stripe(stripe.checkout.Session.retrieve, session_id)
 
@@ -291,15 +336,29 @@ async def verificar_sessao(session_id: str):
         .execute()
     )
 
+    compra = compra_res.data[0] if compra_res.data else None
+
+    if compra and session.payment_status == "paid" and compra["status"] == "pendente":
+        print(f"[verificar_sessao] Fallback: confirmando pagamento {session_id} (webhook não chegou)")
+        await confirmar_pagamento(
+            session_id=session_id,
+            payment_intent_id=session.payment_intent or "",
+        )
+
+        compra_res = (
+            supabase.table("compra")
+            .select("*, planta(nome, imagens)")
+            .eq("stripe_session_id", session_id)
+            .limit(1)
+            .execute()
+        )
+        compra = compra_res.data[0] if compra_res.data else None
+
     return {
         "stripe_status": session.payment_status,
-        "compra":        compra_res.data[0] if compra_res.data else None,
+        "compra": compra,
     }
 
-
-# ──────────────────────────────────────────────
-#  SOLICITAR SAQUE
-# ──────────────────────────────────────────────
 async def solicitar_saque(arquiteto_id: str):
     arq = (
         supabase.table("arquiteto")

@@ -27,9 +27,6 @@ router = APIRouter(tags=["carrinho"])
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
 
 
-# ──────────────────────────────────────────────
-#  SCHEMAS
-# ──────────────────────────────────────────────
 class AdicionarItemBody(BaseModel):
     planta_id: str
 
@@ -44,11 +41,6 @@ class ComprarTudoBody(BaseModel):
     success_url: str = ""
     cancel_url: str = ""
 
-
-# ──────────────────────────────────────────────
-#  GET /api/carrinho
-#  Lista todos os itens do carrinho do utilizador
-# ──────────────────────────────────────────────
 @router.get("/")
 async def get_carrinho(user=Depends(get_current_user)):
     """Devolve o carrinho completo com detalhes de cada planta."""
@@ -60,10 +52,6 @@ async def get_carrinho(user=Depends(get_current_user)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# ──────────────────────────────────────────────
-#  POST /api/carrinho/adicionar
-#  Adiciona uma planta ao carrinho
-# ──────────────────────────────────────────────
 @router.post("/adicionar")
 async def post_adicionar_item(
     body: AdicionarItemBody,
@@ -83,11 +71,6 @@ async def post_adicionar_item(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-
-# ──────────────────────────────────────────────
-#  DELETE /api/carrinho/remover/{planta_id}
-#  Remove uma planta específica do carrinho
-# ──────────────────────────────────────────────
 @router.delete("/remover/{planta_id}")
 async def delete_remover_item(
     planta_id: str,
@@ -104,11 +87,6 @@ async def delete_remover_item(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-
-# ──────────────────────────────────────────────
-#  DELETE /api/carrinho/limpar
-#  Esvazia o carrinho (mantém o registo do carrinho)
-# ──────────────────────────────────────────────
 @router.delete("/limpar")
 async def delete_limpar_carrinho(user=Depends(get_current_user)):
     """Remove todos os itens do carrinho sem apagá-lo."""
@@ -120,10 +98,6 @@ async def delete_limpar_carrinho(user=Depends(get_current_user)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# ──────────────────────────────────────────────
-#  POST /api/carrinho/comprar-item
-#  Checkout de uma única planta
-# ──────────────────────────────────────────────
 @router.post("/comprar-item")
 async def post_comprar_item(
     body: ComprarItemBody,
@@ -149,10 +123,6 @@ async def post_comprar_item(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# ──────────────────────────────────────────────
-#  POST /api/carrinho/comprar-tudo
-#  Checkout de todos os itens do carrinho
-# ──────────────────────────────────────────────
 @router.post("/comprar-tudo")
 async def post_comprar_tudo(
     body: ComprarTudoBody,
@@ -189,10 +159,7 @@ async def post_comprar_tudo(
     
 @router.get("/debug")
 async def debug_carrinho(user=Depends(get_current_user)):
-     """
-#     Testa cada passo isoladamente e diz exactamente onde falha.
-     Acede: GET /api/carrinho/debug
-     """
+
      supabase = get_supabase_admin()
      resultado = {}
 
@@ -206,7 +173,6 @@ async def debug_carrinho(user=Depends(get_current_user)):
          resultado["traceback"] = traceback.format_exc()
          return resultado
 
-     # Passo 2: consegue inserir carrinho?
      if not r.data:
          try:
              ins = supabase.table("carrinho").insert({"usuario_id": user["id"]}).execute()
@@ -219,7 +185,6 @@ async def debug_carrinho(user=Depends(get_current_user)):
      else:
          resultado["passo2_insert_carrinho"] = "PULADO (já existe)"
 
-     # Passo 3: tabela carrinho_item existe?
      try:
          carrinho_id = (r.data or resultado.get("carrinho_criado", [{}]))[0].get("id")
          r2 = supabase.table("carrinho_item").select("id").eq("carrinho_id", carrinho_id).limit(1).execute()

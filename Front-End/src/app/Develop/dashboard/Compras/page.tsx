@@ -1,6 +1,7 @@
-"use client"
+'use client'
 
 import { useEffect, useState, useCallback } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -13,7 +14,7 @@ import {
 } from "@/components/ui/table"
 import DashboardLayout from "@/app/Develop/dashboard/components/dashboard-layout"
 import Image from "next/image"
-import { FileText, Trash2, ShoppingCart, Loader2, RefreshCw, AlertCircle } from "lucide-react"
+import { FileText, Trash2, ShoppingCart, Loader2, RefreshCw, AlertCircle, ArrowRight } from "lucide-react"
 import { useAuth } from "@/Context/AuthContext"
 import { useToast } from "@/hooks/use-toast"
 
@@ -42,10 +43,11 @@ interface CarrinhoData {
   itens: CarrinhoItem[]
 }
 
-// ── Componente principal ────────────────────────────────────────────────────────
+// ── Componente Principal ──────────────────────────────────────────────────────
 export default function ComprasPage() {
   const { ListarCarrinho, RemoverDoCarrinho, LimparCarrinho, ComprarItem, ComprarTudo } = useAuth() as any
   const { toast } = useToast()
+  const router = useRouter()
 
   const [carrinho, setCarrinho] = useState<CarrinhoData | null>(null)
   const [carregando, setCarregando] = useState(true)
@@ -54,7 +56,6 @@ export default function ComprasPage() {
   const [comprando, setComprando] = useState<string | null>(null)
   const [comprandoTudo, setComprandoTudo] = useState(false)
 
-  // ── Carregar carrinho ────────────────────────────────────────────────────────
   const carregarCarrinho = useCallback(async () => {
     setCarregando(true)
     const data = await ListarCarrinho()
@@ -64,7 +65,6 @@ export default function ComprasPage() {
 
   useEffect(() => { carregarCarrinho() }, [carregarCarrinho])
 
-  // ── Remover item ─────────────────────────────────────────────────────────────
   const handleRemover = async (plantaId: string, nomePlanta: string) => {
     setRemovendo(plantaId)
     const resultado = await RemoverDoCarrinho(plantaId)
@@ -72,8 +72,8 @@ export default function ComprasPage() {
       toast({ title: "Erro", description: resultado.erro, variant: "destructive", duration: 3000 })
     } else {
       toast({ title: "Item removido", description: `"${nomePlanta}" foi removido do carrinho.`, duration: 3000 })
-      // Actualiza localmente sem re-fetch
-      setCarrinho(prev =>
+      // Tipagem explícita para evitar erro de 'implicit any'
+      setCarrinho((prev: CarrinhoData | null) =>
         prev
           ? {
               ...prev,
@@ -87,7 +87,6 @@ export default function ComprasPage() {
     setRemovendo(null)
   }
 
-  // ── Limpar carrinho ──────────────────────────────────────────────────────────
   const handleLimpar = async () => {
     if (!carrinho?.itens.length) return
     setLimpando(true)
@@ -96,156 +95,111 @@ export default function ComprasPage() {
       toast({ title: "Erro", description: resultado.erro, variant: "destructive", duration: 3000 })
     } else {
       toast({ title: "Carrinho limpo", description: "Todos os itens foram removidos.", duration: 3000 })
-      setCarrinho(prev => prev ? { ...prev, itens: [], total_itens: 0, valor_total: 0 } : prev)
+      setCarrinho((prev: CarrinhoData | null) => prev ? { ...prev, itens: [], total_itens: 0, valor_total: 0 } : prev)
     }
     setLimpando(false)
   }
 
-  // ── Comprar item individual ──────────────────────────────────────────────────
- const handleComprarItem = async (plantaId: string, nomePlanta: string) => {
+  const handleComprarItem = async (plantaId: string, nomePlanta: string) => {
     setComprando(plantaId)
-    toast({ title: "A processar...", description: `A iniciar compra de "${nomePlanta}".`, duration: 2000 })
- 
     const resultado = await ComprarItem(plantaId)
- 
     if (resultado?.erro) {
       toast({ title: "Erro no checkout", description: resultado.erro, variant: "destructive", duration: 4000 })
       setComprando(null)
       return
     }
- 
-    // ✅ REDIRECT para o Stripe
     const checkoutUrl = resultado?.checkout_url
-    if (checkoutUrl) {
-      window.location.href = checkoutUrl
-    } else {
-      toast({
-        title: "Erro",
-        description: "Não foi possível obter o link de pagamento.",
-        variant: "destructive",
-        duration: 4000,
-      })
+    if (checkoutUrl) window.location.href = checkoutUrl
+    else {
+      toast({ title: "Erro", description: "Não foi possível obter o link.", variant: "destructive", duration: 4000 })
       setComprando(null)
     }
   }
-  // ── Comprar tudo ─────────────────────────────────────────────────────────────
- const handleComprarTudo = async () => {
+
+  const handleComprarTudo = async () => {
     if (!carrinho?.itens.length) return
     setComprandoTudo(true)
-    toast({
-      title: "A processar...",
-      description: `A iniciar checkout de ${carrinho.total_itens} item(ns).`,
-      duration: 2000,
-    })
- 
     const resultado = await ComprarTudo()
- 
     if (resultado?.erro) {
       toast({ title: "Erro no checkout", description: resultado.erro, variant: "destructive", duration: 4000 })
       setComprandoTudo(false)
       return
     }
- 
-    // ✅ REDIRECT para o Stripe — abre a primeira sessão
-    // As restantes ficam guardadas no backend para processamento sequencial
     const sessoes: { checkout_url: string; session_id: string }[] = resultado?.sessoes ?? []
- 
     if (sessoes.length === 0) {
-      toast({ title: "Erro", description: "Nenhuma sessão de pagamento criada.", variant: "destructive", duration: 4000 })
+      toast({ title: "Erro", description: "Nenhuma sessão criada.", variant: "destructive", duration: 4000 })
       setComprandoTudo(false)
       return
     }
- 
-    if (sessoes.length === 1) {
-      // Só 1 item — redirect directo
-      window.location.href = sessoes[0].checkout_url
-    } else {
-      // Múltiplos itens — guardar restantes no sessionStorage e redirecionar para o primeiro
-      // O utilizador será redirecionado para cada sessão após completar a anterior
+    if (sessoes.length === 1) window.location.href = sessoes[0].checkout_url
+    else {
       const [primeira, ...restantes] = sessoes
-      if (restantes.length > 0) {
-        sessionStorage.setItem("checkout_queue", JSON.stringify(restantes.map(s => s.checkout_url)))
-      }
+      if (restantes.length > 0) sessionStorage.setItem("checkout_queue", JSON.stringify(restantes.map(s => s.checkout_url)))
       window.location.href = primeira.checkout_url
     }
   }
 
-  // ── Estados de UI ─────────────────────────────────────────────────────────────
-  if (carregando) {
+  // Estados de Carregamento/Erro
+  if (carregando && !carrinho) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center h-64">
+        <div className="flex flex-col items-center justify-center h-96 gap-3">
           <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-          <span className="ml-3 text-muted-foreground">A carregar o carrinho…</span>
+          <p className="text-sm text-slate-500 font-medium">A carregar o seu carrinho...</p>
         </div>
       </DashboardLayout>
     )
   }
-
-  if (!carrinho) {
-    return (
-      <DashboardLayout>
-        <div className="flex flex-col items-center justify-center h-64 gap-4">
-          <AlertCircle className="h-10 w-10 text-destructive" />
-          <p className="text-muted-foreground">Não foi possível carregar o carrinho.</p>
-          <Button variant="outline" onClick={carregarCarrinho}>
-            <RefreshCw className="mr-2 h-4 w-4" /> Tentar novamente
-          </Button>
-        </div>
-      </DashboardLayout>
-    )
-  }
-
-  const itens = carrinho.itens
-  const totalItens = carrinho.total_itens
-  const valorTotal = carrinho.valor_total
 
   return (
     <DashboardLayout>
-      <div className="flex flex-col gap-6 p-6 md:p-8">
-
+      <div className="flex flex-col gap-6 p-6 md:p-8 max-w-5xl mx-auto">
+        
         {/* Cabeçalho */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Carrinho</h1>
-            <p className="text-muted-foreground">Veja e gerencie os itens do seu carrinho.</p>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900">Carrinho</h1>
+            <p className="text-slate-500 mt-1">Gestão de itens e checkout de plantas.</p>
           </div>
+          
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={carregarCarrinho} disabled={carregando}>
-              <RefreshCw className="mr-2 h-4 w-4" /> Actualizar
+            <Button variant="outline" size="sm" onClick={carregarCarrinho} disabled={carregando} className="gap-2">
+              <RefreshCw className={`h-4 w-4 ${carregando ? 'animate-spin' : ''}`} />
+              Actualizar
             </Button>
-            {itens.length > 0 && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-destructive border-destructive hover:bg-destructive/10"
-                onClick={handleLimpar}
-                disabled={limpando}
-              >
-                {limpando ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
-                Limpar tudo
+            
+            {carrinho?.itens && carrinho.itens.length > 0 && (
+              <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10 gap-2" onClick={handleLimpar} disabled={limpando}>
+                {limpando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                Limpar
               </Button>
             )}
           </div>
         </div>
 
-        {/* Carrinho vazio */}
-        {itens.length === 0 ? (
-          <div className="text-center py-16 border rounded-lg bg-slate-50/50">
-            <ShoppingCart className="mx-auto h-12 w-12 text-slate-300 mb-4" />
-            <h3 className="text-lg font-medium">O seu carrinho está vazio</h3>
-            <p className="text-muted-foreground mt-1">Adicione plantas no painel para começar.</p>
+        {/* Conteúdo do Carrinho */}
+        {!carrinho || carrinho.itens.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 px-6 border-2 border-dashed border-slate-200 rounded-2xl bg-white shadow-sm transition-all hover:border-blue-200">
+            <div className="h-20 w-20 flex items-center justify-center rounded-full bg-blue-50 text-blue-500 mb-6">
+              <ShoppingCart className="h-10 w-10" />
+            </div>
+            <h3 className="text-xl font-bold text-slate-900 mb-2">O seu carrinho está vazio</h3>
+            <p className="text-slate-500 text-center max-w-sm mb-8 leading-relaxed">
+              Ainda não adicionou plantas ao seu carrinho. Explore o nosso catálogo para encontrar a planta perfeita para o seu projeto.
+            </p>
+            <Button onClick={() => router.push('/dashboard')} className="bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-600/20">
+              Explorar Plantas <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
           </div>
         ) : (
           <div className="space-y-6">
-
             {/* Lista de itens */}
             <div className="space-y-4">
               <h2 className="text-lg font-semibold">
-                {totalItens} {totalItens === 1 ? "item" : "itens"} no carrinho
+                {carrinho.total_itens} {carrinho.total_itens === 1 ? "item" : "itens"} no carrinho
               </h2>
 
-              {itens.map((item) => {
+              {carrinho.itens.map((item) => {
                 const planta = item.planta
                 const estaRemovendo = removendo === planta.id
                 const estaComprando = comprando === planta.id
@@ -254,70 +208,30 @@ export default function ComprasPage() {
                   <Card key={item.id} className="overflow-hidden">
                     <CardContent className="pt-6">
                       <div className="flex flex-col sm:flex-row gap-4">
-
-                        {/* Imagem */}
                         <div className="relative aspect-video w-full sm:w-40 rounded-md overflow-hidden bg-slate-100 flex-shrink-0">
                           {planta.imagens?.[0] ? (
-                            <Image
-                              src={planta.imagens[0]}
-                              alt={planta.nome}
-                              fill
-                              className="object-cover"
-                            />
+                            <Image src={planta.imagens[0]} alt={planta.nome} fill className="object-cover" />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-slate-400">
                               <FileText className="h-8 w-8" />
                             </div>
                           )}
                         </div>
-
-                        {/* Detalhes */}
                         <div className="flex-1 space-y-2">
                           <div>
                             <h3 className="font-semibold text-base">{planta.nome}</h3>
                             {planta.arquiteto?.usuario?.nome && (
-                              <p className="text-sm text-muted-foreground">
-                                Arquiteto: {planta.arquiteto.usuario.nome}
-                              </p>
-                            )}
-                            {planta.descricao && (
-                              <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
-                                {planta.descricao}
-                              </p>
+                              <p className="text-sm text-slate-500">Arquiteto: {planta.arquiteto.usuario.nome}</p>
                             )}
                           </div>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <FileText className="h-4 w-4" />
-                            <span>Planta completa com todos os documentos</span>
-                          </div>
-
-                          {/* Preço + Acções */}
                           <div className="flex items-center justify-between pt-2">
-                            <div className="font-bold text-lg">
-                              {planta.orcamento > 0 ? `$${planta.orcamento.toFixed(2)}` : "Preço não definido"}
-                            </div>
+                            <div className="font-bold text-lg">${planta.orcamento.toFixed(2)}</div>
                             <div className="flex gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleRemover(planta.id, planta.nome)}
-                                disabled={estaRemovendo || estaComprando || comprandoTudo}
-                              >
-                                {estaRemovendo
-                                  ? <Loader2 className="h-4 w-4 animate-spin" />
-                                  : <Trash2 className="h-4 w-4" />
-                                }
+                              <Button variant="outline" size="sm" onClick={() => handleRemover(planta.id, planta.nome)} disabled={estaRemovendo || estaComprando || comprandoTudo}>
+                                {estaRemovendo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                               </Button>
-                              <Button
-                                size="sm"
-                                className="bg-blue-500 hover:bg-blue-600"
-                                onClick={() => handleComprarItem(planta.id, planta.nome)}
-                                disabled={estaComprando || estaRemovendo || comprandoTudo || planta.orcamento <= 0}
-                              >
-                                {estaComprando
-                                  ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                  : <ShoppingCart className="mr-2 h-4 w-4" />
-                                }
+                              <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={() => handleComprarItem(planta.id, planta.nome)} disabled={estaComprando || estaRemovendo || comprandoTudo}>
+                                {estaComprando ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShoppingCart className="h-4 w-4 mr-2" />}
                                 Comprar
                               </Button>
                             </div>
@@ -330,57 +244,32 @@ export default function ComprasPage() {
               })}
             </div>
 
-            {/* Resumo do pedido */}
-            <Card className="bg-gradient-to-br from-slate-50 to-white border-slate-200">
-              <CardHeader>
-                <CardTitle className="text-lg">Resumo do Pedido</CardTitle>
-              </CardHeader>
+            {/* Resumo */}
+            <Card className="bg-slate-50 border-slate-200">
+              <CardHeader><CardTitle className="text-lg">Resumo do Pedido</CardTitle></CardHeader>
               <CardContent>
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="border-slate-200">
-                        <TableHead className="text-left font-semibold">Item</TableHead>
-                        <TableHead className="text-right font-semibold">Preço</TableHead>
+                <Table>
+                  <TableBody>
+                    {carrinho.itens.map((item) => (
+                      <TableRow key={item.id}>
+                        <TableCell>{item.planta.nome}</TableCell>
+                        <TableCell className="text-right">${item.planta.orcamento.toFixed(2)}</TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {itens.map((item) => (
-                        <TableRow key={item.id} className="border-slate-100">
-                          <TableCell className="text-left py-3">{item.planta.nome}</TableCell>
-                          <TableCell className="text-right py-3 font-medium">
-                            {item.planta.orcamento > 0 ? `$${item.planta.orcamento.toFixed(2)}` : "—"}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                      <TableRow className="border-t-2 border-slate-300 bg-slate-50/50">
-                        <TableCell className="py-3 font-semibold">
-                          Total ({totalItens} {totalItens === 1 ? "item" : "itens"})
-                        </TableCell>
-                        <TableCell className="text-right py-3 text-lg font-bold">
-                          ${valorTotal.toFixed(2)}
-                        </TableCell>
-                      </TableRow>
-                    </TableBody>
-                  </Table>
-                </div>
+                    ))}
+                    <TableRow className="border-t-2 border-slate-900/10">
+                      <TableCell className="font-bold">Total</TableCell>
+                      <TableCell className="text-right font-bold text-lg">${carrinho.valor_total.toFixed(2)}</TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
               </CardContent>
-              <CardFooter className="pt-0">
-                <Button
-                  size="lg"
-                  className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold"
-                  onClick={handleComprarTudo}
-                  disabled={comprandoTudo || valorTotal <= 0}
-                >
-                  {comprandoTudo
-                    ? <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    : <ShoppingCart className="mr-2 h-5 w-5" />
-                  }
-                  {comprandoTudo ? "A processar…" : "Comprar Tudo"}
+              <CardFooter>
+                <Button size="lg" className="w-full bg-blue-600 hover:bg-blue-700" onClick={handleComprarTudo} disabled={comprandoTudo || carrinho.valor_total <= 0}>
+                  {comprandoTudo ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <ShoppingCart className="mr-2 h-5 w-5" />}
+                  Comprar Tudo
                 </Button>
               </CardFooter>
             </Card>
-
           </div>
         )}
       </div>

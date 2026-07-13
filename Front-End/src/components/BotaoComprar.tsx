@@ -27,7 +27,7 @@ export function BotaoComprar({
   const { iniciarCompra, loading, error } = useCheckout();
 
   // Ocultar o botão se o utilizador for o próprio arquiteto ou admin
-  //if (user?.role === "admin" || user?.role === "arquiteto") return null;
+  if (user?.role === "admin" ) return null;
 
   const handleComprar = () => {
     iniciarCompra({

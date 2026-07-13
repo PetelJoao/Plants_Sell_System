@@ -21,13 +21,13 @@ async def get_current_user(request: Request):
             audience='authenticated'
         )
 
-        # ✅ Lê directo do JWT — sem chamada extra ao Supabase
+
         user_metadata = payload.get('user_metadata', {})
 
         return {
             'id':    payload['sub'],
             'email': payload.get('email'),
-            'role':  user_metadata.get('tipo', 'cliente'),  # ← era metadata de sb_user
+            'role':  user_metadata.get('tipo', 'cliente'),  
             'nome':  user_metadata.get('nome', payload.get('email')),
         }
 
