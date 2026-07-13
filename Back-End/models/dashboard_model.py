@@ -65,6 +65,12 @@ async def ManagePlants(user: dict):
     return response.data[0]
     
     return response.data
+import json
+import datetime
+import traceback
+from typing import Optional, List
+from fastapi import HTTPException, UploadFile, File, Form
+from fastapi.responses import JSONResponse
 
 async def MyPlants(user: dict):
     supabase = get_supabase_admin()
@@ -73,17 +79,15 @@ async def MyPlants(user: dict):
     return response.data
 
 async def upload_plants(
-    user_id:      str,
-    title:        str,
-    description:  Optional[str]       = None,
-    topology:     Optional[str]       = None,
-    category:     Optional[str]       = None,
-    squareFeet:   Optional[str]       = None,
-    bedrooms:     Optional[int]       = 0,
-    bathrooms:    Optional[int]       = 0,
-    price:        float               = 0,
-    imageFiles:   List[UploadFile]    = File(default=[]),   # ← alinhado
-    projectFiles: List[UploadFile]    = File(default=[]),   # ← alinhado
+    user_id:       str,
+    title:         str,
+    description:   Optional[str]       = None,
+    category:      Optional[str]       = None,
+    squareFeet:    Optional[str]       = None,
+    price:         float               = 0,
+    specifications: Optional[str]      = None, 
+    imageFiles:    List[UploadFile]    = File(default=[]),
+    projectFiles:  List[UploadFile]    = File(default=[]),
 ):
     if not imageFiles:
         raise HTTPException(status_code=422, detail="Nenhuma imagem pública enviada.")
@@ -91,7 +95,6 @@ async def upload_plants(
         raise HTTPException(status_code=422, detail="Nenhum arquivo de projeto enviado.")
 
     try:
-
         supabase = get_supabase_admin()
         timestamp = datetime.datetime.now().strftime("%d%m%Y_%H%M%S")
         image_urls: List[str] = []
@@ -109,7 +112,6 @@ async def upload_plants(
             url = supabase.storage.from_("PlansStoraga").get_public_url(file_path)
             image_urls.append(url)
          
-       
         project_file_urls: List[str] = []
 
         for doc in projectFiles:
@@ -119,12 +121,20 @@ async def upload_plants(
             supabase.storage.from_("PlansStoraga").upload(
                 path=file_path,
                 file=contents,
-                file_options={"content-type": doc.content_type ,"upsert": "true"},
+                file_options={"content-type": doc.content_type, "upsert": "true"},
             )
 
             project_file_urls.append(file_path)
     
- 
+        # Converte a string de especificações vinda do FormData para um dicionário Python
+        specs_dict = {}
+        if specifications:
+            try:
+                specs_dict = json.loads(specifications)
+            except Exception:
+                specs_dict = {}
+
+        # Monta o objeto para salvar no Banco de Dados
         planta_db = {
             "nome":             title,
             "descricao":        description,
@@ -132,12 +142,12 @@ async def upload_plants(
             "dono":             user_id,
             "orcamento":        price,
             "imagens":          image_urls,
-            "plantas_arquivo":  project_file_urls,
+            "planta_arquivos":  project_file_urls,
             "estado":           "ativo",        
             "categoria":        category,
-            "quartos":          bedrooms,
-            "banheiros":        bathrooms,     
-            "tipologia":        topology,
+            # REMOVIDOS: quartos, banheiros, tipologia
+            # ADICIONADO: Nova coluna JSONB mapeada
+            "especificacoes":   specs_dict, 
         }
 
         response = supabase.table("planta").insert(planta_db).execute()

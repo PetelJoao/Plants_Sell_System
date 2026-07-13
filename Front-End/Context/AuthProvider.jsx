@@ -26,7 +26,6 @@ function authFetch(path, options = {}) {
     },
   });
 }
-
 function mapPlanta(p) {
   return {
     id: p.id,
@@ -36,10 +35,12 @@ function mapPlanta(p) {
     price: p.orcamento ?? 0,
     image: p.imagens?.[0] ?? p.plantas_arquivo ?? null,
     category: p.categoria ?? "",
-    bedrooms: p.quartos ?? 0,
-    bathrooms: p.banheiros ?? 0,
     featured: p.destaque ?? false,
     dono: p.dono,
+    
+    bedrooms: p.especificacoes?.bedrooms ?? 0,
+    bathrooms: p.especificacoes?.bathrooms ?? 0,
+    topology: p.especificacoes?.topology ?? "",
   };
 }
 
@@ -164,7 +165,7 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  const inserir = useCallback(
+const inserir = useCallback(
     async ({
       title,
       description,
@@ -181,12 +182,17 @@ export function AuthProvider({ children }) {
       const formData = new FormData();
       formData.append("title", title);
       formData.append("description", description ?? "");
-      formData.append("topology", topology ?? "");
       formData.append("category", category ?? "");
       formData.append("squareFeet", squareFeet ?? "");
-      formData.append("bedrooms", bedrooms ?? 0);
-      formData.append("bathrooms", bathrooms ?? 0);
       formData.append("price", price ?? 0);
+
+      const specifications = {
+        topology: topology ?? "",
+        bedrooms: Number(bedrooms ?? 0),
+        bathrooms: Number(bathrooms ?? 0),
+      };
+      formData.append("specifications", JSON.stringify(specifications));
+
       files.forEach((f) => formData.append("projectFiles", f));
       imageFiles.forEach((f) => formData.append("imageFiles", f));
 
@@ -205,7 +211,7 @@ export function AuthProvider({ children }) {
       }
       return data;
     },
-    [user?.id]
+    [user?.id, mapPlanta] 
   );
 
   const EditPlant = useCallback(
@@ -228,12 +234,17 @@ export function AuthProvider({ children }) {
       const formData = new FormData();
       formData.append("title", title);
       formData.append("description", description ?? "");
-      formData.append("topology", topology ?? "");
       formData.append("category", category ?? "");
       formData.append("squareFeet", squareFeet ?? "");
-      formData.append("bedrooms", bedrooms ?? 0);
-      formData.append("bathrooms", bathrooms ?? 0);
       formData.append("price", price ?? 0);
+
+      const specifications = {
+        topology: topology ?? "",
+        bedrooms: Number(bedrooms ?? 0),
+        bathrooms: Number(bathrooms ?? 0),
+      };
+      formData.append("specifications", JSON.stringify(specifications));
+
       files.forEach((f) => formData.append("projectFiles", f));
       imageFiles.forEach((f) => formData.append("imageFiles", f));
 
@@ -259,8 +270,9 @@ export function AuthProvider({ children }) {
       }
       return data;
     },
-    [user?.id]
+    [user?.id, mapPlanta]
   );
+
 
   const deletar = useCallback(async (plantId) => {
     const res = await authFetch(`/api/dashboard/${plantId}`, {

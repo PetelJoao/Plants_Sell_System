@@ -35,12 +35,32 @@ import {
 const formSchema = z.object({
   title: z.string().min(3, { message: "O nome da planta deve ter pelo menos 3 Caracteres" }),
   description: z.string().min(10, { message: "A descrição deve ter pelo menos 10 Caracteres" }),
-  topology: z.string().min(1, { message: "Por favor selecione uma Tipologia" }),
   category: z.string().min(1, { message: "Por favor selecione uma Categoria" }),
   squareFeet: z.coerce.number().positive({ message: "Tamanho deve ser um número positivo" }),
-  bedrooms: z.coerce.number().int().nonnegative({ message: "Não pode ser um número negativo" }),
-  bathrooms: z.coerce.number().positive({ message: "Não pode ser um número negativo" }),
   price: z.coerce.number().positive({ message: "Não pode ser um número negativo" }),
+  
+  // Criamos a estrutura do objeto espelhando o JSONB
+  specifications: z.object({
+    topology: z.string().optional(),
+    bedrooms: z.coerce.number().int().nonnegative().optional(),
+    bathrooms: z.coerce.number().int().nonnegative().optional(),
+  })
+})
+.superRefine((data, ctx) => {
+  const cat = data.category?.toLowerCase()
+  const precisaValidar = cat === "residencial" || cat === "comercial"
+
+  if (precisaValidar) {
+    if (!data.specifications.topology || data.specifications.topology.trim() === "") {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Selecione a Tipologia", path: ["specifications.topology"] })
+    }
+    if (data.specifications.bedrooms === undefined || data.specifications.bedrooms < 0) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Número inválido", path: ["specifications.bedrooms"] })
+    }
+    if (data.specifications.bathrooms === undefined || data.specifications.bathrooms <= 0) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Deve ter pelo menos 1", path: ["specifications.bathrooms"] })
+    }
+  }
 })
 
 type FormValues = z.infer<typeof formSchema>
@@ -49,9 +69,6 @@ type FormValues = z.infer<typeof formSchema>
 const categories = [
   "Residencial",
   "Comercial",
-  "Multifamiliar",
-  "Tiny Home",
-  "Luxo",
   "Industrial",
   "Educacional",
   "Saúde",
@@ -60,15 +77,7 @@ const categories = [
 // Topology options
 const topologies = [
   "Moderno",
-  "Tradicional",
-  "Contemporanio",
-  "Minimalista",
-  "Colonial",
-  "Victoriana",
-  "Mediterranea",
-  "Craftsman",
-  "Rancho",
-  "Farmhouse",
+
 ]
 
 interface PlanUploadDialogProps {
@@ -87,21 +96,25 @@ export function PlanUploadDialog({ open, onOpenChange, onPlanAdded }: PlanUpload
    const [fileError, setFileError] = useState<string | null>(null)
   const { inserir } = useAuth() as any
   // Initialize the form
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      title: "",
-      description: "",
+ const form = useForm<FormValues>({
+   resolver: zodResolver(formSchema),
+   defaultValues: {
+    title: "",
+    description: "",
+    category: "",
+    squareFeet: 0,
+    price: 0,
+    specifications: {
       topology: "",
-      category: "",
-      squareFeet: 0,
       bedrooms: 0,
       bathrooms: 0,
-      price: 0,
-    },
-  })
-
-  // Handle file selection
+    }
+  },
+})
+const currentCategory = form.watch("category")
+const isSpecsAllowed = currentCategory?.toLowerCase() === "residencial" || currentCategory?.toLowerCase() === "comercial"
+  
+// Handle file selection
 const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
   const selectedFiles = e.target.files ? Array.from(e.target.files) : []
   setFileError(null)
@@ -343,31 +356,25 @@ const clearImageFile = () => {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField
-                  control={form.control}
-                  name="topology"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={labelStyles}>Tipologia / Estilo</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger className={inputStyles}>
-                            <SelectValue placeholder="Selecione o estilo arquitetônico" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent className="rounded-xl border-slate-200 shadow-lg">
-                          {topologies.map((topology) => (
-                            <SelectItem key={topology} value={topology} className="font-medium focus:bg-slate-100 cursor-pointer">
-                              {topology}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage className="text-red-500 font-medium text-xs" />
-                    </FormItem>
-                  )}
-                />
-
+<FormField
+    control={form.control}
+    name="specifications.topology" // Atualizado para o objeto aninhado
+    render={({ field }) => (
+      <FormItem>
+        <FormLabel>Tipologia</FormLabel>
+        <FormControl>
+          <Input 
+            type="text" 
+            disabled={!isSpecsAllowed} 
+            placeholder={isSpecsAllowed ? "Ex: T3, V4" : "N/A"}
+            {...field} 
+            value={isSpecsAllowed ? field.value : ""}
+          />
+        </FormControl>
+        <FormMessage />
+      </FormItem>
+    )}
+  />
                 <FormField
                   control={form.control}
                   name="squareFeet"
@@ -384,33 +391,50 @@ const clearImageFile = () => {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <FormField
-                  control={form.control}
-                  name="bedrooms"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={labelStyles}>Quartos</FormLabel>
-                      <FormControl>
-                        <Input type="number" min="0" step="1" className={inputStyles} placeholder="Ex: 4" {...field} />
-                      </FormControl>
-                      <FormMessage className="text-red-500 font-medium text-xs" />
-                    </FormItem>
-                  )}
-                />
+<FormField
+    control={form.control}
+    name="specifications.bedrooms" // Atualizado para o objeto aninhado
+    render={({ field }) => (
+      <FormItem>
+        <FormLabel>Quartos</FormLabel>
+        <FormControl>
+          <Input 
+            type="number" 
+            min="0" 
+            step="1" 
+            disabled={!isSpecsAllowed} // Bloqueia se não for residencial/comercial
+            placeholder={isSpecsAllowed ? "0" : "N/A"}
+            {...field} 
+            // Garante que o valor mude visualmente para 0 quando desabilitado
+            value={isSpecsAllowed ? field.value : 0} 
+          />
+        </FormControl>
+        <FormMessage />
+      </FormItem>
+    )}
+  />
 
-                <FormField
-                  control={form.control}
-                  name="bathrooms"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={labelStyles}>Casas de Banho</FormLabel>
-                      <FormControl>
-                        <Input type="number" min="0" step="1" className={inputStyles} placeholder="Ex: 3" {...field} />
-                      </FormControl>
-                      <FormMessage className="text-red-500 font-medium text-xs" />
-                    </FormItem>
-                  )}
-                />
+<FormField
+    control={form.control}
+    name="specifications.bathrooms" // Atualizado para o objeto aninhado
+    render={({ field }) => (
+      <FormItem>
+        <FormLabel>Casas de Banho</FormLabel>
+        <FormControl>
+          <Input 
+            type="number" 
+            min="0" 
+            step="1" 
+            disabled={!isSpecsAllowed} 
+            placeholder={isSpecsAllowed ? "0" : "N/A"}
+            {...field} 
+            value={isSpecsAllowed ? field.value : 0}
+          />
+        </FormControl>
+        <FormMessage />
+      </FormItem>
+    )}
+  />
 
                 <FormField
                   control={form.control}
