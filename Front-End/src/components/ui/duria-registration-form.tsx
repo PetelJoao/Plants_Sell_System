@@ -88,7 +88,7 @@ export function DuriaRegistrationForm() {
     formState: { errors },
   } = useForm<FormFields>({
     resolver: zodResolver(formSchema),
-    // ✅ FIX 2: defaultValues alinhados com o schema (sem campos removidos)
+    
     defaultValues: {
       profession:   undefined,
       name:         '',
@@ -195,7 +195,7 @@ export function DuriaRegistrationForm() {
         </div>
 
         <form onSubmit={handleSubmit(onSubmit, (erros) => {
-          // ✅ FIX 6: log de erros de validação do handleSubmit
+         
           console.error('[handleSubmit] erros de validação:', erros)
         })} className="space-y-6">
 

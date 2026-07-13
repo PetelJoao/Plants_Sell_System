@@ -52,7 +52,7 @@ export default function PlansPage() {
   const [withdrawalOpen, setWithdrawalOpen] = useState(false)
   const  {GerenciarPlantas , MinhasPlantas , deletar , solicitarSaque , loading}  = useAuth() as any
   const [stats, setStats] = useState({
-    totalUploaded: 1,
+    totalUploaded: 0,
     sold: 0,
     revenue: 0,
     active: 0,
@@ -77,9 +77,9 @@ export default function PlansPage() {
         const myPlans = await MinhasPlantas()
         setPlans(myPlans)
         setStats({
-      totalUploaded: data.total_plantas      ?? 1,
+      totalUploaded: data.total_plantas      ?? 0,
       sold:          data.plantas_vendidas   ?? 0,
-      revenue:       data.saldo_disponivel     || 200,
+      revenue:       data.saldo_disponivel     || 0,
       active:        data.plantas_ativas     ?? 0,
       inactive:      data.plantas_inativas   ?? 0,
     });
