@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
-import { ChevronDown, Download, Heart, MoreHorizontal, Share2, ShoppingCart,AlertCircle } from "lucide-react"
+import { ChevronDown, Download, Heart, MoreHorizontal, Share2, ShoppingCart, AlertCircle, Ruler, BedDouble, Bath, LayoutGrid } from "lucide-react"
 import Image from "next/image"
 import HousePic from "@/assets/images/Casa.jpeg"
 import Porshe from "@/assets/images/Porsche.jpeg"
@@ -74,107 +74,169 @@ useEffect(() => {
   const filteredPlans = filter === "All" ? plans : plans.filter((plan) => plan.category === filter)
   
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline">
-                {filter} <ChevronDown className="ml-2 h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem onClick={() => setFilter("All")}>All</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setFilter("Residencial")}>Residencial</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setFilter("Comercial")}>Comercial</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setFilter("Multifamiliar")}>Multifamiliar</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setFilter("Casa Pequena")}>Casa Pequena</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setFilter("Luxo")}>Luxo</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <span className="text-sm text-muted-foreground">{filteredPlans.length} Plantas Disponíveis</span>
+    <div className="space-y-8 font-[Inter,sans-serif]">
+      <style jsx global>{`
+        @import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap");
+        .font-display { font-family: "Space Grotesk", ui-sans-serif, system-ui, sans-serif; }
+        .font-mono-label { font-family: "IBM Plex Mono", ui-monospace, monospace; letter-spacing: 0.06em; }
+      `}</style>
 
-        </div>
-         {/* <Button onClick={() => setIsUploadDialogOpen(true)}>Adicionar Planta</Button>*/} 
+      {/* Page header */}
+      <div className="flex flex-col gap-6">
+        <div>
+          <p className="font-mono-label text-xs uppercase text-[#8a6a38]">Catálogo</p>
+          <h1 className="font-display mt-1 text-2xl sm:text-3xl font-bold text-[#101A2E]">
+            Plantas Arquitetónicas
+          </h1>
+          <p className="mt-1 text-sm text-[#55617A]">
+            Explore, compre e organize plantas prontas para o seu próximo projeto.
+          </p>
         </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex items-center gap-3">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="rounded-xl border-[#E4E0D8] bg-white text-[#101A2E] font-medium hover:bg-[#F7F5F1] hover:border-[#C79A56]/50 focus-visible:ring-2 focus-visible:ring-[#C79A56]/40 transition-all"
+                >
+                  <LayoutGrid className="mr-2 h-4 w-4 text-[#8a6a38]" />
+                  {filter}
+                  <ChevronDown className="ml-2 h-4 w-4 text-[#55617A]" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="rounded-xl border-[#E4E0D8] shadow-lg shadow-[#101A2E]/5">
+                <DropdownMenuItem onClick={() => setFilter("All")} className="rounded-lg text-sm">All</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setFilter("Residencial")} className="rounded-lg text-sm">Residencial</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setFilter("Comercial")} className="rounded-lg text-sm">Comercial</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setFilter("Multifamiliar")} className="rounded-lg text-sm">Multifamiliar</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setFilter("Casa Pequena")} className="rounded-lg text-sm">Casa Pequena</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setFilter("Luxo")} className="rounded-lg text-sm">Luxo</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <span className="font-mono-label text-xs text-[#55617A] bg-[#F7F5F1] border border-[#E4E0D8] rounded-full px-3 py-1.5">
+              {filteredPlans.length} PLANTAS DISPONÍVEIS
+            </span>
+          </div>
+           {/* <Button onClick={() => setIsUploadDialogOpen(true)}>Adicionar Planta</Button>*/} 
+          </div>
+      </div>
+
+      {/* Empty state */}
+      {filteredPlans.length === 0 && (
+        <div className="flex flex-col items-center justify-center text-center rounded-2xl border border-dashed border-[#E4E0D8] bg-white py-20 px-6">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#F7F5F1] border border-[#E4E0D8]">
+            <LayoutGrid className="h-6 w-6 text-[#C79A56]" />
+          </div>
+          <h3 className="font-display mt-4 text-lg font-semibold text-[#101A2E]">
+            Nenhuma planta encontrada
+          </h3>
+          <p className="mt-1 max-w-sm text-sm text-[#55617A]">
+            Não há plantas disponíveis para este filtro no momento. Experimente escolher outra categoria.
+          </p>
+        </div>
+      )}
+
+      {/* Plans grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredPlans.map((plan) => (
-          <Card key={plan.id} 
-           className="overflow-hidden cursor-pointer"
+          <Card
+            key={plan.id}
+            className="group overflow-hidden cursor-pointer rounded-2xl border border-[#E4E0D8] bg-white transition-all hover:shadow-xl hover:shadow-[#101A2E]/8 hover:-translate-y-1"
             onClick={() => {
-            setSelectedPlan(plan)
-            setDetailModalOpen(true)
-           }}
+              setSelectedPlan(plan)
+              setDetailModalOpen(true)
+            }}
           >
-            <div className="relative aspect-video">
-           
-            <Image
-              
+            <div className="relative aspect-video overflow-hidden bg-[#F7F5F1]">
+              <Image
                 src={(plan.image) || Porshe}
                 alt={plan.title ?? plan.description ?? "Planta arquitectónica"}
-                width={500} 
+                width={500}
                 height={300}
+                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
               />
+
+              {/* base gradient overlay for legibility */}
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#101A2E]/70 via-[#101A2E]/10 to-transparent" />
+
+              {plan.featured && (
+                <Badge className="absolute top-3 left-3 rounded-full border-0 bg-[#C79A56] text-[#101A2E] font-semibold px-3 py-1 shadow-sm">
+                  Featured
+                </Badge>
+              )}
+
+              {plan.category && (
+                <span className="absolute bottom-3 left-3 font-mono-label text-[10px] uppercase text-white/90 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-2.5 py-1">
+                  {plan.category}
+                </span>
+              )}
 
               <Button
                 variant="ghost"
                 size="icon"
-                className="absolute top-2 right-2 bg-background/80 backdrop-blur-sm hover:bg-background/90"
-                 onClick={(e) => {
-                 e.stopPropagation()
-                 handleAddToOrder(plan)
-                 }}
+                className="absolute top-3 right-3 h-9 w-9 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white hover:bg-[#C79A56] hover:text-[#101A2E] transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleAddToOrder(plan)
+                }}
               >
-               <ShoppingCart className="h-4 w-4" />
+                <ShoppingCart className="h-4 w-4" />
               </Button>
-              {plan.featured && <Badge className="absolute top-2 left-2">Featured</Badge>}
             </div>
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <CardTitle>{plan.title}</CardTitle>
+            <CardHeader className="pb-2">
+              <div className="flex justify-between items-start gap-2">
+                <CardTitle className="font-display text-base font-semibold text-[#101A2E]">
+                  {plan.title}
+                </CardTitle>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 rounded-full text-[#55617A] hover:bg-[#F7F5F1] hover:text-[#101A2E] -mt-1 -mr-1"
+                    >
                       <MoreHorizontal className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
+                  <DropdownMenuContent align="end" className="rounded-xl border-[#E4E0D8]">
                     <DropdownMenuItem
                       onClick={(e) => {
                         e.stopPropagation()
                         handleReportClick(plan)
                       }}
-                      className="text-red-600"
+                      className="rounded-lg text-sm text-red-600 focus:text-red-600"
                     >
                       <AlertCircle className="mr-2 h-4 w-4" /> Denunciar
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
-              <CardDescription>{plan.description}</CardDescription>
+              <CardDescription className="text-sm text-[#55617A] line-clamp-2">
+                {plan.description}
+              </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div>
-                  <span className="text-muted-foreground">Categoria:</span> {plan.category}
+            <CardContent className="pb-2">
+              <div className="grid grid-cols-3 gap-2 rounded-xl bg-[#F7F5F1] border border-[#E4E0D8] p-3 text-xs text-[#101A2E]">
+                <div className="flex items-center gap-1.5">
+                  <Ruler className="h-3.5 w-3.5 text-[#8a6a38]" />
+                  <span>{plan.squareFeet} m²</span>
                 </div>
-                <div>
-                  <span className="text-muted-foreground">Tamanho:</span> {plan.squareFeet} m²
+                <div className="flex items-center gap-1.5">
+                  <BedDouble className="h-3.5 w-3.5 text-[#8a6a38]" />
+                  <span>{plan.bedrooms}</span>
                 </div>
-                <div>
-                  <span className="text-muted-foreground">Quartos:</span> {plan.bedrooms}
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Casas de banho:</span> {plan.bathrooms}
+                <div className="flex items-center gap-1.5">
+                  <Bath className="h-3.5 w-3.5 text-[#8a6a38]" />
+                  <span>{plan.bathrooms}</span>
                 </div>
               </div>
               <div onClick={(e) => e.stopPropagation()}>
-           </div>
-              
+              </div>
             </CardContent>
-            <CardFooter className="flex justify-between">
-                <BotaoComprar
+            <CardFooter className="flex justify-between items-center pt-3 border-t border-[#E4E0D8]">
+              <BotaoComprar
                 plantaId={plan.id}
                 arquitetoId={plan.dono}        // campo 'dono' da tabela planta = arquiteto_id
                 nomePlanta={plan.title}
@@ -206,4 +268,3 @@ useEffect(() => {
     </div>
   )
 }
-

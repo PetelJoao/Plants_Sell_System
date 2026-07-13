@@ -13,6 +13,17 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import DashboardLayout from "@/app/Develop/dashboard/components/dashboard-layout"
 import { useAuth } from "@/Context/AuthContext"
 import { useEffect, useRef, useState } from "react"
+import {
+  Camera,
+  Trash2,
+  Loader2,
+  Lock,
+  CheckCircle2,
+  XCircle,
+  Building2,
+  Wallet,
+  Star,
+} from "lucide-react"
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -36,6 +47,10 @@ interface PerfilCompleto {
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+
+// Shared input styling so every field in the page reads as one design system
+const inputClass =
+  "rounded-lg border-border transition-colors focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary/60"
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -176,97 +191,101 @@ function FotoPerfilEditor({
   }
 
   return (
-    <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
-      {/* Avatar */}
-      <div className="relative shrink-0">
-        <Avatar className="w-24 h-24">
-          <AvatarImage src={preview ?? undefined} alt="Foto de perfil" />
-          <AvatarFallback className="text-2xl font-semibold">
-            {getInitials(nome)}
-          </AvatarFallback>
-        </Avatar>
+    <div className="rounded-xl border border-border/60 bg-muted/20 p-5">
+      <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+        {/* Avatar */}
+        <div className="relative shrink-0">
+          <Avatar className="w-24 h-24 ring-4 ring-primary/15 ring-offset-2 ring-offset-background">
+            <AvatarImage src={preview ?? undefined} alt="Foto de perfil" />
+            <AvatarFallback className="text-2xl font-semibold bg-primary/10 text-primary">
+              {getInitials(nome)}
+            </AvatarFallback>
+          </Avatar>
 
-        {/* Overlay de upload no hover */}
-        <button
-          type="button"
-          onClick={() => inputRef.current?.click()}
-          disabled={uploading}
-          className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 opacity-0 hover:opacity-100 transition-opacity disabled:cursor-not-allowed"
-          title="Alterar foto"
-        >
-          {uploading ? (
-            <svg className="w-6 h-6 text-white animate-spin" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-            </svg>
-          ) : (
-            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-          )}
-        </button>
-      </div>
-
-      {/* Texto + botão explícito */}
-      <div className="flex flex-col justify-center gap-3 text-center sm:text-left">
-        <div>
-          <p className="font-medium text-sm">Foto de Perfil</p>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            JPG, PNG ou WEBP · máx. 5 MB
-          </p>
-        </div>
-        <div className="flex flex-col sm:flex-row gap-2">
-          <Button
+          {/* Overlay de upload no hover */}
+          <button
             type="button"
-            variant="outline"
-            size="sm"
-            disabled={uploading}
             onClick={() => inputRef.current?.click()}
+            disabled={uploading}
+            className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 opacity-0 hover:opacity-100 transition-opacity disabled:cursor-not-allowed"
+            title="Alterar foto"
           >
-            {uploading ? "A enviar…" : "Alterar foto"}
-          </Button>
-          {preview && (
+            {uploading ? (
+              <Loader2 className="w-6 h-6 text-white animate-spin" />
+            ) : (
+              <Camera className="w-6 h-6 text-white" />
+            )}
+          </button>
+        </div>
+
+        {/* Texto + botão explícito */}
+        <div className="flex flex-col justify-center gap-3 text-center sm:text-left">
+          <div>
+            <p className="font-medium text-sm">Foto de Perfil</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              JPG, PNG ou WEBP · máx. 5 MB
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-2">
             <Button
               type="button"
-              variant="ghost"
+              variant="outline"
               size="sm"
-              className="text-destructive hover:text-destructive"
               disabled={uploading}
-              onClick={async () => {
-                const token = localStorage.getItem("token")
-                if (!token) return
-                setUploading(true)
-                // envia null para remover a foto
-                await fetch(`${API}/api/auth/me/foto`, {
-                  method:  "DELETE",
-                  headers: { Authorization: `Bearer ${token}` },
-                })
-                setPreview(null)
-                onFotoAtualizada("")
-                setUploading(false)
-                setFeedback({ type: "success", msg: "Foto removida." })
-              }}
+              onClick={() => inputRef.current?.click()}
+              className="gap-2"
             >
-              Remover
+              {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Camera className="h-3.5 w-3.5" />}
+              {uploading ? "A enviar…" : "Alterar foto"}
             </Button>
+            {preview && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+                disabled={uploading}
+                onClick={async () => {
+                  const token = localStorage.getItem("token")
+                  if (!token) return
+                  setUploading(true)
+                  // envia null para remover a foto
+                  await fetch(`${API}/api/auth/me/foto`, {
+                    method:  "DELETE",
+                    headers: { Authorization: `Bearer ${token}` },
+                  })
+                  setPreview(null)
+                  onFotoAtualizada("")
+                  setUploading(false)
+                  setFeedback({ type: "success", msg: "Foto removida." })
+                }}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Remover
+              </Button>
+            )}
+          </div>
+          {feedback && (
+            <p className={`flex items-center gap-1.5 text-xs ${feedback.type === "success" ? "text-emerald-600" : "text-destructive"}`}>
+              {feedback.type === "success" ? (
+                <CheckCircle2 className="h-3.5 w-3.5" />
+              ) : (
+                <XCircle className="h-3.5 w-3.5" />
+              )}
+              {feedback.msg}
+            </p>
           )}
         </div>
-        {feedback && (
-          <p className={`text-xs ${feedback.type === "success" ? "text-green-600" : "text-destructive"}`}>
-            {feedback.msg}
-          </p>
-        )}
-      </div>
 
-      {/* Input oculto */}
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/jpeg,image/png,image/webp"
-        className="hidden"
-        onChange={handleFileChange}
-      />
+        {/* Input oculto */}
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          className="hidden"
+          onChange={handleFileChange}
+        />
+      </div>
     </div>
   )
 }
@@ -277,15 +296,11 @@ function StarRating({ value }: { value: number }) {
   return (
     <div className="flex items-center gap-1">
       {[1, 2, 3, 4, 5].map((star) => (
-        <svg
+        <Star
           key={star}
           className={`w-5 h-5 ${star <= value ? "text-yellow-400 fill-yellow-400" : "text-muted-foreground fill-none"}`}
-          viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}
-        >
-          <path strokeLinecap="round" strokeLinejoin="round"
-            d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.562.562 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.562.562 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z"
-          />
-        </svg>
+          strokeWidth={1.5}
+        />
       ))}
       <span className="text-sm text-muted-foreground ml-1">({value}/5)</span>
     </div>
@@ -340,12 +355,12 @@ function TabGeral({ user, loadingUser }: { user: any; loadingUser: boolean }) {
   if (loadingUser) return null
 
   return (
-    <Card>
+    <Card className="rounded-xl shadow-sm">
       <CardHeader>
         <CardTitle>Informação Pessoal</CardTitle>
         <CardDescription>Atualize as suas informações pessoais e detalhes de contacto.</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-8">
 
         {/* ── Foto de perfil ── */}
         <FotoPerfilEditor
@@ -356,49 +371,62 @@ function TabGeral({ user, loadingUser }: { user: any; loadingUser: boolean }) {
 
         <Separator />
 
-        {/* ── Nome ── */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="first-name">Primeiro Nome</Label>
-            <Input id="first-name" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="last-name">Último Nome</Label>
-            <Input id="last-name" value={lastName} onChange={(e) => setLastName(e.target.value)} />
-          </div>
-        </div>
+        <div className="space-y-6">
+          <p className="text-sm font-medium text-foreground/80">Dados de contacto</p>
 
-        {/* ── Email (read-only) ── */}
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email" type="email" value={user?.email ?? ""} readOnly
-            className="bg-muted cursor-not-allowed"
-          />
-          <p className="text-xs text-muted-foreground">O email não pode ser alterado aqui.</p>
-        </div>
+          {/* ── Nome ── */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="first-name">Primeiro Nome</Label>
+              <Input id="first-name" className={inputClass} value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="last-name">Último Nome</Label>
+              <Input id="last-name" className={inputClass} value={lastName} onChange={(e) => setLastName(e.target.value)} />
+            </div>
+          </div>
 
-        {/* ── Telefone ── */}
-        <div className="space-y-2">
-          <Label htmlFor="phone">
-            Número de Telefone
-            {!telefone && <span className="ml-2 text-xs text-muted-foreground">(não adicionado)</span>}
-          </Label>
-          <Input
-            id="phone" type="tel" value={telefone}
-            onChange={(e) => setTelefone(e.target.value)}
-            placeholder={!telefone ? "Adicione um número de telefone…" : ""}
-          />
+          {/* ── Email (read-only) ── */}
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <div className="relative">
+              <Input
+                id="email" type="email" value={user?.email ?? ""} readOnly
+                className={`${inputClass} bg-muted/60 text-muted-foreground cursor-not-allowed pr-9`}
+              />
+              <Lock className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            </div>
+            <p className="text-xs text-muted-foreground">O email não pode ser alterado aqui.</p>
+          </div>
+
+          {/* ── Telefone ── */}
+          <div className="space-y-2">
+            <Label htmlFor="phone">
+              Número de Telefone
+              {!telefone && <span className="ml-2 text-xs text-muted-foreground">(não adicionado)</span>}
+            </Label>
+            <Input
+              id="phone" type="tel" value={telefone} className={inputClass}
+              onChange={(e) => setTelefone(e.target.value)}
+              placeholder={!telefone ? "Adicione um número de telefone…" : ""}
+            />
+          </div>
         </div>
 
       </CardContent>
-      <CardFooter className="flex flex-col items-start gap-3">
+      <CardFooter className="flex flex-col items-start gap-3 border-t border-border/60 pt-6">
         {feedback && (
-          <p className={`text-sm ${feedback.type === "success" ? "text-green-600" : "text-destructive"}`}>
+          <p className={`flex items-center gap-1.5 text-sm ${feedback.type === "success" ? "text-emerald-600" : "text-destructive"}`}>
+            {feedback.type === "success" ? (
+              <CheckCircle2 className="h-4 w-4" />
+            ) : (
+              <XCircle className="h-4 w-4" />
+            )}
             {feedback.msg}
           </p>
         )}
-        <Button onClick={handleSave} disabled={saving}>
+        <Button onClick={handleSave} disabled={saving} className="gap-2 shadow-sm min-w-[160px]">
+          {saving && <Loader2 className="h-4 w-4 animate-spin" />}
           {saving ? "A salvar…" : "Salvar Mudanças"}
         </Button>
       </CardFooter>
@@ -462,7 +490,8 @@ function TabProfissional() {
   }
 
   if (loading) return (
-    <div className="flex items-center justify-center py-16 text-muted-foreground text-sm">
+    <div className="flex items-center justify-center gap-2 py-16 text-muted-foreground text-sm">
+      <Loader2 className="h-4 w-4 animate-spin" />
       A carregar informações profissionais…
     </div>
   )
@@ -477,35 +506,52 @@ function TabProfissional() {
     <div className="space-y-6">
 
       {/* ── Visão Geral ── */}
-      <Card>
+      <Card className="rounded-xl shadow-sm">
         <CardHeader>
           <CardTitle>Visão Geral</CardTitle>
           <CardDescription>Resumo do seu perfil profissional visível aos clientes.</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <p className="text-sm font-medium text-muted-foreground">Avaliação</p>
-              <StarRating value={perfil.avaliacao} />
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="flex items-center gap-3 rounded-lg border border-border/60 p-4">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-yellow-50 dark:bg-yellow-950 shrink-0">
+                <Star className="h-4 w-4 text-yellow-500 fill-yellow-400" />
+              </div>
+              <div className="space-y-0.5">
+                <p className="text-xs font-medium text-muted-foreground">Avaliação</p>
+                <StarRating value={perfil.avaliacao} />
+              </div>
             </div>
-            <div className="space-y-1">
-              <p className="text-sm font-medium text-muted-foreground">Saldo Disponível</p>
-              <p className="text-2xl font-bold">
-                {(perfil.saldo_disponivel ?? 0).toLocaleString("pt-AO", {
-                  style: "currency", currency: "AOA",
-                })}
-              </p>
+            <div className="flex items-center gap-3 rounded-lg border border-border/60 p-4">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-950 shrink-0">
+                <Wallet className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <div className="space-y-0.5">
+                <p className="text-xs font-medium text-muted-foreground">Saldo Disponível</p>
+                <p className="text-xl font-bold leading-tight">
+                  {(perfil.saldo_disponivel ?? 0).toLocaleString("pt-AO", {
+                    style: "currency", currency: "AOA",
+                  })}
+                </p>
+              </div>
             </div>
-            <div className="space-y-1">
-              <p className="text-sm font-medium text-muted-foreground">Estado</p>
-              <Badge variant="outline" className="text-green-600 border-green-600">Activo</Badge>
+            <div className="flex items-center gap-3 rounded-lg border border-border/60 p-4">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 shrink-0">
+                <CheckCircle2 className="h-4 w-4 text-primary" />
+              </div>
+              <div className="space-y-0.5">
+                <p className="text-xs font-medium text-muted-foreground">Estado</p>
+                <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-400">
+                  Activo
+                </Badge>
+              </div>
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* ── Informações editáveis ── */}
-      <Card>
+      <Card className="rounded-xl shadow-sm">
         <CardHeader>
           <CardTitle>Informações Profissionais</CardTitle>
           <CardDescription>Dados profissionais visíveis no seu perfil público e usados em transações.</CardDescription>
@@ -515,60 +561,68 @@ function TabProfissional() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="nif">NIF</Label>
-              <Input id="nif" value={nif} onChange={(e) => setNif(e.target.value)}
+              <Input id="nif" className={inputClass} value={nif} onChange={(e) => setNif(e.target.value)}
                 placeholder="Ex: 5000123456LA041" maxLength={15} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="cedula">Cédula Profissional</Label>
-              <Input id="cedula" value={cedula} onChange={(e) => setCedula(e.target.value)}
+              <Input id="cedula" className={inputClass} value={cedula} onChange={(e) => setCedula(e.target.value)}
                 placeholder="Número de cédula" maxLength={45} />
             </div>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="compania">Compania (Opcional)</Label>
-            <Input id="compania" value={compania} onChange={(e) => setCompania(e.target.value)}
-              placeholder="Nome da empresa ou atelier" />
+            <div className="relative">
+              <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input id="compania" className={`${inputClass} pl-9`} value={compania} onChange={(e) => setCompania(e.target.value)}
+                placeholder="Nome da empresa ou atelier" />
+            </div>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="iban">IBAN</Label>
-            <Input id="iban" value={iban} onChange={(e) => setIban(e.target.value)}
+            <Input id="iban" className={inputClass} value={iban} onChange={(e) => setIban(e.target.value)}
               placeholder="Ex: AO06 0040 0000 1234 5678 1014 5" />
             <p className="text-xs text-muted-foreground">Usado para receber saques da plataforma.</p>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="endereco-prof">Endereço Profissional</Label>
-            <Input id="endereco-prof" value={endereco} onChange={(e) => setEndereco(e.target.value)}
+            <Input id="endereco-prof" className={inputClass} value={endereco} onChange={(e) => setEndereco(e.target.value)}
               placeholder="Rua, número, cidade" />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="bio-prof">Biografia Profissional</Label>
-            <Textarea id="bio-prof" value={bio} onChange={(e) => setBio(e.target.value)}
-              placeholder="Descreva a sua experiência, especialidades e projectos relevantes…"
-              className="min-h-[120px]" />
+            <Textarea id="bio-prof" className={`${inputClass} min-h-[120px]`} value={bio} onChange={(e) => setBio(e.target.value)}
+              placeholder="Descreva a sua experiência, especialidades e projectos relevantes…" />
             <p className="text-xs text-muted-foreground">
               Esta biografia é exibida publicamente no seu perfil de arquitecto.
             </p>
           </div>
 
         </CardContent>
-        <CardFooter className="flex flex-col items-start gap-3">
+        <CardFooter className="flex flex-col items-start gap-3 border-t border-border/60 pt-6">
           {feedback && (
-            <p className={`text-sm ${feedback.type === "success" ? "text-green-600" : "text-destructive"}`}>
+            <p className={`flex items-center gap-1.5 text-sm ${feedback.type === "success" ? "text-emerald-600" : "text-destructive"}`}>
+              {feedback.type === "success" ? (
+                <CheckCircle2 className="h-4 w-4" />
+              ) : (
+                <XCircle className="h-4 w-4" />
+              )}
               {feedback.msg}
             </p>
           )}
-          <Button onClick={handleSave} disabled={saving}>
+          <Button onClick={handleSave} disabled={saving} className="gap-2 shadow-sm min-w-[220px]">
+            {saving && <Loader2 className="h-4 w-4 animate-spin" />}
             {saving ? "A salvar…" : "Salvar Informações Profissionais"}
           </Button>
         </CardFooter>
       </Card>
 
       {/* ── Dados financeiros read-only ── */}
-      <Card>
+      <Card className="rounded-xl shadow-sm">
         <CardHeader>
           <CardTitle>Dados Financeiros</CardTitle>
           <CardDescription>Informações geridas pela plataforma. Para ajustes, contacte o suporte.</CardDescription>
@@ -581,11 +635,11 @@ function TabProfissional() {
                 value={(perfil.saldo_disponivel ?? 0).toLocaleString("pt-AO", {
                   style: "currency", currency: "AOA",
                 })}
-                className="bg-muted cursor-not-allowed" />
+                className={`${inputClass} bg-muted/60 text-muted-foreground cursor-not-allowed`} />
             </div>
             <div className="space-y-2">
               <Label>Avaliação Média</Label>
-              <Input readOnly value={`${perfil.avaliacao} / 5`} className="bg-muted cursor-not-allowed" />
+              <Input readOnly value={`${perfil.avaliacao} / 5`} className={`${inputClass} bg-muted/60 text-muted-foreground cursor-not-allowed`} />
             </div>
           </div>
         </CardContent>
@@ -610,11 +664,35 @@ export default function Perfil() {
         </div>
 
         <Tabs defaultValue="general" className="w-full">
-          <TabsList className={`w-full md:w-auto grid md:inline-flex ${isArquiteto ? "grid-cols-4" : "grid-cols-3"}`}>
-            <TabsTrigger value="general">Geral</TabsTrigger>
-            <TabsTrigger value="security">Segurança</TabsTrigger>
-            <TabsTrigger value="preferences">Preferências</TabsTrigger>
-            {isArquiteto && <TabsTrigger value="professional">Profissional</TabsTrigger>}
+          <TabsList
+            className={`w-full md:w-auto grid md:inline-flex gap-1 rounded-lg bg-muted p-1 ${isArquiteto ? "grid-cols-4" : "grid-cols-3"}`}
+          >
+            <TabsTrigger
+              value="general"
+              className="rounded-md px-4 py-2 text-sm font-medium text-muted-foreground transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+            >
+              Geral
+            </TabsTrigger>
+            <TabsTrigger
+              value="security"
+              className="rounded-md px-4 py-2 text-sm font-medium text-muted-foreground transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+            >
+              Segurança
+            </TabsTrigger>
+            <TabsTrigger
+              value="preferences"
+              className="rounded-md px-4 py-2 text-sm font-medium text-muted-foreground transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+            >
+              Preferências
+            </TabsTrigger>
+            {isArquiteto && (
+              <TabsTrigger
+                value="professional"
+                className="rounded-md px-4 py-2 text-sm font-medium text-muted-foreground transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+              >
+                Profissional
+              </TabsTrigger>
+            )}
           </TabsList>
 
           {/* ── Geral ── */}
@@ -624,7 +702,7 @@ export default function Perfil() {
 
           {/* ── Segurança ── */}
           <TabsContent value="security" className="space-y-6 mt-6">
-            <Card>
+            <Card className="rounded-xl shadow-sm">
               <CardHeader>
                 <CardTitle>Palavra-Passe</CardTitle>
                 <CardDescription>Altere a sua palavra-passe ou ative a autenticação de dois fatores.</CardDescription>
@@ -632,26 +710,26 @@ export default function Perfil() {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="current-password">Palavra-Passe Atual</Label>
-                  <Input id="current-password" type="password" />
+                  <Input id="current-password" type="password" className={inputClass} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="new-password">Nova Palavra-Passe</Label>
-                  <Input id="new-password" type="password" />
+                  <Input id="new-password" type="password" className={inputClass} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="confirm-password">Confirmar Palavra-Passe</Label>
-                  <Input id="confirm-password" type="password" />
+                  <Input id="confirm-password" type="password" className={inputClass} />
                 </div>
               </CardContent>
-              <CardFooter>
-                <Button>Atualizar Palavra-Passe</Button>
+              <CardFooter className="border-t border-border/60 pt-6">
+                <Button className="shadow-sm">Atualizar Palavra-Passe</Button>
               </CardFooter>
             </Card>
           </TabsContent>
 
           {/* ── Preferências ── */}
           <TabsContent value="preferences" className="space-y-6 mt-6">
-            <Card>
+            <Card className="rounded-xl shadow-sm">
               <CardHeader>
                 <CardTitle>Notificações</CardTitle>
                 <CardDescription>Configure como recebe atualizações e notificações.</CardDescription>
@@ -681,8 +759,8 @@ export default function Perfil() {
                   <Switch />
                 </div>
               </CardContent>
-              <CardFooter>
-                <Button>Salvar Preferências</Button>
+              <CardFooter className="border-t border-border/60 pt-6">
+                <Button className="shadow-sm">Salvar Preferências</Button>
               </CardFooter>
             </Card>
           </TabsContent>

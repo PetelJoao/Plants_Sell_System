@@ -202,16 +202,29 @@ export default function Page() {
 
   return (
     <DashboardLayout>
-      <div className="flex flex-col gap-6 p-6 md:p-8">
+      <div className="mx-auto w-full max-w-7xl flex flex-col gap-6 p-6 md:p-8">
+        
+        {/* Header e Ações Globais */}
         <div className="flex items-center justify-between">
-          <Button variant="outline" size="sm" onClick={() => router.push("/Develop/dashboard")}>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => router.push("/Develop/dashboard")}
+            className="text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+          >
             <ArrowLeft className="mr-1.5 h-4 w-4" />
             Voltar
           </Button>
-          <Button size="sm" onClick={() => setShowModal(true)}>
-            <Plus className="mr-1.5 h-4 w-4" />
-            Criar Evento
-          </Button>
+          {eventos.length > 0 && (
+            <Button 
+              size="sm" 
+              onClick={() => setShowModal(true)}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition-all"
+            >
+              <Plus className="mr-1.5 h-4 w-4" />
+              Novo Evento
+            </Button>
+          )}
         </div>
 
         <div className="flex flex-col gap-1">
@@ -224,19 +237,36 @@ export default function Page() {
             A carregar eventos...
           </div>
         ) : eventos.length === 0 ? (
-          <Card>
-            <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-                <Calendar className="h-6 w-6 text-primary" />
-              </div>
-              <div className="space-y-1">
-                <h3 className="font-semibold">Ainda não tem eventos</h3>
-                <p className="max-w-sm text-sm text-muted-foreground">
-                  Crie o seu primeiro evento e comece a receber propostas de arquitectos.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          
+          /* Empty State Redesenhado */
+          <div className="mt-4 mx-auto flex w-full max-w-3xl flex-col items-center justify-center rounded-2xl border border-muted bg-card/50 px-6 py-24 shadow-sm transition-all hover:shadow-md">
+            
+            {/* Ilustração Circular */}
+            <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-primary/10 ring-8 ring-primary/5">
+              <Calendar className="h-10 w-10 text-primary" />
+            </div>
+            
+            {/* Tipografia e Textos de Apoio */}
+            <div className="mb-8 space-y-3 text-center">
+              <h3 className="text-2xl font-bold tracking-tight text-foreground">
+                Ainda não tem eventos
+              </h3>
+              <p className="mx-auto max-w-md text-base text-muted-foreground leading-relaxed">
+                Crie o seu primeiro evento detalhando o seu projecto. Comece a receber e avaliar propostas de arquitectos qualificados directamente na plataforma.
+              </p>
+            </div>
+            
+            {/* CTA Integrado */}
+            <Button 
+              size="lg" 
+              onClick={() => setShowModal(true)}
+              className="h-12 rounded-full px-8 text-base font-medium shadow-sm transition-all hover:scale-105 hover:shadow-md"
+            >
+              <Plus className="mr-2 h-5 w-5" />
+              Criar o meu primeiro evento
+            </Button>
+
+          </div>
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {eventos.map((e) => (
