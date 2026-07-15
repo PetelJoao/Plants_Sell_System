@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { AuthContext } from "./AuthContext";
 import { DataContext } from "./DataContext";
 
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const API = "https://plants-sell-system.onrender.com" || "http://localhost:5000";
 
 // ────────────────────────────────────────────────────────────
 // Helper único para todos os fetches autenticados.
