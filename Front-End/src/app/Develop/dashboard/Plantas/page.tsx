@@ -72,6 +72,7 @@ export default function PlansPage() {
   }, [plans, searchQuery, statusFilter, planStatuses])
 
   useEffect(() => {
+    
     const LoadPlansStatuses = async () => {
       try {
         const data = await GerenciarPlantas()
