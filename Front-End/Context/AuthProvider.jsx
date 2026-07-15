@@ -191,8 +191,8 @@ const inserir = useCallback(
         bedrooms: Number(bedrooms ?? 0),
         bathrooms: Number(bathrooms ?? 0),
       };
-      formData.append("specifications", JSON.stringify(specifications));
 
+      formData.append("specifications", JSON.stringify(specifications));
       files.forEach((f) => formData.append("projectFiles", f));
       imageFiles.forEach((f) => formData.append("imageFiles", f));
 

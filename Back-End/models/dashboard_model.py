@@ -39,7 +39,7 @@ async def DeletePlants(plant_id: str):
     
     planta = await run_query(lambda: (
         supabase.table("planta")
-        .select("imagens, plantas_arquivo")
+        .select("imagens, planta_arquivos")
         .eq("id", plant_id)
         .single()
         .execute()
@@ -50,7 +50,7 @@ async def DeletePlants(plant_id: str):
         raise HTTPException(status_code=404, detail="Planta não encontrada.")
     
     imagens = planta.data.get("imagens", []) or []
-    arquivos = planta.data.get("plantas_arquivo", []) or []
+    arquivos = planta.data.get("planta_arquivos", []) or []
 
   
     def url_to_path(url: str) -> str:
@@ -107,9 +107,9 @@ async def upload_plants(
     category:     Optional[str]       = None,
     squareFeet:   Optional[str]       = None,
     price:        float               = 0,
-    especificacoes: Optional[str]       = Form(default=None), 
-    imageFiles:   List[UploadFile]    = File(default=[]),   # ← alinhado
-    projectFiles: List[UploadFile]    = File(default=[]),   # ← alinhado
+    specifications: Optional[str]       = Form(default=None), 
+    imageFiles:   List[UploadFile]    = File(default=[]),  
+    projectFiles: List[UploadFile]    = File(default=[]),   
 ):
     if not imageFiles:
         raise HTTPException(status_code=422, detail="Nenhuma imagem pública enviada.")
@@ -117,10 +117,10 @@ async def upload_plants(
         raise HTTPException(status_code=422, detail="Nenhum arquivo de projeto enviado.")
 
 
-    especificacoes_dict = None
-    if especificacoes:
+    specifications_dict = None
+    if specifications:
         try:
-            especificacoes_dict = json.loads(especificacoes)
+            specifications_dict = json.loads(specifications)
         except json.JSONDecodeError:
             raise HTTPException(status_code=422, detail="Campo 'especificacoes' não é um JSON válido.")
         
@@ -174,7 +174,7 @@ async def upload_plants(
             "planta_arquivos":  project_file_urls,
             "estado":           "ativo",        
             "categoria":        category,
-            "especificacoes":   especificacoes_dict,
+            "especificacoes":   specifications_dict,
         }
 
         response = await run_query(
@@ -202,22 +202,30 @@ async def upload_plants(
 
 
 async def EditPlants(
-    plant_id:     str,
+    plant_id:      str,
     title:        str,
-    description:  Optional[str]    = None,
-    category:     Optional[str]    = None,
-    squareFeet:   Optional[str]    = None,
-    price:        float            = 0,
-    imageFiles:   List[UploadFile] = [],
-    projectFiles: List[UploadFile] = [],
+    description:  Optional[str]       = None,
+    category:     Optional[str]       = None,
+    squareFeet:   Optional[str]       = None,
+    price:        float               = 0,
+    specifications: Optional[str]       = Form(default=None), 
+    imageFiles:   List[UploadFile]    = File(default=[]),  
+    projectFiles: List[UploadFile]    = File(default=[]),  
 ):
     try:
         supabase = get_supabase_admin()
 
-       
+        # ── PARSE DAS ESPECIFICAÇÕES ─────────────────────────────────────
+        specifications_dict = None
+        if specifications:
+            try:
+                specifications_dict = json.loads(specifications)
+            except json.JSONDecodeError:
+                raise HTTPException(status_code=422, detail="Campo 'especificacoes' não é um JSON válido.")
+
         planta_atual = await run_query(lambda: (
             supabase.table("planta")
-            .select("dono, imagens, plantas_arquivo")
+            .select("dono, imagens, planta_arquivos")
             .eq("id", plant_id)
             .single()
             .execute()
@@ -228,7 +236,7 @@ async def EditPlants(
 
         dono            = planta_atual.data.get("dono")
         imagens_atuais  = planta_atual.data.get("imagens", [])        or []
-        arquivos_atuais = planta_atual.data.get("plantas_arquivo", []) or []
+        arquivos_atuais = planta_atual.data.get("planta_arquivos", []) or []
 
         timestamp = datetime.datetime.now().strftime("%d%m%Y_%H%M%S")
 
@@ -237,10 +245,7 @@ async def EditPlants(
 
         # ── IMAGENS ──────────────────────────────────────────────────────
         if imageFiles:
-            # Ler todos os ficheiros primeiro
             image_contents = [await img.read() for img in imageFiles]
-
-            # Apagar imagens antigas (não bloqueia o upload das novas)
             old_image_paths = [url_to_path(u) for u in imagens_atuais if u]
 
             async def delete_old_images():
@@ -257,7 +262,6 @@ async def EditPlants(
                 ))
                 return supabase.storage.from_("PlansStoraga").get_public_url(file_path)
 
-            # Delete das antigas e upload das novas correm ao mesmo tempo
             _, image_urls = await asyncio.gather(
                 delete_old_images(),
                 asyncio.gather(*[
@@ -305,9 +309,9 @@ async def EditPlants(
             "dimensao":        squareFeet,
             "orcamento":       price,
             "categoria":       category,
-            "especificacoes":  None,  #
+            "especificacoes":  specifications_dict,
             "imagens":         image_urls,
-            "plantas_arquivo": project_file_urls,
+            "planta_arquivos": project_file_urls,
         }
 
         response = await run_query(lambda: (

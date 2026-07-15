@@ -31,6 +31,7 @@ export default function PurchaseHistoryPage() {
 
         const mappedPurchases = response.compras.map((purchases: any) => ({
           id: purchases.compra_id,
+          
           date: new Date(purchases.comprado_em).toLocaleDateString("pt-PT", {
             year: "numeric",
             month: "long",
@@ -38,7 +39,7 @@ export default function PurchaseHistoryPage() {
           }),
           plan: {
             title: purchases.planta_nome,
-            image: purchases.imagens?.[0] ?? null,
+            image: purchases.planta_imagens?.[0] ?? null,
             category: purchases.categoria,
           },
           total: purchases.valor,
