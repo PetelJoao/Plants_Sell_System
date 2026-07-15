@@ -381,7 +381,6 @@ async def register_arquiteto(
     gender:             Optional[str]          = Form(None),
     address:            Optional[str]          = Form(None),
     nif:                Optional[str]          = Form(None),
-    professionalLicense: Optional[str]         = Form(None),
     iban:               Optional[str]          = Form(None),
     biography:          Optional[str]          = Form(None),
     profilePhoto:       Optional[UploadFile]   = File(None),
@@ -403,14 +402,23 @@ async def register_arquiteto(
     iban_str = iban.replace(" ", "").upper() if iban else None
 
     try:
+        sb.table("usuario").insert({
+            "id":       user_id,
+            "nome":     name,
+            "email":    email,
+            "tipo":     "arquiteto",
+            "telefone": phoneNumber,
+            "sexo":     gender,
+            "foto_pessoal": photo_url,
+        }).execute()
+
         sb.table("arquiteto").upsert({
             "id":                 user_id,   # ← chave primária
             "endereco":           address,
             "bio":                biography,
             "nif":                nif,
-            "cedula_profissional": professionalLicense,
             "IBAN":               iban_str,  # ← string em vez de int
-            "foto_pessoal":       photo_url,
+           
         }).execute()
     except Exception as e:
         traceback.print_exc()

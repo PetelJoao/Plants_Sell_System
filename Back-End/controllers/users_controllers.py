@@ -3,7 +3,6 @@ from pydantic import BaseModel, EmailStr
 from typing import Optional
 from models.db import get_supabase_admin
 
-
 class UserCreateSchema(BaseModel):
     name: str
     email: EmailStr
@@ -28,10 +27,6 @@ async def get_by_id(user_id: str):
     if not res.data:
         raise HTTPException(status_code=404, detail='Usuário não encontrado')
     return res.data
-
-
-
-
 
 async def update(user_id: str, data: UserUpdateSchema):
     sb = get_supabase_admin()

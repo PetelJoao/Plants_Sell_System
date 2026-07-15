@@ -51,12 +51,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   const isArquitecto = user?.role === "arquiteto"
+  const isClient= user?.role ==="Cliente"
 
   const navigationItems = [
     { name: "Dashboard",            href: "/Develop/dashboard",                  icon: LayoutDashboard, show: true },
-    { name: "Minhas Plantas",       href: "/Develop/dashboard/Plantas",          icon: Building2,       show: isArquitecto },
-    { name: "Meus eventos",               href: "/Develop/dashboard/Eventos",           icon: ActivitySquareIcon,            show: true },
-    { name: "Eventos",         href: "/Develop/dashboard/Eventos/Arquitecto", icon: Calendar,       show: isArquitecto },
+    { name: "Minhas Plantas",       href: "/Develop/dashboard/Plantas",          icon: Building2,      show: isArquitecto },
+    { name: "Meus eventos",         href: "/Develop/dashboard/Eventos",           icon: ActivitySquareIcon,show: isClient },
+    { name: "Eventos",              href: "/Develop/dashboard/Eventos/Arquitecto", icon: Calendar,       show: isArquitecto },
     { name: "Carrinho de Compras",  href: "/Develop/dashboard/Compras",          icon: ShoppingCart,    show: true },
     { name: "Histórico de Compras", href: "/Develop/dashboard/history",          icon: Clock,           show: true },
     { name: "Perfil",               href: "/Develop/dashboard/perfil",           icon: User,            show: true },
