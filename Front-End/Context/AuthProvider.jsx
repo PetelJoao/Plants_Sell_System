@@ -670,6 +670,209 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+   const ChatObterUsuario = useCallback(async (targetUserId) => {
+    try {
+      const res = await authFetch(`/api/chat/user/${targetUserId}`);
+      if (!res.ok) throw new Error("Erro ao obter utilizador do chat");
+      return await res.json();
+    } catch (err) {
+      console.error("Erro ao obter utilizador do chat:", err);
+      return null;
+    }
+  }, []);
+
+  const CriarConversa = useCallback(async (target_user_id, evento_id) => {
+    try {
+      const res = await authFetch("/api/chat/conversations", {
+        method: "POST",
+        body: JSON.stringify({ target_user_id, evento_id }),
+      });
+      const data = await res.json();
+      if (!res.ok) return { erro: data?.error || "Erro ao criar conversa" };
+      return data;
+    } catch (err) {
+      console.error("Erro ao criar conversa:", err);
+      return { erro: "Erro de ligação" };
+    }
+  }, []);
+
+  const CarregarMensagens = useCallback(async (conversationId) => {
+    try {
+      const res = await authFetch(`/api/chat/conversations/${conversationId}/messages`);
+      if (!res.ok) throw new Error("Erro ao carregar mensagens");
+      return await res.json();
+    } catch (err) {
+      console.error("Erro ao carregar mensagens:", err);
+      return null;
+    }
+  }, []);
+
+  const EnviarMensagemChat = useCallback(async (conversation_id, content) => {
+    try {
+      const res = await authFetch("/api/chat/messages", {
+        method: "POST",
+        body: JSON.stringify({ conversation_id, content }),
+      });
+      const data = await res.json();
+      if (!res.ok) return { erro: data?.error || "Erro ao enviar mensagem" };
+      return data;
+    } catch (err) {
+      console.error("Erro ao enviar mensagem:", err);
+      return { erro: "Erro de ligação" };
+    }
+  }, []);
+
+  // ════════════════════════════════════════════════════════
+  // COMENTÁRIOS
+  // ════════════════════════════════════════════════════════
+
+  const CarregarComentarios = useCallback(async (plantaId) => {
+    try {
+      // Rota pública — authFetch só acrescenta o header se houver token
+      const res = await authFetch(`/api/comments/${plantaId}`);
+      if (!res.ok) throw new Error("Erro ao carregar comentários");
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
+    } catch (err) {
+      console.error("Erro ao carregar comentários:", err);
+      return [];
+    }
+  }, []);
+
+  const PodeComentar = useCallback(async (plantaId) => {
+    try {
+      const token =
+        typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      if (!token) return false;
+
+      const res = await authFetch(`/api/comments/${plantaId}/pode-comentar`);
+      if (!res.ok) return false;
+      const data = await res.json();
+      return !!data.pode_comentar;
+    } catch (err) {
+      console.error("Erro ao verificar permissão de comentário:", err);
+      return false;
+    }
+  }, []);
+
+  const CriarComentario = useCallback(async (plantaId, conteudo) => {
+    try {
+      const res = await authFetch(`/api/comments/${plantaId}`, {
+        method: "POST",
+        body: JSON.stringify({ conteudo }),
+      });
+      const data = await res.json();
+      if (!res.ok) return { erro: data?.detail || "Não foi possível publicar." };
+      return data;
+    } catch (err) {
+      console.error("Erro ao criar comentário:", err);
+      return { erro: "Erro de ligação" };
+    }
+  }, []);
+
+  const ApagarComentario = useCallback(async (commentId) => {
+    try {
+      const res = await authFetch(`/api/comments/${commentId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        return { erro: err?.detail || "Erro ao apagar comentário" };
+      }
+      return { ok: true };
+    } catch (err) {
+      console.error("Erro ao apagar comentário:", err);
+      return { erro: "Erro de ligação" };
+    }
+  }, []);
+
+
+  // ════════════════════════════════════════════════════════
+  // PERFIL DO UTILIZADOR
+  // ════════════════════════════════════════════════════════
+
+  const CarregarPerfilCompleto = useCallback(async () => {
+    try {
+      const res = await authFetch("/api/auth/me");
+      if (!res.ok) return { telefone: null, foto_pessoal: null };
+      return await res.json();
+    } catch (err) {
+      console.error("Erro ao carregar perfil completo:", err);
+      return { telefone: null, foto_pessoal: null };
+    }
+  }, []);
+
+  const AtualizarPerfilGeral = useCallback(async (payload) => {
+    try {
+      const res = await authFetch("/api/auth/me", {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      return res.ok ? { ok: true } : { ok: false, detail: data.detail };
+    } catch (err) {
+      console.error("Erro ao atualizar perfil geral:", err);
+      return { ok: false, detail: "Erro de ligação" };
+    }
+  }, []);
+
+  const UploadFotoPerfil = useCallback(async (file) => {
+    try {
+      const form = new FormData();
+      form.append("foto", file);
+      const res = await authFetch("/api/auth/me/foto", {
+        method: "POST",
+        body: form,
+      });
+      const data = await res.json();
+      if (!res.ok) return { ok: false, detail: data.detail ?? "Erro ao enviar foto." };
+      return { ok: true, url: data.foto_url };
+    } catch (err) {
+      console.error("Erro ao enviar foto:", err);
+      return { ok: false, detail: "Erro de ligação" };
+    }
+  }, []);
+
+  const RemoverFotoPerfil = useCallback(async () => {
+    try {
+      const res = await authFetch("/api/auth/me/foto", {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        return { ok: false, detail: data.detail ?? "Erro ao remover foto." };
+      }
+      return { ok: true };
+    } catch (err) {
+      console.error("Erro ao remover foto:", err);
+      return { ok: false, detail: "Erro de ligação" };
+    }
+  }, []);
+
+  const CarregarPerfilArquiteto = useCallback(async () => {
+    try {
+      const res = await authFetch("/api/auth/me/arquiteto");
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (err) {
+      console.error("Erro ao carregar perfil de arquiteto:", err);
+      return null;
+    }
+  }, []);
+
+  const AtualizarPerfilArquiteto = useCallback(async (payload) => {
+    try {
+      const res = await authFetch("/api/auth/me/arquiteto", {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      return res.ok ? { ok: true } : { ok: false, detail: data.detail };
+    } catch (err) {
+      console.error("Erro ao atualizar perfil de arquiteto:", err);
+      return { ok: false, detail: "Erro de ligação" };
+    }
+  }, []);
   // ════════════════════════════════════════════════════════
   // VALORES DE CONTEXTO (memoizados)
   // ════════════════════════════════════════════════════════
@@ -735,6 +938,20 @@ export function AuthProvider({ children }) {
       LimparCarrinho,
       ComprarItem,
       ComprarTudo,
+      ChatObterUsuario,
+      CriarConversa,
+      CarregarMensagens,
+      EnviarMensagemChat,
+      CarregarComentarios,
+      PodeComentar,
+      CriarComentario,
+      ApagarComentario,
+      CarregarPerfilCompleto,
+      AtualizarPerfilGeral,
+      UploadFotoPerfil,
+      RemoverFotoPerfil,
+      CarregarPerfilArquiteto,
+      AtualizarPerfilArquiteto,
     }),
     [
       plans,
@@ -770,6 +987,10 @@ export function AuthProvider({ children }) {
       LimparCarrinho,
       ComprarItem,
       ComprarTudo,
+      ChatObterUsuario,
+      CriarConversa,
+      CarregarMensagens,
+      EnviarMensagemChat,
     ]
   );
 

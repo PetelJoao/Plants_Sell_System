@@ -12,7 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 import DashboardLayout from "@/app/Develop/dashboard/components/dashboard-layout"
 import { useAuth } from "@/Context/AuthContext"
-import { useEffect, useRef, useState } from "react"
+import { SetStateAction, useEffect, useRef, useState } from "react"
 import {
   Camera,
   Trash2,
@@ -39,14 +39,7 @@ interface ArquitetoPerfil {
   compania:            string | null
 }
 
-interface PerfilCompleto {
-  telefone:     string | null
-  foto_pessoal: string | null   // universal — vem da tabela certa conforme o role
-}
-
 // ── Constants ─────────────────────────────────────────────────────────────────
-
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
 
 // Shared input styling so every field in the page reads as one design system
 const inputClass =
@@ -67,81 +60,6 @@ function getInitials(nome: string): string {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
 }
 
-async function fetchPerfilCompleto(token: string): Promise<PerfilCompleto> {
-  try {
-    const res = await fetch(`${API}/api/auth/me`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    if (!res.ok) return { telefone: null, foto_pessoal: null }
-    return await res.json()
-  } catch {
-    return { telefone: null, foto_pessoal: null }
-  }
-}
-
-async function updatePerfilGeral(
-  token: string,
-  payload: { nome?: string; telefone?: string },
-): Promise<{ ok: boolean; detail?: string }> {
-  try {
-    const res = await fetch(`${API}/api/auth/me`, {
-      method:  "PUT",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body:    JSON.stringify(payload),
-    })
-    const data = await res.json()
-    return res.ok ? { ok: true } : { ok: false, detail: data.detail }
-  } catch {
-    return { ok: false, detail: "Erro de ligação" }
-  }
-}
-
-async function uploadFoto(token: string, file: File): Promise<{ ok: boolean; url?: string; detail?: string }> {
-  try {
-    const form = new FormData()
-    form.append("foto", file)
-    const res = await fetch(`${API}/api/auth/me/foto`, {
-      method:  "POST",
-      headers: { Authorization: `Bearer ${token}` },
-      body:    form,
-    })
-    const data = await res.json()
-    if (!res.ok) return { ok: false, detail: data.detail ?? "Erro ao enviar foto." }
-    return { ok: true, url: data.foto_url }
-  } catch {
-    return { ok: false, detail: "Erro de ligação" }
-  }
-}
-
-async function fetchArquitetoPerfil(token: string): Promise<ArquitetoPerfil | null> {
-  try {
-    const res = await fetch(`${API}/api/auth/me/arquiteto`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    if (!res.ok) return null
-    return await res.json()
-  } catch {
-    return null
-  }
-}
-
-async function updateArquitetoPerfil(
-  token: string,
-  payload: Record<string, unknown>,
-): Promise<{ ok: boolean; detail?: string }> {
-  try {
-    const res = await fetch(`${API}/api/auth/me/arquiteto`, {
-      method:  "PUT",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body:    JSON.stringify(payload),
-    })
-    const data = await res.json()
-    return res.ok ? { ok: true } : { ok: false, detail: data.detail }
-  } catch {
-    return { ok: false, detail: "Erro de ligação" }
-  }
-}
-
 // ── Componente: Alterador de foto ─────────────────────────────────────────────
 
 function FotoPerfilEditor({
@@ -153,6 +71,8 @@ function FotoPerfilEditor({
   nome:             string
   onFotoAtualizada: (url: string) => void
 }) {
+  const { UploadFotoPerfil, RemoverFotoPerfil } = useAuth() as any
+
   const inputRef               = useRef<HTMLInputElement>(null)
   const [preview, setPreview]  = useState<string | null>(fotoUrl)
   const [uploading, setUploading] = useState(false)
@@ -171,10 +91,7 @@ function FotoPerfilEditor({
     setFeedback(null)
     setUploading(true)
 
-    const token = localStorage.getItem("token")
-    if (!token) { setUploading(false); return }
-
-    const result = await uploadFoto(token, file)
+    const result = await UploadFotoPerfil(file)
     setUploading(false)
 
     if (result.ok && result.url) {
@@ -188,6 +105,20 @@ function FotoPerfilEditor({
 
     // limpa o input para permitir re-selecionar o mesmo ficheiro
     e.target.value = ""
+  }
+
+  const handleRemove = async () => {
+    setUploading(true)
+    const result = await RemoverFotoPerfil()
+    setUploading(false)
+
+    if (result.ok) {
+      setPreview(null)
+      onFotoAtualizada("")
+      setFeedback({ type: "success", msg: "Foto removida." })
+    } else {
+      setFeedback({ type: "error", msg: result.detail ?? "Erro ao remover foto." })
+    }
   }
 
   return (
@@ -245,20 +176,7 @@ function FotoPerfilEditor({
                 size="sm"
                 className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
                 disabled={uploading}
-                onClick={async () => {
-                  const token = localStorage.getItem("token")
-                  if (!token) return
-                  setUploading(true)
-                  // envia null para remover a foto
-                  await fetch(`${API}/api/auth/me/foto`, {
-                    method:  "DELETE",
-                    headers: { Authorization: `Bearer ${token}` },
-                  })
-                  setPreview(null)
-                  onFotoAtualizada("")
-                  setUploading(false)
-                  setFeedback({ type: "success", msg: "Foto removida." })
-                }}
+                onClick={handleRemove}
               >
                 <Trash2 className="h-3.5 w-3.5" />
                 Remover
@@ -310,6 +228,8 @@ function StarRating({ value }: { value: number }) {
 // ── Aba Geral ─────────────────────────────────────────────────────────────────
 
 function TabGeral({ user, loadingUser }: { user: any; loadingUser: boolean }) {
+  const { CarregarPerfilCompleto, AtualizarPerfilGeral } = useAuth() as any
+
   const [firstName,  setFirstName]  = useState("")
   const [lastName,   setLastName]   = useState("")
   const [telefone,   setTelefone]   = useState("")
@@ -324,22 +244,18 @@ function TabGeral({ user, loadingUser }: { user: any; loadingUser: boolean }) {
     setLastName(n.ultimo)
 
     // busca telefone e foto do endpoint /me
-    const token = localStorage.getItem("token")
-    if (!token) return
-    fetchPerfilCompleto(token).then((d) => {
+    CarregarPerfilCompleto().then((d: any /*depois definir uma interface propria  */) => {
       if (d.telefone)    setTelefone(d.telefone)
       if (d.foto_pessoal) setFotoUrl(d.foto_pessoal)
     })
   }, [loadingUser, user])
 
   const handleSave = async () => {
-    const token = localStorage.getItem("token")
-    if (!token) return
     setSaving(true)
     setFeedback(null)
 
     const nomeCompleto = [firstName.trim(), lastName.trim()].filter(Boolean).join(" ")
-    const result = await updatePerfilGeral(token, {
+    const result = await AtualizarPerfilGeral({
       nome:     nomeCompleto || undefined,
       telefone: telefone     || undefined,
     })
@@ -437,6 +353,8 @@ function TabGeral({ user, loadingUser }: { user: any; loadingUser: boolean }) {
 // ── Aba Profissional (só arquitetos) ──────────────────────────────────────────
 
 function TabProfissional() {
+  const { CarregarPerfilArquiteto, AtualizarPerfilArquiteto } = useAuth() as any
+
   const [perfil,   setPerfil]   = useState<ArquitetoPerfil | null>(null)
   const [loading,  setLoading]  = useState(true)
   const [saving,   setSaving]   = useState(false)
@@ -450,9 +368,7 @@ function TabProfissional() {
   const [compania, setCompania] = useState("")
 
   useEffect(() => {
-    const token = localStorage.getItem("token")
-    if (!token) { setLoading(false); return }
-    fetchArquitetoPerfil(token).then((data) => {
+    CarregarPerfilArquiteto().then((data: any/*depois definir uma interface propria  */) => {
       if (data) {
         setPerfil(data)
         setEndereco(data.endereco            ?? "")
@@ -467,12 +383,10 @@ function TabProfissional() {
   }, [])
 
   const handleSave = async () => {
-    const token = localStorage.getItem("token")
-    if (!token) return
     setSaving(true)
     setFeedback(null)
 
-    const result = await updateArquitetoPerfil(token, {
+    const result = await AtualizarPerfilArquiteto({
       endereco, bio, nif,
       cedula_profissional: cedula,
       IBAN: iban, compania,

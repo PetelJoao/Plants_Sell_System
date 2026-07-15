@@ -195,7 +195,6 @@ export function DuriaRegistrationForm() {
         </div>
 
         <form onSubmit={handleSubmit(onSubmit, (erros) => {
-          // ✅ FIX 6: log de erros de validação do handleSubmit
           console.error('[handleSubmit] erros de validação:', erros)
         })} className="space-y-6">
 

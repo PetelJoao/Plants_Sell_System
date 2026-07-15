@@ -13,8 +13,6 @@ import { useToast } from "@/hooks/use-toast"
 import { BotaoComprar } from "@/components/BotaoComprar"
 import { useAuth } from "@/Context/AuthContext"
 
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
-
 // ── Tipos ──────────────────────────────────────
 interface Comentario {
   id: string
@@ -46,7 +44,13 @@ interface PlanDetailModalProps {
 
 // ── Sub-componente: formulário + lista de comentários ──
 function ComentariosSection({ plantaId }: { plantaId: string }) {
-  const { user } = useAuth() as any
+  const {
+    user,
+    CarregarComentarios,
+    PodeComentar,
+    CriarComentario,
+    ApagarComentario,
+  } = useAuth() as any
   const { toast } = useToast()
 
   const [comentarios, setComentarios]   = useState<Comentario[]>([])
@@ -61,25 +65,13 @@ function ComentariosSection({ plantaId }: { plantaId: string }) {
     let cancelled = false
 
     async function load() {
-      const token = localStorage.getItem("token")
-
       // Comentários são públicos
-      const res = await fetch(`${API}/api/comments/${plantaId}`)
-      const data = await res.json()
-      // Garante que é sempre um array
-      if (!cancelled) setComentarios(Array.isArray(data) ? data : [])
+      const data = await CarregarComentarios(plantaId)
+      if (!cancelled) setComentarios(data)
 
-      // Permissão só se autenticado
-      if (token) {
-        const permRes = await fetch(
-          `${API}/api/comments/${plantaId}/pode-comentar`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        )
-        if (permRes.ok && !cancelled) {
-          const perm = await permRes.json()
-          setPodeComentar(perm.pode_comentar)
-        }
-      }
+      // Permissão só se autenticado (a função já trata isso internamente)
+      const perm = await PodeComentar(plantaId)
+      if (!cancelled) setPodeComentar(perm)
 
       if (!cancelled) setLoading(false)
     }
@@ -92,37 +84,23 @@ function ComentariosSection({ plantaId }: { plantaId: string }) {
     if (conteudo.trim().length < 3) return
     setSubmitting(true)
 
-    const token = localStorage.getItem("token")
-    const res = await fetch(`${API}/api/comments/${plantaId}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ conteudo }),
-    })
+    const novo = await CriarComentario(plantaId, conteudo)
 
-    if (res.ok) {
-      const novo = await res.json()
+    if (!novo?.erro) {
       setComentarios((prev) => [novo, ...prev])
       setConteudo("")
       toast({ title: "Comentário publicado!", description: "A tua opinião foi partilhada com sucesso." })
     } else {
-      const err = await res.json()
-      toast({ title: "Erro", description: err.detail || "Não foi possível publicar.", variant: "destructive" })
+      toast({ title: "Erro", description: novo.erro, variant: "destructive" })
     }
 
     setSubmitting(false)
   }
 
   const handleDelete = async (commentId: string) => {
-    const token = localStorage.getItem("token")
-    const res = await fetch(`${API}/api/comments/${commentId}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
-    })
+    const result = await ApagarComentario(commentId)
 
-    if (res.ok) {
+    if (result?.ok) {
       setComentarios((prev) => prev.filter((c) => c.id !== commentId))
       toast({ title: "Comentário apagado." })
     }
@@ -138,6 +116,7 @@ function ComentariosSection({ plantaId }: { plantaId: string }) {
       </div>
     )
   }
+
 
   return (
     <div className="space-y-5">
@@ -396,7 +375,7 @@ export function PlanDetailModal({ open, onOpenChange, plan }: PlanDetailModalPro
                 ))}
               </div>
               <p className="text-sm text-[#55617A] mt-4 text-center py-2.5 bg-[#F7F5F1] border border-dashed border-[#E4E0D8] rounded-xl">
-                🔒 Purchase this plan to unlock all documents
+                 Purchase this plan to unlock all documents
               </p>
             </CardContent>
           </Card>

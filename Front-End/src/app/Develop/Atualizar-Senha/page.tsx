@@ -29,7 +29,7 @@ export default function AtualizarSenhaPage() {
     setError('');
     try {
       await resetPassword(password);
-      router.push('/login'); // rota correcta do teu projecto
+      router.push('/login'); 
     } catch (err: any) {
       setError(err.message);
     } finally {

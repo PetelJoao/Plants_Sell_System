@@ -8,17 +8,21 @@ import { RealtimeChat } from '@/components/realtime-chat'
 import { ArrowLeft, MessageCircle, Send, Loader2 } from 'lucide-react'
 import type { ChatMessage } from '@/hooks/use-realtime-chat'
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
-
 export default function ChatPage() {
   const params = useParams()
   const router = useRouter()
   const searchParams = useSearchParams()
   const targetUserId = params?.userId as string
   const nomeFromQuery = searchParams.get('nome')
-  const eventoIdFromQuery = searchParams.get('evento') 
+  const eventoIdFromQuery = searchParams.get('evento')
 
-  const { user } = useAuth() as any
+  const {
+    user,
+    ChatObterUsuario,
+    CriarConversa,
+    CarregarMensagens,
+    EnviarMensagemChat,
+  } = useAuth() as any
 
   const [conversationId, setConversationId] = useState<string | null>(null)
   const [initialMessages, setInitialMessages] = useState<ChatMessage[]>([])
@@ -26,36 +30,17 @@ export default function ChatPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!user?.id || !targetUserId || !eventoIdFromQuery) return 
+    if (!user?.id || !targetUserId || !eventoIdFromQuery) return
 
     async function init() {
-      const token = localStorage.getItem('token')
-
       if (!nomeFromQuery) {
-        const userRes = await fetch(`${API}/api/chat/user/${targetUserId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-        if (userRes.ok) {
-          const data = await userRes.json()
-          setTargetName(data?.nome || 'Utilizador')
-        }
+        const data = await ChatObterUsuario(targetUserId)
+        setTargetName(data?.nome || 'Utilizador')
       }
 
-      const convRes = await fetch(`${API}/api/chat/conversations`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          target_user_id: targetUserId,
-          evento_id: eventoIdFromQuery,
-        }),
-      })
+      const conv = await CriarConversa(targetUserId, eventoIdFromQuery)
 
-      const conv = await convRes.json()
-
-      if (!convRes.ok || !conv?.id) {
+      if (conv?.erro || !conv?.id) {
         console.error('Erro ao criar conversa:', conv)
         setLoading(false)
         return
@@ -63,10 +48,7 @@ export default function ChatPage() {
 
       setConversationId(conv.id)
 
-      const msgRes = await fetch(`${API}/api/chat/conversations/${conv.id}/messages`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      const msgs = await msgRes.json()
+      const msgs = await CarregarMensagens(conv.id)
       setInitialMessages(
         (msgs || []).map((m: any) => ({
           id: m.id,
@@ -86,25 +68,14 @@ export default function ChatPage() {
     const latest = messages[messages.length - 1]
     if (!latest?.user || latest.user.name !== user?.nome) return
 
-    const token = localStorage.getItem('token')
-    await fetch(`${API}/api/chat/messages`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        conversation_id: conversationId,
-        content: latest.content,
-      }),
-    })
+    await EnviarMensagemChat(conversationId, latest.content)
   }
 
-  // Define as iniciais para o avatar
   const getInitials = (name: string) => {
     if (!name) return 'U'
     return name.charAt(0).toUpperCase()
   }
+
 
   return (
     <DashboardLayout>

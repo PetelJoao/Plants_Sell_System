@@ -136,7 +136,7 @@ function CardArquiteto({
   return (
     <div className={`flex flex-col rounded-xl border p-5 shadow-sm transition-all duration-300 relative group ${cardStatusClasses}`}>
       
-      {/* Botão Flutuante de Chat */}
+      
       {podeConversar && (
         <button 
           className="absolute top-4 right-4 h-9 w-9 flex items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50/50 transition-all shadow-sm focus:outline-none" 
