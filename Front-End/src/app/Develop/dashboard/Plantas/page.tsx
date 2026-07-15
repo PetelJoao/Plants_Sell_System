@@ -96,6 +96,27 @@ export default function PlansPage() {
     
   }, [])
 
+const minimoSaque = 200;
+const podeSacar = stats.revenue >= minimoSaque;
+
+const handleRetirarFundos = async () => {
+  if (!podeSacar) return;
+
+  const response = await solicitarSaque(stats.revenue)
+  if (!response) {
+    toast({
+      title: "Erro ao solicitar saque",
+      description: "Não foi possível processar o pedido. Verifica se já tens um saque pendente.",
+      variant: "destructive",
+    })
+    return
+  }
+  toast({
+    title: "Saque solicitado",
+    description: "O seu dinheiro será enviado em 2 a 3 dias úteis.",
+  })
+}
+
   const handlePlanAdded = (newPlan: any) => {
     addPlan(newPlan)
     setPlanStatuses((prev) => ({ ...prev, [newPlan.id]: true }))
@@ -247,12 +268,13 @@ export default function PlansPage() {
                 </h3>
               </div>
               <Button 
-                onClick={() => setWithdrawalOpen(true)}
-                className="bg-blue-600 hover:bg-blue-700 text-white shadow-md transition-colors rounded-xl px-5 py-2 font-semibold"
-              >
-                <Wallet className="mr-2 h-4 w-4" />
-                Retirar fundos
-              </Button>
+            onClick={handleRetirarFundos}
+            disabled={!podeSacar}
+            className="bg-blue-600 hover:bg-blue-700 text-white shadow-md transition-colors rounded-xl px-5 py-2 font-semibold disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600"
+          >
+            <Wallet className="mr-2 h-4 w-4" />
+            Retirar fundos
+          </Button>
             </div>
             
             {/* Progress Bar Redesigned */}
