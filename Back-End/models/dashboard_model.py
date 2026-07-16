@@ -71,7 +71,10 @@ async def DeletePlants(plant_id: str):
 async def ManagePlants(user: dict):
     supabase = get_supabase_admin()
     response = await run_query(lambda: supabase.from_("dashboard_gestao_plantas").select("*").eq("arquiteto_id", user["id"]).execute()
+                               
     )
+
+    Saldo= await run_query(lambda: supabase.from_("compra").select("valor").eq("arquiteto_id", user["id"]).execute())
     if not response.data:
         return {
             "arquiteto_id":       user["id"],
