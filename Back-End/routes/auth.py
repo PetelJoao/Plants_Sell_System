@@ -9,6 +9,10 @@ from middlewares.auth import get_current_user
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import smtplib
+import random
+import string
+from datetime import datetime, timedelta, timezone
+from services.email_service import enviar_codigo_verificacao
 
 auth_router = APIRouter(tags=["auth"])
 
@@ -27,13 +31,13 @@ class ArquitetoUpdateSchema(BaseModel):
 
 
 
-def _create_auth_user(sb, email: str, password: str, metadata: dict) -> str:
+def _create_auth_user(sb, email: str, password: str, metadata: dict, email_confirm: bool = True) -> str:
     """Cria utilizador no Supabase Auth e devolve o user_id."""
     try:
         res = sb.auth.admin.create_user({
             "email":         email,
             "password":      password,
-            "email_confirm": True,
+            "email_confirm": email_confirm,
             "user_metadata": metadata,
         })
         return res.user.id
@@ -44,6 +48,53 @@ def _create_auth_user(sb, email: str, password: str, metadata: dict) -> str:
             raise HTTPException(status_code=409, detail="Este email já está registado.")
         raise HTTPException(status_code=500, detail=err)
 
+def _gerar_codigo(tamanho: int = 6) -> str:
+    return "".join(random.choices(string.digits, k=tamanho))
+
+
+@auth_router.post("/register/cliente", status_code=201)
+async def register_cliente(
+    name:        str           = Form(...),
+    email:       str           = Form(...),
+    password:    str           = Form(...),
+    phoneNumber: Optional[str] = Form(None),
+    gender:      Optional[str] = Form(None),
+):
+    sb = get_supabase_admin()
+    user_id = _create_auth_user(sb, email, password, {
+        "nome":     name,
+        "tipo":     "cliente",
+        "telefone": phoneNumber,
+        "sexo":     gender,
+    }, email_confirm=False)
+
+    try:
+        codigo = _criar_codigo_verificacao(sb, email)
+        enviar_codigo_verificacao(destinatario=email, nome_cliente=name, codigo=codigo)
+    except Exception as e:
+        print(f"[register_cliente][ERRO] Falha ao gerar/enviar código: {e}")
+
+    return {
+        "id": user_id, "name": name, "email": email, "role": "cliente",
+        "requer_verificacao": True,
+    }
+
+def _criar_codigo_verificacao(sb, email: str) -> str:
+    codigo = _gerar_codigo()
+    expira_em = datetime.now(timezone.utc) + timedelta(minutes=15)
+
+    try:
+        sb.table("verificacao_email").delete().eq("email", email).execute()
+    except Exception:
+        pass
+
+    sb.table("verificacao_email").insert({
+        "email":     email,
+        "codigo":    codigo,
+        "expira_em": expira_em.isoformat(),
+    }).execute()
+
+    return codigo
 
 def _upload_photo(sb, file: UploadFile, content: bytes) -> str | None:
     if not file or not file.filename:
@@ -420,14 +471,103 @@ async def register_arquiteto(
             "IBAN":               iban_str,  # ← string em vez de int
            
         }).execute()
+        codigo = _criar_codigo_verificacao(sb, email)
+        enviar_codigo_verificacao(destinatario=email, nome_cliente=name, codigo=codigo)
     except Exception as e:
-        traceback.print_exc()
-        raise HTTPException(
-            status_code=500,
-            detail=f"Conta criada mas erro ao guardar perfil: {e}"
-        )
+        print(f"[register_arquiteto][ERRO] Falha ao gerar/enviar código: {e}")
 
-    return {"id": user_id, "name": name, "email": email, "role": "arquiteto"}
+    return {
+        "id": user_id, "name": name, "email": email, "role": "arquiteto",
+        "requer_verificacao": True,
+    }
+
+class VerifyEmailSchema(BaseModel):
+    email: EmailStr
+    codigo: str
+
+
+@auth_router.post("/verify-email", status_code=200)
+async def verify_email(data: VerifyEmailSchema):
+    sb = get_supabase_admin()
+
+    try:
+        row = (
+            sb.table("verificacao_email")
+            .select("*")
+            .eq("email", data.email)
+            .single()
+            .execute()
+        )
+    except Exception:
+        raise HTTPException(status_code=400, detail="Código não encontrado. Solicite um novo.")
+
+    registro = row.data
+    if not registro:
+        raise HTTPException(status_code=400, detail="Código não encontrado. Solicite um novo.")
+
+    expira_em = datetime.fromisoformat(registro["expira_em"])
+    if expira_em.tzinfo is None:
+        expira_em = expira_em.replace(tzinfo=timezone.utc)
+
+    if datetime.now(timezone.utc) > expira_em:
+        sb.table("verificacao_email").delete().eq("email", data.email).execute()
+        raise HTTPException(status_code=400, detail="Código expirado. Solicite um novo.")
+
+    if registro["tentativas"] >= 5:
+        sb.table("verificacao_email").delete().eq("email", data.email).execute()
+        raise HTTPException(status_code=429, detail="Demasiadas tentativas. Solicite um novo código.")
+
+    if registro["codigo"] != data.codigo.strip():
+        sb.table("verificacao_email").update(
+            {"tentativas": registro["tentativas"] + 1}
+        ).eq("email", data.email).execute()
+        raise HTTPException(status_code=400, detail="Código incorreto.")
+
+    try:
+        u_row = sb.table("usuario").select("id").eq("email", data.email).single().execute()
+        if not u_row.data:
+            raise HTTPException(status_code=404, detail="Utilizador não encontrado.")
+        sb.auth.admin.update_user_by_id(u_row.data["id"], {"email_confirm": True})
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao confirmar conta: {e}")
+
+    sb.table("verificacao_email").delete().eq("email", data.email).execute()
+
+    return {"message": "Conta verificada com sucesso."}
+
+
+@auth_router.post("/resend-verification-code", status_code=200)
+async def resend_verification_code(email: str = Form(...)):
+    sb = get_supabase_admin()
+
+    try:
+        u_row = sb.table("usuario").select("id, nome").eq("email", email).single().execute()
+    except Exception:
+        u_row = None
+
+    if not u_row or not u_row.data:
+        return {"message": "Se o e-mail existir, um novo código foi enviado."}
+
+    try:
+        res = sb.auth.admin.get_user_by_id(u_row.data["id"])
+        if res.user.email_confirmed_at:
+            raise HTTPException(status_code=400, detail="Esta conta já está verificada.")
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[resend_verification_code][AVISO] {e}")
+
+    try:
+        codigo = _criar_codigo_verificacao(sb, email)
+        enviar_codigo_verificacao(destinatario=email, nome_cliente=u_row.data.get("nome", "Cliente"), codigo=codigo)
+    except Exception as e:
+        print(f"[resend_verification_code][ERRO] {e}")
+        raise HTTPException(status_code=500, detail="Erro ao enviar código.")
+
+    return {"message": "Se o e-mail existir, um novo código foi enviado."}
+
 
 
 @auth_router.post("/login")
@@ -442,5 +582,10 @@ async def login(data: LoginSchema):
             "token": res.session.access_token,
             "user":  {"id": res.user.id, "email": res.user.email},
         }
-    except Exception:
+    except Exception as e:
+        if "email not confirmed" in str(e).lower():
+            raise HTTPException(
+                status_code=403,
+                detail="Conta ainda não verificada. Confirme o seu e-mail para continuar.",
+            )
         raise HTTPException(status_code=401, detail="Credenciais inválidas")

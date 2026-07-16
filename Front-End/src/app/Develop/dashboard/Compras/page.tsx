@@ -155,7 +155,7 @@ export default function ComprasPage() {
     <DashboardLayout>
       <div className="flex flex-col gap-6 p-6 md:p-8 max-w-5xl mx-auto">
         
-        {/* Cabeçalho */}
+     
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900">Carrinho</h1>
@@ -177,7 +177,7 @@ export default function ComprasPage() {
           </div>
         </div>
 
-        {/* Conteúdo do Carrinho */}
+ 
         {!carrinho || carrinho.itens.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 px-6 border-2 border-dashed border-slate-200 rounded-2xl bg-white shadow-sm transition-all hover:border-blue-200">
             <div className="h-20 w-20 flex items-center justify-center rounded-full bg-blue-50 text-blue-500 mb-6">
@@ -193,7 +193,7 @@ export default function ComprasPage() {
           </div>
         ) : (
           <div className="space-y-6">
-            {/* Lista de itens */}
+            
             <div className="space-y-4">
               <h2 className="text-lg font-semibold">
                 {carrinho.total_itens} {carrinho.total_itens === 1 ? "item" : "itens"} no carrinho
@@ -244,7 +244,7 @@ export default function ComprasPage() {
               })}
             </div>
 
-            {/* Resumo */}
+           
             <Card className="bg-slate-50 border-slate-200">
               <CardHeader><CardTitle className="text-lg">Resumo do Pedido</CardTitle></CardHeader>
               <CardContent>

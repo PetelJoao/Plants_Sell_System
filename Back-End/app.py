@@ -23,6 +23,15 @@ from routes.carrinho_route import router as carrinho_router
 from routes.chat import chat_router
 from routes.comments_route import comments_router
 
+from fastapi import FastAPI, Depends
+from middlewares.auth import get_current_admin
+
+
+app.include_router(
+    admin_router,
+    prefix="/api/admin",
+    dependencies=[Depends(get_current_admin)],
+)
 app.include_router(comments_router, prefix="/api/comments")
 app.include_router(chat_router, prefix="/api/chat")
 app.include_router(router,           prefix="/api/payments")

@@ -6,12 +6,6 @@ import { DataContext } from "./DataContext";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
-// ────────────────────────────────────────────────────────────
-// Helper único para todos os fetches autenticados.
-// Antes cada função tinha "http://localhost:5000" hardcoded —
-// isso quebra em produção. Agora tudo passa por aqui e usa a
-// variável de ambiente API.
-// ────────────────────────────────────────────────────────────
 function authFetch(path, options = {}) {
   const token =
     typeof window !== "undefined" ? localStorage.getItem("token") : null;
@@ -135,6 +129,7 @@ export function AuthProvider({ children }) {
     return data.message;
   }, []);
 
+  
   // ════════════════════════════════════════════════════════
   // DASHBOARD — plantas do utilizador
   // ════════════════════════════════════════════════════════
@@ -880,6 +875,27 @@ const inserir = useCallback(
       return { ok: false, detail: "Erro de ligação" };
     }
   }, []);
+const verifyEmail = useCallback(async (email, codigo) => {
+  const res = await fetch(`${API}/api/auth/verify-email`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, codigo }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail || "Erro ao verificar conta");
+  return data.message;
+}, []);
+
+const resendVerificationCode = useCallback(async (email) => {
+  const res = await fetch(`${API}/api/auth/resend-verification-code`, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ email }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail || "Erro ao reenviar código");
+  return data.message;
+}, []);
   // ════════════════════════════════════════════════════════
   // VALORES DE CONTEXTO (memoizados)
   // ════════════════════════════════════════════════════════
@@ -959,6 +975,8 @@ const inserir = useCallback(
       RemoverFotoPerfil,
       CarregarPerfilArquiteto,
       AtualizarPerfilArquiteto,
+      verifyEmail,
+      resendVerificationCode
     }),
     [
       plans,

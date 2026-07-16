@@ -17,7 +17,6 @@ import { Upload, ChevronRight, ChevronLeft } from 'lucide-react'
 const PROFESSIONS = ['Arquiteto', 'Cliente'] as const
 const GENDERS = ['M', 'F'] as const
 
-// Architect ✅ FIX 1: Removidos neighborhood, municipality, professionalLicense do schema
 const baseArchitectSchema = z.object({
   name: z.string()
     .trim()
@@ -165,7 +164,7 @@ export function DuriaRegistrationForm() {
         console.log('[onSubmit] registo concluído, a fazer login...')
         await login(data.email, data.password)
         console.log('[onSubmit] login concluído, a redirecionar...')
-        window.location.href = 'Develop/dashboard'
+        window.location.href = '/Verificar-Email'
 
       } else {
         formData.append('name',        data.name)
@@ -176,7 +175,7 @@ export function DuriaRegistrationForm() {
         console.log('[onSubmit] a enviar para /api/auth/register/cliente')
         await registerUser(formData, 'cliente')
         console.log('[onSubmit] registo cliente concluído, a redirecionar...')
-        window.location.href = 'Develop/dashboard'
+        window.location.href = '/Verificar-Email'
       }
     } catch (err: any) {
       console.error('[onSubmit] erro:', err)

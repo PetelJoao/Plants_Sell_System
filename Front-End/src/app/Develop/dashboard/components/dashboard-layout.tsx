@@ -56,7 +56,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const navigationItems = [
     { name: "Dashboard",            href: "/Develop/dashboard",                  icon: LayoutDashboard, show: true },
     { name: "Minhas Plantas",       href: "/Develop/dashboard/Plantas",          icon: Building2,      show: isArquitecto },
-    { name: "Meus eventos",         href: "/Develop/dashboard/Eventos",           icon: ActivitySquareIcon,show: isClient },
+    { name: "Meus eventos",         href: "/Develop/dashboard/Eventos",           icon: ActivitySquareIcon,show: true },
     { name: "Eventos",              href: "/Develop/dashboard/Eventos/Arquitecto", icon: Calendar,       show: isArquitecto },
     { name: "Carrinho de Compras",  href: "/Develop/dashboard/Compras",          icon: ShoppingCart,    show: true },
     { name: "Histórico de Compras", href: "/Develop/dashboard/history",          icon: Clock,           show: true },
@@ -104,36 +104,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <LayoutGroup id="sidebar-nav">
 
             <SidebarMenu className="gap-3">
-              <div className="px-0 pb-1 group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setChatOpen(true)}
-                  className="h-10 w-full justify-start gap-3 rounded-full px-3 text-white/80 hover:bg-white/10 hover:text-white group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:w-10 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
-                >
-                  <MessageCircle className="h-4 w-4 shrink-0" />
-                  <span className="text-sm font-medium group-data-[collapsible=icon]:hidden">Mensagens</span>
-                </Button>
-              </div>
+              
 
-              <ChatModal
-                open={chatOpen}
-                onClose={() => setChatOpen(false)}
-                currentUser={{ id: user.id, nome: user.nome, email: user.email }}
-              />
+             
               {navigationItems.map((item) => {
                 const isActive = pathname === item.href
                 return (
                   <SidebarMenuItem key={item.name} className="relative">
                    {isActive && (
                         <>
-                          {/* Pill com borda invertida — só no modo expandido */}
+                          
                           <motion.span
                             layoutId="sidebar-active-pill"
                             className="absolute -right-5 left-0 top-0 bottom-0 z-0 rounded-l-full bg-[#F7F5F1] group-data-[collapsible=icon]:hidden"
                             transition={{ type: "spring", stiffness: 320, damping: 30, mass: 0.9 }}
                           >
-                            {/* Curva Superior */}
+                            
                             <svg 
                               className="pointer-events-none absolute -top-8 right-3 h-8 w-8 text-[#F7F5F1]" 
                               viewBox="0 0 24 24" 
@@ -152,7 +138,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                             </svg>
                           </motion.span>
 
-                          {/* Pill simples — só no modo ícone colapsado, sem bleed */}
+                         
                           <motion.span
                             layoutId="sidebar-active-pill-icon"
                             className="absolute inset-0 z-0 hidden rounded-full bg-[#F7F5F1] group-data-[collapsible=icon]:block"

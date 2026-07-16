@@ -1,4 +1,3 @@
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
@@ -7,6 +6,10 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'kikuuhndrprxaynaxfpe.supabase.co',
         pathname: '/storage/v1/object/public/**',
+      },
+      {
+  protocol: 'https',
+  hostname: 'images.unsplash.com',
       },
     ],
   },

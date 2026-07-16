@@ -235,3 +235,74 @@ def enviar_fatura_compra(
         print(f"[email_service] Fatura enviada para {destinatario}")
     except Exception as e:
         print(f"[email_service][ERRO] Falha ao enviar fatura: {e}")
+
+def _montar_html_codigo(nome_cliente: str, codigo: str) -> str:
+    return f"""
+    <html>
+    <body style="margin:0;padding:0;background-color:#f2f2f2;font-family:Arial,Helvetica,sans-serif;">
+      <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f2f2f2;padding:40px 0;">
+        <tr>
+          <td align="center">
+            <table width="480" cellpadding="0" cellspacing="0">
+              <tr>
+                <td align="center" style="padding-bottom:24px;">
+                  <span style="color:#1a1a1a;font-size:32px;font-weight:800;letter-spacing:-0.5px;">
+                    Confirme a sua conta
+                  </span>
+                </td>
+              </tr>
+              <tr>
+                <td style="background-color:#ffffff;border-radius:4px;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+                  <table width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td align="center" style="padding:40px 40px 8px 40px;">
+                        <p style="color:#1a1a1a;font-size:16px;font-weight:700;margin:0 0 4px 0;">
+                          Olá {nome_cliente},
+                        </p>
+                        <p style="color:#666666;font-size:14px;margin:0;">
+                          Use o código abaixo para confirmar o seu e-mail na {SITE_NAME}.
+                        </p>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td align="center" style="padding:28px 40px;">
+                        <span style="display:inline-block;background-color:#f5f5f5;border-radius:6px;
+                                      padding:16px 32px;color:#1a1a1a;font-size:32px;font-weight:800;
+                                      letter-spacing:8px;">
+                          {codigo}
+                        </span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td align="center" style="padding:0 40px 40px 40px;">
+                        <p style="color:#999999;font-size:12px;margin:0;">
+                          Este código expira em 15 minutos. Se não foi você quem se registou,
+                          pode ignorar este e-mail.
+                        </p>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </body>
+    </html>
+    """
+
+
+def enviar_codigo_verificacao(destinatario: str, nome_cliente: str, codigo: str):
+    if not destinatario:
+        print("[email_service] Sem destinatário, código não enviado.")
+        return
+
+    html = _montar_html_codigo(nome_cliente=nome_cliente or "Cliente", codigo=codigo)
+    assunto = f"O seu código de verificação — {SITE_NAME}"
+
+    try:
+        _enviar_email_sync(destinatario, assunto, html)
+        print(f"[email_service] Código de verificação enviado para {destinatario}")
+    except Exception as e:
+        print(f"[email_service][ERRO] Falha ao enviar código: {e}")

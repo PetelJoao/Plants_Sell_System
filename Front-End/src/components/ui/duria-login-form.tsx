@@ -68,15 +68,19 @@ export function DuriaLoginForm() {
     setApiError('')
     setIsLoading(true)
 
-    try {
+     try {
+    const userData = await login(data.email, data.password) 
 
-       await login(email, password); // - atualiza o user no contexto
-      router.push("/Develop/dashboard") // - redireciona para o dashboard;
-    } catch (err) {
-      setApiError('Falha no login. Por favor, verifique as suas credenciais.')
-    } finally {
-      setIsLoading(false)
+    if (userData?.role === "administrador") {
+      router.push("/admin")
+    } else {
+      router.push("/Develop/dashboard")
     }
+  } catch (err) {
+    setApiError('Falha no login. Por favor, verifique as suas credenciais.')
+  } finally {
+    setIsLoading(false)
+  }
   }
 
   return (
